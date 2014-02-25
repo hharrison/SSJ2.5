@@ -156,15 +156,14 @@ public class MRG32k3aL extends RandomStreamBase  {
    } 
 
 
-   /**
-    * @param seed array of 6 elements representing the seed
-    * 
-    * 
-    */
-   public static void setPackageSeed (long seed[])  {
+   private static void validateSeed(long seed[]) {
       // Must use long because there is no unsigned int type.
       if (seed.length < 6)
          throw new IllegalArgumentException ("Seed must contain 6 values");
+      if (seed[0] < 0 || seed[1] < 0 || seed[2]  < 0 ||
+          seed[3] < 0 || seed[4] < 0 || seed[5]  < 0)
+          throw new IllegalArgumentException
+              ("All seed values must be non-negative");
       if (seed[0] == 0 && seed[1] == 0 && seed[2] == 0)
          throw new IllegalArgumentException
              ("The first 3 values must not be 0");
@@ -179,6 +178,14 @@ public class MRG32k3aL extends RandomStreamBase  {
       if (seed[5] >= m2 || seed[3] >= m2 || seed[4] >= m2)
          throw new IllegalArgumentException
              ("The last 3 values must be less than " + m2);
+   }
+   /**
+    * @param seed array of 6 elements representing the seed
+    *
+    *
+    */
+   public static void setPackageSeed (long seed[])  {
+      validateSeed(seed);
       for (int i = 0; i < 6;  ++i)
          nextSeed[i] = seed[i];
    }
@@ -190,23 +197,7 @@ public class MRG32k3aL extends RandomStreamBase  {
     * 
     */
    public void setSeed (long seed[])  {
-      // Must use long because there is no unsigned int type.
-      if (seed.length < 6)
-         throw new IllegalArgumentException ("Seed must contain 6 values");
-      if (seed[0] == 0 && seed[1] == 0 && seed[2] == 0)
-         throw new IllegalArgumentException
-            ("The first 3 values must not be 0");
-      if (seed[3] == 0 && seed[4] == 0 && seed[5] == 0)
-         throw new IllegalArgumentException
-            ("The last 3 values must not be 0");
-      final long m1 = 4294967087L;
-      if (seed[0] >= m1 || seed[1] >= m1 || seed[2] >= m1)
-         throw new IllegalArgumentException
-            ("The first 3 values must be less than " + m1);
-      final long m2 = 4294944443L;
-      if (seed[3] >= m2 || seed[4] >= m2 || seed[5] >= m2)
-         throw new IllegalArgumentException
-            ("The last 3 values must be less than " + m2);
+      validateSeed(seed);
       for (int i = 0; i < 6;  ++i)
          Ig[i] = seed[i];
       resetStartStream();
