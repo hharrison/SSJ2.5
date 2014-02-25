@@ -1,0 +1,45 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+
+
+This package contains Java classes providing methods to 
+compute mass, density, distribution and complementary
+distribution functions for some multi-dimensional discrete
+and continuous probability distributions.
+% and to perform goodness-of-fit tests. % and collect statistics.  
+It does not generate random numbers for multivariate distributions;
+for that, see the package \externalclass{umontreal.iro.lecuyer}{randvarmulti}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection* {Distributions}
+
+We recall that the {\em distribution function\/} of a {\em continuous\/} random
+vector $X= \{x_1, x_2, \ldots, x_d\}$ with {\em density\/} $f(x_1, x_2, \ldots,
+x_d)$ over the
+ $d$-dimensional space $R^d$  is
+\begin{eqnarray}
+  F(x_1, x_2, \ldots, x_d) &=& P[X_1\le x_1, X_2\le x_2, \ldots, X_d\le x_d] \\[6pt]
+    &=&
+  \int_{-\infty}^{x_1}\int_{-\infty}^{x_2} \cdots  \int_{-\infty}^{x_d} f(s_1, s_2,
+ \ldots, s_d)\; ds_1 ds_2 \ldots ds_d    \label{eq:FDist}
+\end{eqnarray}
+while that of a {\em discrete\/} random vector $X$ with {\em mass function\/}
+ $\{p_1, p_2, \ldots, p_d\}$ over a fixed set of real numbers is
+\begin{eqnarray}
+  F(x_1, x_2, \ldots, x_d) &=& P[X_1\le x_1, X_2\le x_2, \ldots, X_d\le x_d] \\[6pt]
+   &=& \sum_{i_1\le x_1}\sum_{i_2\le x_2} \cdots
+   \sum_{i_d\le x_d} p(x_1, x_2, \ldots, x_d),     \label{eq:FDistDisc}
+\end{eqnarray}
+where $p(x_1, x_2, \ldots, x_d) = P[X_1 = x_1, X_2 = x_2, \ldots, X_d = x_d]$.
+For a discrete distribution over the set of integers, one has
+\begin{eqnarray}
+  F (x_1, x_2, \ldots, x_d) &=& P[X_1\le x_1, X_2\le x_2, \ldots, X_d\le x_d] \\[6pt]
+   &=& \sum_{s_1=-\infty}^{x_1} \sum_{s_2=-\infty}^{x_2} \cdots
+   \sum_{s_d=-\infty}^{x_d} p(s_1, s_2, \ldots, s_d),   \label{eq:FDistDiscInt}
+\end{eqnarray}
+where $p(s_1, s_2, \ldots, s_d) = P[X_1=s_1, X_2=s_2, \ldots, X_d=s_d]$.
+
+We define $\bar{F}$, the {\em complementary distribution function\/} 
+of $X$, as
+\eq
+ \bar{F} (x_1, x_2, \ldots, x_d) = P[X_1\ge x_1, X_2\ge x_2, \ldots, X_d\ge x_d].
+\endeq

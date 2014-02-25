@@ -1,0 +1,98 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+
+This package offers the basic facilities for generating uniform random 
+numbers. It provides an interface called
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} 
+and some implementations of that interface.  
+The interface specifies that each stream of random numbers
+is partitioned into multiple substreams and that methods are available to jump
+between the substreams, as discussed in \cite{rLEC91a,rLEC97d,rLEC02a}.
+For an example of how to use these streams properly, see  
+\texttt{InventoryCRN} in the set of example programs.
+
+Each implementation uses a specific backbone 
+uniform random number generator (RNG), whose period length is typically
+partitioned into very long non-overlapping segments to provide the 
+streams and substreams.
+A stream can generate uniform variates (real numbers) over the interval (0,1),
+uniform integers over a given range of values $\{i,\dots,j\}$,
+and arrays of these.
+
+The generators provided here have various speeds and period lengths.
+\externalclass{umontreal.iro.lecuyer.rng}{MRG32k3a} is the one that
+ has been most extensively tested, but it is not among the fastest. 
+The \externalclass{umontreal.iro.lecuyer.rng}{LFSR113}, \externalclass{umontreal.iro.lecuyer.rng}{GenF2w32},
+ \externalclass{umontreal.iro.lecuyer.rng}{MT19937}, and the \texttt{WELL} generators produce sequences
+of bits that obey a linear recurrence, so they eventually fail statistical 
+tests that measure the linear complexity of these bits sequences.
+But this can affect only very special types of applications.
+
+For each generator, the following tables give
+the approximate period length (period),
+the CPU time (in seconds) to generate $10^9$ $U(0,1)$ random numbers 
+(gen.\ time), and the CPU time to jump ahead $10^6$ times 
+to the next substream (jump time).
+The following timings are on a 2100 MHz 32-bit AMD Athlon XP 2800+
+computer running Linux, with the JDK 1.4.2.
+
+\begin{center}
+\begin{tabular}{|l|lcr|}
+\hline
+ RNG  &  period  & gen.\ time  &  jump time \\    
+\hline
+ LFSR113\rule{0pt}{1em} & $2^{113}$   & \phantom{0}51  & 0.08 \\
+ WELL512      & $2^{512}$   & \phantom{0}55             & 372    \\
+ WELL1024     & $2^{1024}$  & \phantom{0}55             & 1450   \\
+ MT19937      & $2^{19937}$ & \phantom{0}56             & 60   \\
+ WELL607      & $2^{607}$   & \phantom{0}61             & 523    \\
+ GenF2w32     & $2^{800}$   & \phantom{0}62             & 937    \\
+ MRG31k3p     & $2^{185}$   & \phantom{0}66             & 1.8   \\
+ MRG32k3a     & $2^{191}$   & 109  & 2.3   \\
+% MRG32k3aL    & $2^{191}$   & ?  & ?   \\
+ F2NL607      & $2^{637}$   & 125  & 523    \\
+ RandRijndael & $2^{130}$   & 260  & 0.9  \\
+\hline
+\end{tabular}
+\end{center}
+
+The following timings are on a 2400 MHz 64-bit AMD Athlon 64 Processor 4000+
+computer running Linux, with the JDK 1.5.0.
+
+%Les tests ont ete effectues sur Papaye
+
+\begin{center}
+\begin{tabular}{|l|lcr|}
+\hline
+ RNG  &  period  & gen.\ time  &  jump time \\    
+\hline
+ LFSR113\rule{0pt}{1em} & $2^{113}$   & \phantom{0}31  & 0.08 \\
+ WELL607      & $2^{607}$   & \phantom{0}33             & 329    \\
+ WELL512      & $2^{512}$   & \phantom{0}33             & 234    \\
+ WELL1024     & $2^{1024}$  & \phantom{0}34             & 917   \\
+ LFSR258      & $2^{258}$   & \phantom{0}35             & 0.18   \\
+ MT19937      & $2^{19937}$ & \phantom{0}36             & 46   \\
+ GenF2w32     & $2^{800}$   & \phantom{0}43             & 556    \\
+ MRG31k3p     & $2^{185}$   & \phantom{0}51             & 0.89   \\
+ F2NL607      & $2^{637}$   & \phantom{0}65  & 329    \\
+ MRG32k3a     & $2^{191}$   & \phantom{0}70   & 1.1   \\
+% MRG32k3aL    & $2^{191}$   & ?  & ?   \\
+ RandRijndael & $2^{130}$   & 127  & 0.6  \\
+\hline
+\end{tabular}
+\end{center}
+
+
+Other tools included in this package permit one to manage
+and synchronize several streams simultaneously 
+(\externalclass{umontreal.iro.lecuyer.rng}{RandomStreamManager}),
+to create random stream factories for a given type of stream
+(\externalclass{umontreal.iro.lecuyer.rng}{BasicRandomStreamFactory}),
+and to apply automatic transformations to the output of a given
+stream (\externalclass{umontreal.iro.lecuyer.rng}{AntitheticStream} and 
+\externalclass{umontreal.iro.lecuyer.rng}{BakerTransformedStream}).
+
+For further details about uniform RNGs, we refer the reader to
+\cite{rKNU98a,rLEC01d,rLEC04b}.
+
+\hpierre{Should add an example somewhere.}
+

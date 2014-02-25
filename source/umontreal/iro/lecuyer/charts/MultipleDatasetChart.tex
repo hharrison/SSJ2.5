@@ -1,0 +1,536 @@
+\defclass {MultipleDatasetChart}
+
+Provides tools to plot many datasets on the same chart.
+This class is mainly used to draw plots with different styles.
+Class \externalclass{umontreal.iro.lecuyer.charts}{XYChart} and
+its subclasses are to be preferred to draw simple charts with one style.
+Datasets are stored in an \texttt{ArrayList}. The first dataset is called
+as the \textit{primary dataset}.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        MultipleDatasetChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   org.jfree.chart.JFreeChart;
+import   org.jfree.chart.ChartPanel;
+import   org.jfree.chart.ChartFactory;
+import   org.jfree.chart.axis.NumberAxis;
+import   org.jfree.chart.plot.XYPlot;
+import   org.jfree.chart.plot.PlotOrientation;
+
+import   java.util.Locale;
+import   java.util.Formatter;
+import   java.util.ArrayList;
+import   javax.swing.JFrame;\end{hide}
+
+public class MultipleDatasetChart \begin{hide} {
+
+   protected ArrayList<SSJXYSeriesCollection> datasetList;
+   protected Axis XAxis;
+   protected Axis YAxis;
+   protected JFreeChart chart;
+   protected boolean latexDocFlag = true;
+
+   protected boolean autoRange = true;
+   protected double[] manualRange;
+
+   protected boolean grid = false;
+   protected double xstepGrid;
+   protected double ystepGrid;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+   public MultipleDatasetChart() \begin{hide} {
+      super();
+
+      // create the chart...
+      chart = ChartFactory.createXYLineChart(
+         null,                     // chart title
+         null,                     // x axis label
+         null,                     // y axis label
+         null, // data
+         PlotOrientation.VERTICAL,
+         true,                     // include legend
+         true,                     // tool tips
+         false                     // urls
+      );
+
+      datasetList = new ArrayList<SSJXYSeriesCollection>();
+      // Initialize axis variables
+      XAxis = new Axis((NumberAxis)((XYPlot) chart.getPlot()).getDomainAxis(),
+                 Axis.ORIENTATION_HORIZONTAL);
+      YAxis = new Axis((NumberAxis)((XYPlot) chart.getPlot()).getRangeAxis(),
+                 Axis.ORIENTATION_VERTICAL);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{MultipleDatasetChart}.
+\end{tabb}
+\begin{code}
+
+   public MultipleDatasetChart (String title, String XLabel, String YLabel) \begin{hide} {
+      // create the chart...
+      chart = ChartFactory.createXYLineChart(
+         title,                    // chart title
+         XLabel,                   // x axis label
+         YLabel,                   // y axis label
+         null,                     // data
+         PlotOrientation.VERTICAL,
+         true,                     // include legend
+         true,                     // tool tips
+         false                     // urls
+      );
+
+      datasetList = new ArrayList<SSJXYSeriesCollection>();
+      //Initialize axis variables
+      XAxis = new Axis((NumberAxis)((XYPlot) chart.getPlot()).getDomainAxis(),
+              Axis.ORIENTATION_HORIZONTAL);
+      YAxis = new Axis((NumberAxis)((XYPlot) chart.getPlot()).getRangeAxis(),
+              Axis.ORIENTATION_VERTICAL);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{MultipleDatasetChart} instance.
+   \texttt{title} sets a title, \texttt{XLabel} is a short description of
+   the $x$-axis, and \texttt{YLabel} is a short description of the $y$-axis.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public JFreeChart getJFreeChart() \begin{hide} {
+      return chart;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{JFreeChart} variable associated with this chart.
+\end{tabb}
+\begin{htmlonly}
+   \return{the associated JFreeChart variable.}
+\end{htmlonly}
+\begin{code}
+
+   public Axis getXAxis() \begin{hide} {
+      return XAxis;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's domain axis ($x$-axis) object.
+\end{tabb}
+\begin{htmlonly}
+   \return{chart's domain axis ($x$-axis) object.}
+\end{htmlonly}
+\begin{code}
+
+   public Axis getYAxis() \begin{hide} {
+      return YAxis;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's range axis ($y$-axis) object.
+\end{tabb}
+\begin{htmlonly}
+   \return{chart's range axis ($y$-axis) object.}
+\end{htmlonly}
+\begin{code}
+
+   public String getTitle() \begin{hide} {
+      return chart.getTitle().getText();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Gets the current chart title.
+\end{tabb}
+\begin{htmlonly}
+   \return{Chart title.}
+\end{htmlonly}
+\begin{code}
+
+   public void setTitle (String title) \begin{hide} {
+      chart.setTitle(title);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets a title to the chart. This title will appear on the chart displayed by method \method{view}{}.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+\end{htmlonly}
+\begin{code}
+
+   public void setAutoRange() \begin{hide} {
+      autoRange = true;
+      double[][] temp = new double[2][datasetList.size()];
+      for(int i = 0; i<datasetList.size(); i++) {
+         temp[0][i] = (datasetList.get(i).getDomainBounds())[0];
+         temp[1][i] = (datasetList.get(i).getDomainBounds())[1];
+      }
+      XAxis.getAxis().setLowerBound(min(temp[0]));
+      XAxis.getAxis().setUpperBound(max(temp[1]));
+
+      for(int i = 0; i<datasetList.size(); i++) {
+         temp[0][i] = (datasetList.get(i).getRangeBounds())[0];
+         temp[1][i] = (datasetList.get(i).getRangeBounds())[1];
+      }
+      YAxis.getAxis().setLowerBound(min(temp[0]));
+      YAxis.getAxis().setUpperBound(max(temp[1]));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets chart range to automatic values.
+\end{tabb}
+\begin{code}
+
+   public void setManualRange (double[] axisRange) \begin{hide} {
+      if(axisRange.length != 4)
+         throw new IllegalArgumentException("axisRange must share the format: [xmin, xmax, ymin, ymax]");
+      autoRange = false;
+      XAxis.getAxis().setLowerBound(axisRange[0]);
+      XAxis.getAxis().setUpperBound(axisRange[1]);
+      YAxis.getAxis().setLowerBound(axisRange[2]);
+      YAxis.getAxis().setUpperBound(axisRange[3]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets new $x$-axis and $y$-axis bounds, with format: \texttt{axisRange} = [xmin, xmax, ymin, ymax].
+\end{tabb}
+\begin{htmlonly}
+   \param{axisRange}{new axis ranges.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (SSJXYSeriesCollection dataset) \begin{hide} {
+      ((XYPlot)chart.getPlot()).setDataset(datasetList.size(),
+                  dataset.getSeriesCollection());
+      ((XYPlot)chart.getPlot()).setRenderer(datasetList.size(),
+                  dataset.getRenderer());
+      datasetList.add(dataset);
+      if(datasetList.size() == 1) {
+         XAxis.setLabelsAuto();
+         YAxis.setLabelsAuto();
+      }
+      return datasetList.size()-1;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a new dataset to the chart at the end of the list and returns its position.
+\end{tabb}
+\begin{htmlonly}
+   \param{dataset}{dataset to add.}
+   \return{the dataset position in the list.}
+\end{htmlonly}
+\begin{code}
+
+   public SSJXYSeriesCollection get() \begin{hide} {
+      return datasetList.get(0);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Gets the primary dataset.
+\end{tabb}
+\begin{htmlonly}
+   \return{dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void set (SSJXYSeriesCollection dataset) \begin{hide} {
+      ((XYPlot)chart.getPlot()).setDataset(dataset.getSeriesCollection());
+      ((XYPlot)chart.getPlot()).setRenderer(dataset.getRenderer());
+      datasetList.set(0, dataset);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Sets the primary dataset for the plot, replacing the existing dataset if there is one.
+\end{tabb}
+\begin{htmlonly}
+   \param{dataset}{the new primary dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public SSJXYSeriesCollection get (int datasetNum) \begin{hide} {
+      return datasetList.get(datasetNum);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Gets the element at the specified position in the dataset list.
+\end{tabb}
+\begin{htmlonly}
+   \param{datasetNum}{position in the dataset list.}
+   \return{dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void set (int datasetNum, SSJXYSeriesCollection dataset) \begin{hide} {
+      ((XYPlot)chart.getPlot()).setDataset(datasetNum, dataset.getSeriesCollection());
+      ((XYPlot)chart.getPlot()).setRenderer(datasetNum, dataset.getRenderer());
+      datasetList.add(datasetNum, dataset);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Replaces the element at the specified position in the dataset list with the specified element.
+\end{tabb}
+\begin{htmlonly}
+   \param{datasetNum}{position in the dataset list.}
+   \param{dataset}{dataset list.}
+\end{htmlonly}
+\begin{code}
+
+   public ArrayList<SSJXYSeriesCollection> getList() \begin{hide} {
+      return datasetList;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the dataset list.
+\end{tabb}
+\begin{htmlonly}
+   \return{dataset list.}
+\end{htmlonly}
+\begin{code}
+
+   public JFrame view (int width, int height) \begin{hide} {
+      JFrame myFrame;
+      if (chart.getTitle() != null)
+         myFrame = new JFrame("MultipleDatasetChart from SSJ: " +
+                               chart.getTitle().getText());
+      else
+         myFrame = new JFrame("MultipleDatasetChart from SSJ");
+      ChartPanel chartPanel = new ChartPanel(chart);
+      chartPanel.setPreferredSize(new java.awt.Dimension(width, height));
+      myFrame.setContentPane(chartPanel);
+      myFrame.pack();
+      myFrame.setDefaultCloseOperation (JFrame.DISPOSE_ON_CLOSE);
+      myFrame.setLocationRelativeTo (null);
+      myFrame.setVisible(true);
+      return myFrame;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Displays chart on the screen using Swing.
+   This method creates an application containing a chart panel displaying
+   the chart. The created frame is positioned on-screen, and displayed before
+   it is returned. The \texttt{width} and the \texttt{height}
+   of the chart are measured in pixels.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{frame width in pixels.}
+   \param{height}{frame height in pixels.}
+\end{htmlonly}
+\begin{code}
+
+   public void enableGrid (double xstep, double ystep) \begin{hide} {
+      this.grid = true;
+      this.xstepGrid = xstep;
+      this.ystepGrid = ystep;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Puts grid on the background. It is important to note that the grid is
+always placed in such a way that it contains the axes. Thus, the grid does
+   not always have an intersection at the corner points; this occurs
+   only if the corner points are multiples of the stepping. \texttt{xstep}
+   and \texttt{ystep} sets the stepping in each direction.
+\end{tabb}
+\begin{htmlonly}
+   \param{xstep}{sets the stepping in the $x$-direction.}
+   \param{ystep}{sets the stepping in the $y$-direction.}
+\end{htmlonly}
+\begin{code}
+
+   public void disableGrid () \begin{hide} {
+      this.grid = false;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Disables the background grid.
+\end{tabb}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{\LaTeX-specific method}
+
+\begin{code}
+
+   public String toLatex (double width, double height) \begin{hide} {
+      double xunit, yunit;
+      double[] save = new double[4];
+
+      if(datasetList.size() == 0)
+         throw new IllegalArgumentException("Empty chart");
+
+      //Calcul des parametres d'echelle et de decalage
+      double XScale = computeXScale(XAxis.getTwinAxisPosition());
+      double YScale = computeYScale(YAxis.getTwinAxisPosition());
+
+      xunit = width / ( (Math.max(XAxis.getAxis().getRange().getUpperBound(), XAxis.getTwinAxisPosition()) * XScale) - (Math.min(XAxis.getAxis().getRange().getLowerBound(), XAxis.getTwinAxisPosition()) * XScale) );
+      //taille d'une unite en x et en cm dans l'objet "tikzpicture"
+      yunit = height / ( (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition()) * YScale) - (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition()) * YScale) );
+      //taille d'une unite en y et en cm dans l'objet "tikzpicture"
+
+      Formatter formatter = new Formatter(Locale.US);
+
+      /*Entete du document*/
+      if (latexDocFlag) {
+         formatter.format("\\documentclass[12pt]{article}%n%n");
+         formatter.format("\\usepackage{tikz}%n\\usetikzlibrary{plotmarks}%n\\begin{document}%n%n");
+      }
+      if(chart.getTitle() != null)
+         formatter.format("%% PGF/TikZ picture from SSJ : %s%n", chart.getTitle().getText());
+      else
+         formatter.format("%% PGF/TikZ picture from SSJ %n");
+      formatter.format("%% XScale = %s,  YScale = %s,  XShift = %s,  YShift = %s%n", XScale, YScale, XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition());
+      formatter.format("%% Therefore, thisFileXValue = (originalSeriesXValue+XShift)*XScale%n");
+      formatter.format("%%        and thisFileYValue = (originalSeriesYValue+YShift)*YScale%n%n");
+      if (chart.getTitle() != null)
+         formatter.format("\\begin{figure}%n");
+      formatter.format("\\begin{center}%n");
+      formatter.format("\\begin{tikzpicture}[x=%scm, y=%scm]%n", xunit, yunit);
+      formatter.format("\\footnotesize%n");
+      if(grid)
+         formatter.format("\\draw[color=lightgray] (%s, %s) grid[xstep = %s, ystep=%s] (%s, %s);%n",
+            (Math.min(XAxis.getAxis().getRange().getLowerBound(), XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale,
+            xstepGrid*XScale, ystepGrid*YScale,
+            (Math.max(XAxis.getAxis().getRange().getUpperBound(), XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale );
+
+      formatter.format("%s", XAxis.toLatex(XScale) );
+      formatter.format("%s", YAxis.toLatex(YScale) );
+
+      for(int i = 0; i < datasetList.size(); i++)
+         formatter.format("%s", datasetList.get(i).toLatex(XScale, YScale,
+                                                            XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition(),
+                                                            XAxis.getAxis().getLowerBound(), XAxis.getAxis().getUpperBound(),
+                                                            YAxis.getAxis().getLowerBound(), YAxis.getAxis().getUpperBound()));
+
+      formatter.format("\\end{tikzpicture}%n");
+      formatter.format("\\end{center}%n");
+      if (chart.getTitle() != null) {
+         formatter.format("\\caption{");
+         formatter.format(chart.getTitle().getText());
+         formatter.format("}%n\\end{figure}%n");
+      }
+      if (latexDocFlag)
+      formatter.format("\\end{document}%n");
+      return formatter.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Same as in \class{XYChart}.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{Chart's width in centimeters.}
+   \param{height}{Chart's height in centimeters.}
+\end{htmlonly}
+\begin{code}
+
+   public void setLatexDocFlag (boolean flag) \begin{hide} {
+      latexDocFlag = flag;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Same as in \class{XYChart}.
+\end{tabb}
+\begin{code}
+\begin{hide}
+
+   protected double computeXScale (double position) {
+      double[] bounds = new double[2];
+      bounds[0] = XAxis.getAxis().getLowerBound();
+      bounds[1] = XAxis.getAxis().getUpperBound();
+
+      if(position<bounds[0])
+         bounds[0] = position;
+      if(position>bounds[1])
+         bounds[1] = position;
+      bounds[0] -= position;
+      bounds[1] -= position;
+      return computeScale(bounds);
+   }
+
+   protected double computeYScale (double position) {
+      double[] bounds = new double[2];
+      bounds[0] = YAxis.getAxis().getLowerBound();
+      bounds[1] = YAxis.getAxis().getUpperBound();
+
+      if(position<bounds[0])
+         bounds[0] = position;
+      if(position>bounds[1])
+         bounds[1] = position;
+      bounds[0] -= position;
+      bounds[1] -= position;
+      return computeScale(bounds);
+   }
+
+
+   protected double computeScale (double[] bounds) {
+      int tenPowerRatio=0;
+      //echelle < 1 si les valeurs sont grandes
+      while(bounds[1] > 1000 || bounds[0] < -1000) {
+         bounds[1] /= 10;
+         bounds[0] /= 10;
+         tenPowerRatio++;
+      }
+      //echelle > 1 si les valeurs sont petites
+      while(bounds[1]<100 && bounds[0] > -100) {
+         bounds[1] *= 10;
+         bounds[0] *= 10;
+         tenPowerRatio--;
+      }
+      return 1/Math.pow(10, tenPowerRatio);
+   }
+
+   private static double max (double[] t) {
+      double aux = t[0];
+      for (int i=1 ; i < t.length ; i++)
+         if (t[i] > aux)
+            aux = t[i];
+      return aux ;
+   }
+
+   private static double min (double[] t) {
+      double aux = t[0];
+      for (int i=1 ; i < t.length ; i++)
+         if (t[i] < aux)
+            aux = t[i];
+      return aux ;
+   }
+}\end{hide}
+\end{code}

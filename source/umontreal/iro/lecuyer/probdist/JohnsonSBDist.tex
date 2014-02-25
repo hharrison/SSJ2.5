@@ -1,0 +1,279 @@
+\defclass {JohnsonSBDist}
+
+Extends the class \class{ContinuousDistribution} for
+the {\em Johnson $S_B$\/} distribution\latex{ (see \cite[page 314]{sLAW00a})}
+with shape parameters $\gamma$ and $\delta > 0$, location parameter $\xi$, 
+and scale parameter $\lambda>0$.
+Denoting $y=(x-\xi)/\lambda$, the density is
+\eq
+ f(x) = \html{\delta/(}\latex{\frac {\delta}} {\lambda y(1 - y)\sqrt{2\pi}}
+  \exp(-(1/2)\left[\gamma+\delta\ln \left(y/(1 - y)\right) \right]^2)\html{)}
+  \mbox { for } \xi < x < \xi+\lambda,     \eqlabel{eq:JohnsonSB-density}
+\endeq
+and 0 elsewhere.  The distribution function is
+\eq
+ F(x) = \Phi [\gamma + \delta\ln (y/(1-y))],
+     \mbox { for } \xi < x < \xi+\lambda,   \eqlabel{eq:JohnsonSB-dist}
+\endeq
+where $\Phi$ is the standard normal distribution function.
+The inverse distribution function is
+\eq
+  F^{-1}(u) = \xi + \lambda (1/(1+e^{-v(u)})) \qquad\mbox{for }  0 \le u \le 1,
+                                      \eqlabel{eq:JohnsonSB-inverse}
+\endeq  
+where
+\eq
+  v(u) = [\Phi^{-1}(u) - \gamma]/\delta.
+\endeq
+
+This class relies on the methods  \clsexternalmethod{}{NormalDist}{cdf01}{} and
+  \clsexternalmethod{}{NormalDist}{inverseF01}{}
+of \class{NormalDist} to approximate $\Phi$ and $\Phi^{-1}$.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        JohnsonSBDist
+ * Description:  Johnson S_Bdistribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+\end{hide}
+
+public class JohnsonSBDist extends ContinuousDistribution\begin{hide} {
+   private double gamma;
+   private double delta;
+   private double xi;
+   private double lambda;\end{hide}
+\end{code}
+   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public JohnsonSBDist (double gamma, double delta,
+                         double xi, double lambda)\begin{hide} {
+      setParams (gamma, delta, xi, lambda);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{JohnsonSBDist} object
+   with shape parameters $\gamma$ and $\delta$,
+   location parameter $\xi$ and scale parameter $\lambda$.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{hide}
+\begin{code}
+
+   public double density (double x) {
+      return density (gamma, delta, xi, lambda, x);
+   }
+       
+   public double cdf (double x) {
+      return cdf (gamma, delta, xi, lambda, x);
+   }
+     
+   public double barF (double x) {
+      return barF (gamma, delta, xi, lambda, x);
+   }
+
+   public double inverseF (double u){
+      return inverseF (gamma, delta, xi, lambda, u);
+   }
+\end{code}
+\end{hide}\begin{code}
+
+   public static double density (double gamma, double delta,
+                                 double xi, double lambda, double x)\begin{hide} {
+      if (lambda <= 0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (delta <= 0)
+         throw new IllegalArgumentException ("delta <= 0");
+      if (x <= xi || x >= (xi+lambda))
+         return 0.0;
+      double y = (x - xi)/lambda;
+      double t1 = gamma + delta*Math.log (y/(1.0 - y));
+      return delta/(lambda*y*(1.0 - y)*Math.sqrt (2.0*Math.PI))*
+           Math.exp (-t1*t1/2.0);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function (\ref{eq:JohnsonSB-density}).
+\end{tabb}
+\begin{code}      
+
+   public static double cdf (double gamma, double delta,
+                             double xi, double lambda, double x)\begin{hide} {
+      if (lambda <= 0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (delta <= 0)
+         throw new IllegalArgumentException ("delta <= 0");
+      if (x <= xi)
+         return 0.0;
+      if (x >= xi+lambda)
+         return 1.0;
+      double y = (x - xi)/lambda;
+      return NormalDist.cdf01 (gamma + delta*Math.log (y/(1.0 - y)));
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the distribution function (\ref{eq:JohnsonSB-dist}).
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double gamma, double delta,
+                              double xi, double lambda, double x)\begin{hide} {
+      if (lambda <= 0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (delta <= 0)
+         throw new IllegalArgumentException ("delta <= 0");
+      if (x <= xi)
+         return 1.0;
+      if (x >= xi+lambda)
+         return 0.0;
+      double y = (x - xi)/lambda;
+      return NormalDist.barF01 (gamma + delta*Math.log (y/(1.0 - y)));
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the complementary distribution.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double gamma, double delta,
+                                  double xi, double lambda, double u)\begin{hide} {
+      if (lambda <= 0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (delta <= 0)
+         throw new IllegalArgumentException ("delta <= 0");
+      if (u > 1.0 || u < 0.0)
+          throw new IllegalArgumentException ("u not in [0,1]");
+
+      double v, z;
+
+      if (u >= 1.0)    // if u == 1, in fact
+          return xi+lambda;
+      if (u <= 0.0)    // if u == 0, in fact
+          return xi;
+
+      z = NormalDist.inverseF01 (u);
+      v = (z - gamma)/delta;
+
+      if ((z >= XBIG) || (v >= Num.DBL_MAX_EXP*Num.LN2))
+            return xi + lambda;
+
+        if ((z <= -XBIG) || (v <= -Num.DBL_MAX_EXP*Num.LN2))
+            return xi;
+
+        v = Math.exp (v);
+        return (xi + (xi+lambda)*v)/(1.0 + v);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the inverse of the distribution (\ref{eq:JohnsonSB-inverse}).
+ \end{tabb}
+\begin{code}
+
+   public double getGamma()\begin{hide} {
+      return gamma;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $\gamma$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getDelta()\begin{hide} {
+      return delta;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $\delta$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getXi()\begin{hide} {
+      return xi;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $\xi$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }
+\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $\lambda$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public void setParams(double gamma, double delta, double xi,
+                         double lambda)\begin{hide} {
+      if (lambda <= 0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (delta <= 0)
+         throw new IllegalArgumentException ("delta <= 0");
+      this.gamma = gamma;
+      this.delta = delta;
+      this.xi = xi;
+      this.lambda = lambda;
+      supportA = xi;
+      supportB = xi + lambda;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Sets the value of the parameters $\gamma$, $\delta$, $\xi$ and
+  $\lambda$ for this object.
+ \end{tabb}
+ \begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {gamma, delta, xi, lambda};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\gamma$, $\delta$, $\xi$, $\lambda$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : gamma = " + gamma + ", delta = " + delta + ", xi = " + xi + ", lambda = " + lambda;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

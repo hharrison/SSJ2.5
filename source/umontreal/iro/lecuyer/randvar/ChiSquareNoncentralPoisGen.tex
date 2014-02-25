@@ -1,0 +1,106 @@
+\defclass {ChiSquareNoncentralPoisGen}
+
+This class implements {\em noncentral chi square\/} random variate generators 
+using Poisson and central chi square generators. It uses the following algorithm:
+generate a random integer $J \sim \mbox{Poisson}(\lambda/2)$ from a Poisson 
+distribution, generate a random real $X \sim \Gamma(j + \nu/2, 1/2)$ from a 
+gamma distribution, then return $X$. 
+Here $\nu$ is the number of degrees of freedom and 
+$\lambda$ is the noncentrality parameter.
+
+To generate the Poisson variates, one 
+uses tabulated inversion for $\lambda<10$, and the acceptance complement 
+method for $\lambda \ge 10$, as in \cite{rAHR82b}
+(see class \externalclass{umontreal.iro.lecuyer.randvar}{PoissonTIACGen}).
+To generate the gamma variates, one 
+uses acceptance-rejection for $\alpha<1$, and acceptance-complement
+for $\alpha\ge 1$, as proposed  in \cite{rAHR72b,rAHR82a}
+(see class \externalclass{umontreal.iro.lecuyer.randvar}{GammaAcceptanceRejectionGen}).
+% The first stream $s_1$ is used to generate the Poisson variates,
+% while the second stream $s_2$ is used to generate gamma variates.
+% One may also use the same stream for both Poisson and gamma variates.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ChiSquareNoncentralPoisGen
+ * Description:  noncentral chi square random variate generators using Poisson
+                 and central chi square generators
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class ChiSquareNoncentralPoisGen extends ChiSquareNoncentralGen \begin{hide} {
+//   protected RandomStream aux; 
+
+\end{hide}\end{code}
+
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public ChiSquareNoncentralPoisGen (RandomStream stream,
+                                      double nu, double lambda) \begin{hide} {
+      super (stream, null);
+      setParams (nu, lambda);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a noncentral chi square random variate generator 
+with $\nu = $ \texttt{nu} degrees of freedom and noncentrality parameter
+$\lambda = $ \texttt{lambda} using stream \texttt{stream}, as described above. 
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}\begin{hide} 
+  
+   public double nextDouble() {
+      return poisGenere (stream, nu, lambda);
+   }\end{hide}
+
+   public static double nextDouble (RandomStream stream,
+                                    double nu, double lambda) \begin{hide} {
+      return poisGenere (stream, nu, lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Generates a variate from the noncentral chi square
+   distribution with
+   parameters $\nu = $~\texttt{nu} and $\lambda = $~\texttt{lambda} using
+   stream \texttt{stream}, as described above.
+\end{tabb}
+\begin{code}\begin{hide}
+
+//>>>>>>>>>>>>>>>>>>>>  P R I V A T E S    M E T H O D S   <<<<<<<<<<<<<<<<<<<< 
+
+   private static double poisGenere (RandomStream s, double nu, double lambda) {
+      int j = PoissonTIACGen.nextInt (s, 0.5*lambda);
+      return GammaAcceptanceRejectionGen.nextDouble (s, 0.5*nu + j, 0.5);
+   }
+
+}\end{hide}
+\end{code}

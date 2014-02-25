@@ -1,0 +1,306 @@
+\defclass {SSJCategorySeriesCollection}
+
+Stores data used in a \texttt{CategoryChart}.
+This class provides tools to manage data sets and rendering options, and modify
+plot color, plot style, and marks on points for each series.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        SSJCategorySeriesCollection
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   org.jfree.data.category.CategoryDataset;
+import   org.jfree.chart.renderer.category.CategoryItemRenderer;
+
+import   java.util.Locale;
+import   java.util.Formatter;
+import   java.awt.Color;\end{hide}
+
+public abstract class SSJCategorySeriesCollection \begin{hide} {
+   protected CategoryItemRenderer renderer;
+   protected CategoryDataset seriesCollection;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Data control methods}
+
+\begin{code}
+
+   public String getCategory (int series) \begin{hide} {
+      return seriesCollection.getColumnKey(series).toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the category-value in the specified series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{required series value.}
+   \return{$x$-value at the specified index in the specified series.}
+\end{htmlonly}
+\begin{code}
+
+   public double getValue (int series, int index) \begin{hide} {
+      return (Double)seriesCollection.getValue(series, index);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $y$-value at the specified index in the specified series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{required series value.}
+   \param{index}{value's index.}
+   \return{$y$-value at the specified index in the specified series.}
+\end{htmlonly}
+\begin{code}
+
+   public CategoryDataset getSeriesCollection() \begin{hide} {
+      return seriesCollection;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{CategoryDataset} object associated with the current object.
+\end{tabb}
+\begin{htmlonly}
+   \return{\texttt{CategoryDataset} object associated with the current variable.}
+\end{htmlonly}
+\begin{code}
+
+   public abstract double[] getRangeBounds();
+\end{code}
+\begin{tabb}
+   Returns range ($y$-coordinates) min and max values.
+\end{tabb}
+\begin{htmlonly}
+   \return{range min and max values.}
+\end{htmlonly}
+\begin{code}
+
+   public abstract String toString();
+\end{code}
+\begin{tabb}
+  Returns in a \texttt{String} all data contained in the current object.
+\end{tabb}
+\begin{htmlonly}
+   \return{All data contained in the current object as a \class{String}.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Rendering methods}
+
+\begin{code}
+
+   public CategoryItemRenderer getRenderer() \begin{hide} {
+      return renderer;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{CategoryItemRenderer} object associated with the current object.
+\end{tabb}
+\begin{htmlonly}
+   \return{\texttt{CategoryItemRenderer} object associated with the current variable.}
+\end{htmlonly}
+\begin{code}
+
+   public void setRenderer (CategoryItemRenderer renderer) \begin{hide} {
+      this.renderer = renderer;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the \texttt{CategoryItemRenderer} object associated with the current variable.
+   This object determines the chart JFreeChart look, produced by method
+  \texttt{view} in class
+   \externalclass{umontreal.iro.lecuyer.charts}{XYChart}.
+\end{tabb}
+\begin{htmlonly}
+   \param{renderer}{ new \texttt{CategoryItemRenderer} object.}
+\end{htmlonly}
+\begin{code}
+
+   public Color getColor (int series) \begin{hide} {
+      return (Color)renderer.getSeriesPaint(series);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Gets the current plotting color of the selected series.
+\end{tabb}
+\begin{htmlonly}
+   \return{current plotting color.}
+\end{htmlonly}
+\begin{code}
+
+   public void setColor (int series, Color color) \begin{hide} {
+      renderer.setSeriesPaint(series, color);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets a new plotting color to the series $series$.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{series index.}
+   \param{color}{plotting color.}
+\end{htmlonly}
+\begin{code}
+
+   public abstract String toLatex (double YScale, double YShift,
+                                   double ymin, double ymax);
+\end{code}
+\begin{tabb}
+   Formats and returns a string containing a \LaTeX-compatible source
+   code which represents this data series collection. % and its parameters.
+   The original datasets are shifted and scaled with the
+   \texttt{YShift} and \texttt{YScale} parameters.
+   \texttt{ymin} and \texttt{ymax} represent the chart bounds.
+\end{tabb}
+\begin{htmlonly}
+   \param{YScale}{Range original data scale.}
+   \param{YShift}{Range original data shift value.}
+   \param{ymin}{Range min bound.}
+   \param{ymax}{Range max bound.}
+   \return{Latex code.}
+\end{htmlonly}
+\begin{code}
+\begin{hide}
+
+   /**
+    * Converts a java Color object into a friendly and readable LaTeX/xcolor string.
+    *
+    * @param   color    in color.
+    * @return           friendly color with string format as possible, null otherwise.
+    */
+   protected static String detectXColorClassic(Color color) {
+      String retour = null;
+
+      int red = color.getRed();
+      int green = color.getGreen();
+      int blue = color.getBlue();
+
+      // On utilise pas la method Color.equals(Color ) car on ne veut pas tester le parametre de transparence : Alpha
+      if (   red == Color.GREEN.getRed()
+          && blue == Color.GREEN.getBlue()
+          && green == Color.GREEN.getGreen())
+         return "green";
+      else if (   red == Color.RED.getRed()
+               && blue == Color.RED.getBlue()
+               && green == Color.RED.getGreen())
+         return "red";
+      else if (   red == Color.WHITE.getRed()
+               && blue == Color.WHITE.getBlue()
+               && green == Color.WHITE.getGreen())
+         return "white";
+      else if (   red == Color.GRAY.getRed()
+               && blue == Color.GRAY.getBlue()
+               && green == Color.GRAY.getGreen())
+          return "gray";
+      else if (   red == Color.BLACK.getRed()
+               && blue == Color.BLACK.getBlue()
+               && green == Color.BLACK.getGreen())
+          return "black";
+      else if (   red == Color.YELLOW.getRed()
+               && blue == Color.YELLOW.getBlue()
+               && green == Color.YELLOW.getGreen())
+          return "yellow";
+      else if (   red == Color.MAGENTA.getRed()
+               && blue == Color.MAGENTA.getBlue()
+               && green == Color.MAGENTA.getGreen())
+          return "magenta";
+      else if (   red == Color.CYAN.getRed()
+               && blue == Color.CYAN.getBlue()
+               && green == Color.CYAN.getGreen())
+          return "cyan";
+      else if (   red == Color.BLUE.getRed()
+               && blue == Color.BLUE.getBlue()
+               && green == Color.BLUE.getGreen())
+          return "blue";
+      else if (   red == Color.DARK_GRAY.getRed()
+               && blue == Color.DARK_GRAY.getBlue()
+               && green == Color.DARK_GRAY.getGreen())
+          return "darkgray";
+      else if (   red == Color.LIGHT_GRAY.getRed()
+               && blue == Color.LIGHT_GRAY.getBlue()
+               && green == Color.LIGHT_GRAY.getGreen())
+          return "lightgray";
+      else if (   red == Color.ORANGE.getRed()
+               && blue == Color.ORANGE.getBlue()
+               && green == Color.ORANGE.getGreen())
+          return "orange";
+      else if (   red == Color.PINK.getRed()
+               && blue == Color.PINK.getBlue()
+               && green == Color.PINK.getGreen())
+          return "pink";
+
+
+      if (red == 192 && blue == 128 && green == 64)
+         return "brown";
+     else if (red == 128 && blue == 128 && green == 0)
+         return "olive";
+      else if (red == 128 && blue == 0 && green == 128)
+         return "violet";
+      else if (red == 192 && blue == 0 && green ==64)
+         return "purple";
+      else return null;
+   }
+
+   /**
+    * Gives the default color associated with a series
+    *
+    * @param   index Index of the series in the CategoryDataset object.
+    * @return        default color object.
+    */
+   protected static Color getDefaultColor(int index) {
+      if(index%6 == 0)
+         return Color.RED;
+      else if(index%6 == 1)
+         return Color.BLUE;
+      else if(index%6 == 2)
+         return Color.GREEN;
+      else if(index%6 == 3)
+         return Color.YELLOW;
+      else if(index%6 == 4)
+         return Color.MAGENTA;
+      else
+         return Color.CYAN;
+   }
+
+   // Returns maximum value in table t
+   protected static double max (double[] t) {
+      double aux = t[0];
+      for (int i=1 ; i < t.length ; i++)
+         if (t[i] > aux)
+            aux = t[i];
+      return aux ;
+   }
+   // Returns minimum value in table t
+   protected static double min (double[] t) {
+      double aux = t[0];
+      for (int i=1 ; i < t.length ; i++)
+         if (t[i] < aux)
+            aux = t[i];
+      return aux ;
+   }
+}\end{hide}
+\end{code}

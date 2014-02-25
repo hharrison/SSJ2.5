@@ -1,0 +1,153 @@
+\defclass {GeometricNormalInverseGaussianProcess}
+
+
+The geometric normal inverse gaussian (GNIG) process
+is the exponentiation of a \class{Normal\-Inverse\-Gaussian\-Process}:
+\begin{equation}
+S(t) = S_0 \exp\left[ (r-\omega_{RN})t + \mbox{NIG}(t;\alpha,\beta,\mu,\delta) \right],
+\end{equation}
+where  $r$  is the interest rate.
+It is a strictly positive process, which is useful in finance.
+There is also a neutral
+correction in the exponential, $\omega_{RN}= \mu + \delta\gamma-\delta
+\sqrt{\alpha^2-(1+\beta)^2}$,
+which takes into account the market price of risk.
+The underlying NIG process must start at zero, NIG$(t_0) = 0 $
+and the initial time should also be set to zero, $t_0 = 0$,
+both for the NIG and GNIG.
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GeometricNormalInverseGaussianProcess
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stochprocess;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.randvar.*;
+
+\end{hide}
+
+public class GeometricNormalInverseGaussianProcess extends
+                                                   GeometricLevyProcess \begin{hide} {
+\end{hide}
+\end{code}%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public GeometricNormalInverseGaussianProcess (
+                                        double s0, double muGeom,
+                                        double alpha, double beta,
+                                        double mu, double delta,
+                                        RandomStream streamBrownian,
+                                        NormalInverseGaussianProcess nigP)\begin{hide} {
+        levyProcess = nigP;
+        ((NormalInverseGaussianProcess)levyProcess).setParams(0.0, alpha, beta, mu, delta);
+        this.x0 = s0;
+        this.muGeom = muGeom;
+        omegaRiskNeutralCorrection =
+            mu + delta*((NormalInverseGaussianProcess)levyProcess).getGamma() -
+            delta*Math.sqrt(alpha*alpha - (1.+beta)*(1.+beta));
+    }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new \texttt{Geometric\-Normal\-Inverse\-Gaussian\-Process}.
+The parameters of the NIG process will be overwritten by the parameters
+given to the GNIG, with the initial value of the NIG set to 0.
+The observation times of the NIG will also be changed to
+those of the GNIG.
+\end{tabb}
+\begin{code}
+
+   public GeometricNormalInverseGaussianProcess (
+                                        double s0, double muGeom,
+                                        double alpha, double beta,
+                                        double mu, double delta,
+                                        RandomStream streamBrownian,
+                                        InverseGaussianProcess igP) \begin{hide} {
+
+        levyProcess = new NormalInverseGaussianProcess (0.0, alpha, beta, mu,
+                                                        delta, streamBrownian, igP);
+        this.x0 = s0;
+        this.muGeom = muGeom;
+        omegaRiskNeutralCorrection =
+            mu + delta*((NormalInverseGaussianProcess)levyProcess).getGamma() -
+            delta*Math.sqrt(alpha*alpha - (1.+beta)*(1.+beta));
+    }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new \texttt{GeometricNormalInverseGaussianProcess}.
+The process \texttt{igP}
+will be used internally by the underlying \class{NormalInverseGaussianProcess}.
+\end{tabb}
+\begin{code}
+
+   public GeometricNormalInverseGaussianProcess (
+                                        double s0, double muGeom,
+                                        double alpha, double beta,
+                                        double mu, double delta,
+                                        RandomStream streamBrownian,
+                                        RandomStream streamNIG1,
+                                        RandomStream streamNIG2,
+                                        String igType) \begin{hide} {
+        levyProcess = new NormalInverseGaussianProcess (0.0, alpha, beta, mu, delta,
+                                                        streamBrownian, streamNIG1,
+                                                        streamNIG2, igType);
+        this.x0 = s0;
+        this.muGeom = muGeom;
+        omegaRiskNeutralCorrection =
+            mu + delta*((NormalInverseGaussianProcess)levyProcess).getGamma() -
+            delta*Math.sqrt(alpha*alpha - (1.+beta)*(1.+beta));
+    }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new \texttt{GeometricNormalInverseGaussianProcess}.
+The drift of the geometric term, \texttt{muGeom}, is usually the interest rate $r$.
+\texttt{s0} is the initial value of the process and the other four parameters
+are the parameters of the underlying \class{NormalInverseGaussianProcess} process.
+\end{tabb}
+
+\begin{code}
+
+   public GeometricNormalInverseGaussianProcess (
+                                        double s0, double muGeom,
+                                        double alpha, double beta,
+                                        double mu, double delta,
+                                        RandomStream streamAll,
+                                        String igType) \begin{hide} {
+        this(s0,muGeom,alpha,beta,mu,delta,streamAll,streamAll,streamAll,igType);
+    }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new \texttt{GeometricNormalInverseGaussianProcess}.
+The String \texttt{igType} corresponds to the type of \class{InverseGaussianProcess}
+that will be used by the underlying \class{NormalInverseGaussianProcess}.
+All \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}'s used to generate the underlying
+\class{NormalInverseGaussianProcess} and its underlying \class{InverseGaussianProcess}
+are set to the same given \texttt{streamAll}.
+\end{tabb}
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

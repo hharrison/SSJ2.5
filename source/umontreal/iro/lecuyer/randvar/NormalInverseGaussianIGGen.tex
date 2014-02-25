@@ -1,0 +1,123 @@
+\defclass {NormalInverseGaussianIGGen}
+
+%  \newcommand{\nig}{\emph{normal inverse gaussian}}
+
+This class implements a \nig{} (${NIG}$) random variate generator by
+using a normal generator ($N$) and an inverse gaussian generator ($IG$),
+ as described in the following \cite{fWEB03a,fKAL07a}
+\begin {eqnarray}
+    Y  &\sim& {IG}(\delta/\gamma, \delta^2)    \label{nig2} \\
+    X \mid (Y=y)  &\sim& N(\mu + \beta y, y).  \nonumber
+\end {eqnarray}
+The normal $N(\mu, \sigma^2)$ has mean $\mu$ and variance $\sigma^2$, while
+the inverse gaussian has the parametrization described in%
+\begin{htmlonly}
+\externalclass{umontreal.iro.lecuyer.randvar}{InverseGaussianGen}.
+\end{htmlonly}
+\begin{latexonly}%
+equation (\ref{eq:fInverseGaussian}) on page \pageref{eq:fInverseGaussian}.
+\end{latexonly}
+If $\gamma = \sqrt{\alpha^2 - \beta^2}$ with $0 \le |\beta| < \alpha$ and
+$\delta >0$, then $X \sim {NIG}(\alpha, \beta, \mu, \delta)$. 
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NormalInverseGaussianIGGen
+ * Description:  normal inverse gaussian random variate generator
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since        June 2008
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class NormalInverseGaussianIGGen extends NormalInverseGaussianGen \begin{hide} {
+   private NormalGen genN;
+   private InverseGaussianGen genIG;
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public NormalInverseGaussianIGGen (InverseGaussianGen ig, NormalGen ng,
+                                      double beta, double mu) \begin{hide} {
+      super (null, null);
+      setParams (ig, ng, beta, mu);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a \nig{} random variate generator with parameters
+  $\alpha$, $\beta$ = \texttt{beta}, $\mu$ = \texttt{mu} and $\delta$,
+ using generators  \texttt{ig} and \texttt{ng}, as described
+\begin{htmlonly} above. \end{htmlonly}\begin{latexonly}
+ in eq. (\ref{nig2}).\end{latexonly}
+ The parameters $\alpha$ and $\delta$ are included in generator \texttt{ig}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (InverseGaussianGen ig, NormalGen ng,
+                                    double beta, double mu) \begin{hide} {
+      return mynig (ig, ng, beta, mu);
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a new variate from the \nig{} distribution with 
+parameters $\alpha$, $\beta$ = \texttt{beta}, $\mu$ = \texttt{mu} and $\delta$, 
+using generators \texttt{ig} and \texttt{ng}, as described in eq. (\ref{nig2}).
+The parameters $\alpha$ and $\delta$ are included in generator \texttt{ig}.
+\end{tabb}
+\begin{code}\begin{hide} 
+
+   public double nextDouble() {
+      return mynig (genIG, genN, beta, mu);
+   }
+
+
+// >>>>>>>>>>>>>>>>>>>>  P R I V A T E     M E T H O D S   <<<<<<<<<<<<<<<<<<<
+
+   private static double mynig (InverseGaussianGen ig, NormalGen ng,
+                                double beta, double mu) {
+
+      double y = ig.nextDouble ();
+      double x = mu + beta*y + Math.sqrt(y)*ng.nextDouble ();
+      return x;
+   }
+
+
+   protected void setParams (InverseGaussianGen ig, NormalGen ng,
+                             double beta, double mu) {
+      delta = Math.sqrt(ig.getLambda());
+      gamma = delta / ig.getMu();
+      alpha = Math.sqrt(gamma*gamma + beta*beta);
+      setParams (alpha, beta, mu, delta);
+      this.genN = ng;
+      this.genIG = ig;
+   }
+}\end{hide}
+\end{code}

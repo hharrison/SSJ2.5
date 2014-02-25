@@ -1,0 +1,110 @@
+\defclass {BinomialConvolutionGen}
+
+Implements binomial random variate generators using the 
+convolution method.  
+This method generates $n$ Bernouilli random variates with 
+parameter $p$ and adds them up. 
+Its advantages are that it requires
+little computer memory and no setup time.
+Its disadvantage is that it is very slow for large $n$.
+It makes sense only when $n$ is small.
+
+% A local copy of the parameters $n$ and $p$ is maintained in this class.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BinomialConvolutionGen
+ * Description:  binomial random variate generators using the convolution method
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.rng.*;\end{hide}
+
+public class BinomialConvolutionGen extends BinomialGen \begin{hide} {
+  
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public BinomialConvolutionGen (RandomStream s, int n, double p)\begin{hide} {
+      super (s, null);
+      setParams (n, p);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a \emph{binomial} random variate generator with
+  parameters $n$ and $p$, using stream \texttt{s}.
+ \end{tabb}
+\begin{code}
+
+   public BinomialConvolutionGen (RandomStream s, BinomialDist dist) \begin{hide} {
+      super (s, dist);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a random variate generator for the \emph{binomial}
+   distribution \texttt{dist} and stream \texttt{s}. 
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public int nextInt() { 
+      int x = 0;
+      for (int i = 0; i < n; i++) {
+         double unif = stream.nextDouble();
+         if (unif <= p)
+            x++;
+      }
+      return x;
+   }
+
+   public static int nextInt (RandomStream s, int n, double p) {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (p < 0 || p > 1)
+         throw new IllegalArgumentException ("p must be in [0,1]");
+      return convolution (s, n, p);
+   }
+\end{code}
+\begin{tabb}
+   Generates a new integer from the binomial distribution with parameters
+   $n = $~\texttt{n} and $p = $~\texttt{p}, using the given stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   private static int convolution (RandomStream stream, int n, double p) {
+      int x = 0;
+      for (int i = 0; i < n; i++) {
+         double unif = stream.nextDouble();
+         if (unif <= p)
+            x++;
+      }
+      return x;
+   }
+}\end{hide}
+\end{code}

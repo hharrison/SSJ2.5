@@ -1,0 +1,157 @@
+\defclass{DirichletGen}
+
+Extends \class{RandomMultivariateGen} for a
+\emph{Dirichlet} \cite{tJOH72a} distribution.  This distribution uses the
+parameters
+\hrichard{Doit-on utiliser $d$ pour la dimension comme dans
+  \texttt{MultiNormalGen et RandomMultivariateGen}?}
+$\alpha_1,\dots,\alpha_k$, and has density
+\begin{latexonly}%
+\[
+  f(x_1,\ldots,x_k) = \frac{\Gamma(\alpha_0)\prod_{i=1}^k x_i^{\alpha_i - 1}}
+     {\prod_{i=1}^k \Gamma(\alpha_i)}
+\]
+\end{latexonly}%
+\begin{htmlonly}
+\[
+  f(x_1,\ldots,x_k) = \Gamma(\alpha_0)\prod_{i=1}^k x_i^{\alpha_i - 1}\  / \ \
+     ({\prod_{i=1}^k \Gamma(\alpha_i)})
+\]
+\end{htmlonly}%
+where $\alpha_0=\sum_{i=1}^k\alpha_i$.
+
+Here, the successive coordinates of the Dirichlet vector are generated
+\pierre{How? }
+via the class
+\externalclass{umontreal.iro.lecuyer.randvar}{GammaAcceptance\-Rejec\-tion\-Gen}{}
+in package \texttt{randvar}, using the same stream for all the uniforms.
+% with its particular value of $\alpha$.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        DirichletGen
+ * Description:  multivariate generator for a Dirichlet} distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvarmulti;\begin{hide}
+
+import umontreal.iro.lecuyer.probdist.GammaDist;
+import umontreal.iro.lecuyer.randvar.RandomVariateGen;
+import umontreal.iro.lecuyer.randvar.GammaAcceptanceRejectionGen;
+import umontreal.iro.lecuyer.rng.RandomStream;
+\end{hide}
+
+
+public class DirichletGen extends RandomMultivariateGen\begin{hide} {
+   private GammaAcceptanceRejectionGen[] ggens;
+\end{hide}\end{code}
+
+\subsubsection* {Constructor}
+\begin{code}
+
+   public DirichletGen (RandomStream stream, double[] alphas)\begin{hide} {
+      if (stream == null)
+         throw new NullPointerException ("stream is null");
+      this.stream = stream;
+      dimension = alphas.length;
+      ggens = new GammaAcceptanceRejectionGen[alphas.length];
+      for (int k = 0; k < alphas.length; k++)
+         ggens[k] = new GammaAcceptanceRejectionGen
+            (stream, new GammaDist (alphas[k], 1.0/2.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new Dirichlet
+ generator with parameters $\alpha_{i+1}=$~\texttt{alphas[i]},
+ for $i=0,\ldots,k-1$, and the stream \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{the random number stream used to generate uniforms.}
+   \param{alphas}{the $\alpha_i$ parameters of the generated distribution.}
+   \exception{IllegalArgumentException}{if one $\alpha_k$ is negative or 0.}
+   \exception{NullPointerException}{if any argument is \texttt{null}.}
+\end{htmlonly}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public double getAlpha (int i)\begin{hide} {
+      return ((GammaDist)ggens[i].getDistribution()).getAlpha();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $\alpha_{i+1}$ parameter for this
+ Dirichlet generator.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the index of the parameter.}
+   \return{the value of the parameter.}
+   \exception{ArrayIndexOutOfBoundsException}{if \texttt{i} is
+    negative or greater than or equal to \method{getDimension}{()}.}
+\end{htmlonly}
+\begin{code}
+
+   public static void nextPoint (RandomStream stream, double[] alphas,
+                                 double[] p)\begin{hide} {
+      double total = 0;
+      for (int i = 0; i < alphas.length; i++) {
+         p[i] = GammaAcceptanceRejectionGen.nextDouble
+            (stream, stream, alphas[i], 1.0/2.0);
+         total += p[i];
+      }
+      for (int i = 0; i < alphas.length; i++)
+         p[i] /= total;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Generates a new point from the Dirichlet distribution with
+ parameters \texttt{alphas}, using the stream \texttt{stream}.
+ The generated values are placed into \texttt{p}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{the random number stream used to generate the uniforms.}
+   \param{alphas}{the $\alpha_i$ parameters of the distribution, for
+    $i=1,\ldots,k$.}
+   \param{p}{the array to be filled with the generated point.}
+\end{htmlonly}
+\begin{code}
+
+   public void nextPoint (double[] p)\begin{hide} {
+      int n = ggens.length;
+      double total = 0;
+      for (int i = 0; i < n; i++) {
+         p[i] = ggens[i].nextDouble();
+         total += p[i];
+      }
+      for (int i = 0; i < n; i++)
+         p[i] /= total;
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}  Generates a point from the Dirichlet distribution.
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{the array to be filled with the generated point.}
+\end{htmlonly}

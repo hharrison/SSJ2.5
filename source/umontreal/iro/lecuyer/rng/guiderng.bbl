@@ -1,0 +1,106 @@
+\begin{thebibliography}{10}
+
+\bibitem{rKNU98a}
+D.~E. Knuth.
+\newblock {\em The Art of Computer Programming, Volume 2: Seminumerical
+  Algorithms}.
+\newblock Addison-Wesley, Reading, MA, third edition, 1998.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{rLEC96a}
+P.~L'Ecuyer.
+\newblock Maximally equidistributed combined {T}ausworthe generators.
+\newblock {\em Mathematics of Computation}, 65(213):203--213, 1996.
+
+\bibitem{rLEC99b}
+P.~L'Ecuyer.
+\newblock Good parameters and implementations for combined multiple recursive
+  random number generators.
+\newblock {\em Operations Research}, 47(1):159--164, 1999.
+
+\bibitem{rLEC99a}
+P.~L'Ecuyer.
+\newblock Tables of maximally equidistributed combined {LFSR} generators.
+\newblock {\em Mathematics of Computation}, 68(225):261--269, 1999.
+
+\bibitem{rLEC01d}
+P.~L'Ecuyer.
+\newblock Software for uniform random number generation: Distinguishing the
+  good and the bad.
+\newblock In {\em Proceedings of the 2001 Winter Simulation Conference}, pages
+  95--105, Pistacaway, NJ, 2001. {IEEE} Press.
+
+\bibitem{rLEC04b}
+P.~L'Ecuyer.
+\newblock Random number generation.
+\newblock In J.~E. Gentle, W.~Haerdle, and Y.~Mori, editors, {\em Handbook of
+  Computational Statistics}, pages 35--70. Springer-Verlag, Berlin, 2004.
+\newblock Chapter II.2.
+
+\bibitem{rLEC97d}
+P.~L'Ecuyer and T.~H. Andres.
+\newblock A random number generator based on the combination of four {LCG}s.
+\newblock {\em Mathematics and Computers in Simulation}, 44:99--107, 1997.
+
+\bibitem{rLEC91a}
+P.~L'Ecuyer and S.~C{\^o}t{\'e}.
+\newblock Implementing a random number package with splitting facilities.
+\newblock {\em ACM Transactions on Mathematical Software}, 17(1):98--111, 1991.
+
+\bibitem{rLEC03c}
+P.~L'Ecuyer and J.~Granger-Pich\'e.
+\newblock Combined generators with components from different families.
+\newblock {\em Mathematics and Computers in Simulation}, 62:395--404, 2003.
+
+\bibitem{rLEC02a}
+P.~L'Ecuyer, R.~Simard, E.~J. Chen, and W.~D. Kelton.
+\newblock An object-oriented random-number package with many long streams and
+  substreams.
+\newblock {\em Operations Research}, 50(6):1073--1075, 2002.
+
+\bibitem{rLEC00b}
+P.~L'Ecuyer and R.~Touzin.
+\newblock Fast combined multiple recursive generators with multipliers of the
+  form $a = \pm 2^q \pm 2^r$.
+\newblock In J.~A. Joines, R.~R. Barton, K.~Kang, and P.~A. Fishwick, editors,
+  {\em Proceedings of the 2000 Winter Simulation Conference}, pages 683--689,
+  Pistacaway, NJ, 2000. {IEEE} Press.
+
+\bibitem{rMAT98a}
+M.~Matsumoto and T.~Nishimura.
+\newblock Mersenne twister: A 623-dimensionally equidistributed uniform
+  pseudo-random number generator.
+\newblock {\em ACM Transactions on Modeling and Computer Simulation},
+  8(1):3--30, 1998.
+
+\bibitem{rPAN04t}
+F.~Panneton.
+\newblock {\em Construction d'ensembles de points bas\'ee sur des r\'ecurrences
+  lin\'eaires dans un corps fini de caract\'eristique 2 pour la simulation
+  {M}onte {C}arlo et l'int\'egration quasi-{M}onte {C}arlo}.
+\newblock PhD thesis, D\'epartement d'informatique et de recherche
+  op\'erationnelle, Universit\'e de Montr\'eal, Canada, August 2004.
+
+\bibitem{rPAN04a}
+F.~Panneton and P.~L'Ecuyer.
+\newblock Random number generators based on linear recurrences in {$F_{2^w}$}.
+\newblock In H.~Niederreiter, editor, {\em {M}onte {C}arlo and Quasi-{M}onte
+  {C}arlo Methods 2002}, pages 367--378, Berlin, 2004. Springer-Verlag.
+
+\bibitem{rPAN06b}
+F.~Panneton, P.~L'Ecuyer, and M.~Matsumoto.
+\newblock Improved long-period generators based on linear recurrences modulo 2.
+\newblock {\em {ACM} Transactions on Mathematical Software}, 32(1):1--16, 2006.
+
+\bibitem{rTEZ91b}
+S.~Tezuka and P.~L'Ecuyer.
+\newblock Efficient and portable combined {T}ausworthe random number
+  generators.
+\newblock {\em ACM Transactions on Modeling and Computer Simulation},
+  1(2):99--112, 1991.
+
+\end{thebibliography}

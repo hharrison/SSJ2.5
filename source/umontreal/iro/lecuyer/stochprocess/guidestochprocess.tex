@@ -1,0 +1,89 @@
+\documentclass[12pt]{article}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{alltt}
+\usepackage{html}
+\usepackage{ssj}
+
+\def\bmu{\boldmu}
+\def\bSigma{\boldSigma}
+
+
+
+
+% The symbols for the complex, the real, the integers, the fields.
+%% $\mathbb{C, R, N, Z, F}$
+
+\mytwoheads
+% \dateheadtrue
+% \detailedtrue
+\hyphenation{Inverse-Gaussian-Process Brown-ian-Motion-PCA}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+
+\title{stochprocess}{Stochastic Processes}
+
+%\footnote{\normalsize 
+This package provides tools to generate various stochastic processes.
+
+\vfill
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+
+\include{overview}
+
+\include{StochasticProcess}
+\include{BrownianMotion}
+\include{BrownianMotionBridge}
+\include{BrownianMotionPCA}
+\include{GeometricBrownianMotion}
+
+\include{GeometricLevyProcess}
+
+
+\include{InverseGaussianProcess}
+\include{InverseGaussianProcessBridge}
+\include{InverseGaussianProcessMSH}
+\include{InverseGaussianProcessPCA}
+\include{NormalInverseGaussianProcess}
+\include{GeometricNormalInverseGaussianProcess}
+
+\include{OrnsteinUhlenbeckProcess}
+\include{OrnsteinUhlenbeckProcessEuler}
+\include{CIRProcess}
+\include{CIRProcessEuler}
+\include{GammaProcess}
+\include{GammaProcessBridge}
+\include{GammaProcessSymmetricalBridge}
+\include{GammaProcessPCA}
+\include{GammaProcessPCABridge}
+\include{GammaProcessPCASymmetricalBridge}
+\include{VarianceGammaProcess}
+\include{VarianceGammaProcessDiff}
+\include{VarianceGammaProcessDiffPCA}
+\include{VarianceGammaProcessDiffPCABridge}
+\include{VarianceGammaProcessDiffPCASymmetricalBridge}
+\include{GeometricVarianceGammaProcess}
+
+
+%\addtocontents{toc}{\bigskip}
+%\include{StringDist}
+%% Discrete distributions
+
+
+\bibliography{fin,prob,random}
+\bibliographystyle{plain}
+
+%\bibliography{stat,random,simul,math,ift,temp2,fin}
+%\include guidefinance.bbl
+
+\end{document}

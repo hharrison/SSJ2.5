@@ -1,0 +1,209 @@
+\defclass {LogarithmicGen}
+
+This class implements random variate generators for the (discrete)
+{\em logarithmic\/} distribution. Its  mass function is
+\eq
+\begin{latexonly}
+  p(x) = \frac{-\theta^x}{x \log(1 - \theta)} \qquad\mbox{ for } x = 1,2,\ldots,
+                                       \eqlabel{eq:flogar}
+\end{latexonly}
+\begin{htmlonly}
+  p(x) = {-\theta^x} / {x \log(1 - \theta)} \qquad\mbox{ for } x = 1,2,\ldots,
+                                       \eqlabel{eq:flogar}
+\end{htmlonly}
+\endeq
+where $0 < \theta <1$.
+It uses inversion with the LS chop-down algorithm if $\theta < \theta_0$
+and the LK transformation algorithm if $\theta \ge \theta_0$,
+as described in \cite{rKEM81a}.
+The threshold $\theta_0$ can be specified when invoking the constructor.
+Its default value is $\theta_0 = 0.96$, as suggested in \cite{rKEM81a}.
+%
+\hpierre{Does this work for any $\theta_0$?  Should we add constraints?}
+
+% With chop-down, we get wrong inverses and it is used
+% in UNURAN and Colt.
+% With linear search, we get an infinite loop.
+
+A local copy of the parameter $\theta$ is maintained in this class.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LogarithmicGen
+ * Description:  random variate generators for the (discrete) logarithmic distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.util.Num;
+\end{hide}
+
+public class LogarithmicGen extends RandomVariateGenInt \begin{hide} {
+   private static final double default_theta_limit = 0.96;
+
+   private double theta_limit = default_theta_limit;
+   private double theta;
+   private double t;      // = log (1.0-theta).
+   private double h;      // = -theta/log (1.0-theta).
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public LogarithmicGen (RandomStream s, double theta)\begin{hide} {
+      this (s, theta, default_theta_limit);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a logarithmic random variate generator with parameters
+  $\theta = $ \texttt{theta} and default value $\theta_0 = 0.96$,
+  using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public LogarithmicGen (RandomStream s, double theta, double theta0)\begin{hide} {
+      super (s, null);
+      this.theta = theta;
+      theta_limit = theta0;
+      init();
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a logarithmic random variate generator with parameters
+  $\theta = $ \texttt{theta} and $\theta_0 = \texttt{theta0}$,
+  using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public LogarithmicGen (RandomStream s, LogarithmicDist dist)\begin{hide} {
+      this (s, dist, default_theta_limit);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new generator with distribution \texttt{dist} and
+  stream \texttt{s}, with default value $\theta_0 = 0.96$.
+\end{tabb}
+\begin{code}
+
+   public LogarithmicGen (RandomStream s, LogarithmicDist dist,
+                          double theta0)\begin{hide} {
+      super (s, dist);
+      theta_limit = theta0;
+      if (dist != null)
+         theta = dist.getTheta();
+      init();
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new generator with distribution \texttt{dist}
+   and stream \texttt{s}, with $\theta_0 = \texttt{theta0}$.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   private void init () {
+      if (theta <= 0.0 || theta >= 1.0)
+         throw new IllegalArgumentException ("theta not in (0, 1)");
+      if (theta >= theta_limit)
+         h = Math.log1p(-theta);
+      else
+         t = -theta / Math.log1p(-theta);
+   }
+
+   public int nextInt() {
+      if (theta < theta_limit)
+         return ls (stream, theta, t);
+      else   // Transformation
+         return lk (stream, theta, h);
+   }\end{hide}
+
+   public static int nextInt (RandomStream s, double theta)\begin{hide} {
+      if (theta < default_theta_limit)
+         return ls (s, theta, -theta/Math.log1p(-theta));
+      else   // Transformation
+         return lk (s, theta, Math.log1p(-theta));
+   }\end{hide}
+\end{code}
+\begin{tabb} Uses stream \texttt{s} to generate
+   a new variate from the {\em logarithmic\/} distribution with parameter
+ $\theta =$ \texttt{theta}.
+\end{tabb}
+\begin{code}\begin{hide}
+
+
+//>>>>>>>>>>>>>>>>>>>>  P R I V A T E    M E T H O D S   <<<<<<<<<<<<<<<<<<<<
+
+
+   private static int ls (RandomStream stream, double theta, double t) {
+      double u = stream.nextDouble();
+      int x = 1;
+
+      double p =  t;
+
+      while (u > p) {
+            u -= p;
+            x++;
+            p *= theta*((double) x - 1.0)/((double)x);
+      }
+      return x;
+   }
+
+   private static int lk (RandomStream stream, double theta, double h) {
+      double u, v, p, q;
+      int x;
+
+      u = stream.nextDouble();
+      if (u > theta)
+            return 1;
+      v = stream.nextDouble();
+      q = 1.0 - Math.exp(v * h);
+      if ( u <= q * q) {
+           x = (int)(1. + (Math.log(u) / Math.log(q)));
+           return x;
+      }
+      return ((u > q) ? 1 : 2);
+   }\end{hide}
+
+   public double getTheta()\begin{hide} {
+      return theta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\theta$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public double getTheta0()\begin{hide} {
+      return theta_limit;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\theta_0$ associated with this object.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

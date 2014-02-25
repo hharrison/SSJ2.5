@@ -1,0 +1,37 @@
+\begin{thebibliography}{1}
+
+\bibitem{ccAVR04a}
+A.~N. Avramidis, A.~Deslauriers, and P.~L'Ecuyer.
+\newblock Modeling daily arrivals to a telephone call center.
+\newblock {\em Management Science}, 50(7):896--908, 2004.
+
+\bibitem{tDON73a}
+T.~G. Donnelly.
+\newblock Algorithm 462: Bivariate normal distribution.
+\newblock {\em Communications of the ACM}, 16(10):638, 1973.
+
+\bibitem{tDRE90a}
+Z.~Drezner and G.~O. Wesolowsky.
+\newblock On the computation of the bivariate normal integral.
+\newblock {\em Journal of Statistical Computation and Simulation}, 35:101--107,
+  1990.
+
+\bibitem{tGEN04a}
+A.~Genz.
+\newblock Numerical computation of rectangular bivariate and trivariate normal
+  and $t$ probabilities.
+\newblock {\em Statistics and Computing}, 14:151--160, 2004.
+\newblock See \url{http://www.math.wsu.edu/faculty/genz/homepage}.
+
+\bibitem{tJOH69a}
+N.~L. Johnson and S.~Kotz.
+\newblock {\em Distributions in Statistics: Discrete Distributions}.
+\newblock Houghton Mifflin, Boston, 1969.
+
+\bibitem{tJOH72a}
+N.~L. Johnson and S.~Kotz.
+\newblock {\em Distributions in Statistics: Continuous Multivariate
+  Distributions}.
+\newblock John Wiley, New York, NY, 1972.
+
+\end{thebibliography}

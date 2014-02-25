@@ -1,0 +1,220 @@
+\defclass{RandShiftedPointSet}
+
+\adam{Cette classe reprogramme un \texttt{addRandomShift} explicitement sur
+l'ensemble $P$, alors
+que le \texttt{ContainerPointSet} applique le \texttt{addRandomShift} sur le
+contenu $P$,  ce qui est beaucoup plus propre et plus g\'en\'eral.
+Faut-il \'eliminer cette classe? Est-elle vraiment n\'ecessaire?}
+%
+This container class embodies a point set to which a random shift
+modulo 1 is applied (i.e., a single uniform random point is added
+to all points, modulo 1, to randomize the inner point set).
+When calling \method{addRandomShift}{}, a new random shift will be generated.
+This shift is represented by a vector of $d$ uniforms over $(0,1)$,
+where $d$ is the current dimension of the shift.
+
+% The shift is executed \emph{after} all other randomizations in the
+% randomization list, if any.
+
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandShiftedPointSet
+ * Description:  Point set to which a random shift modulo 1 is applied
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import umontreal.iro.lecuyer.rng.*;
+\end{hide}
+
+public class RandShiftedPointSet extends ContainerPointSet \begin{hide} {
+
+   protected double[] shift;           // The random shift.
+   protected int dimShift = 0;         // Current dimension of the shift.
+   protected int capacityShift = 0;    // Number of array elements;
+                                       // always >= dimShift.
+   protected RandomStream shiftStream; // Used to generate random shifts.
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructor}
+
+\begin{code}
+
+   public RandShiftedPointSet (PointSet P, int dimShift, RandomStream stream)\begin{hide} {
+      init (P);
+      if (dimShift <= 0) {
+         throw new IllegalArgumentException (
+            "Cannot construct RandShiftedPointSet with dimShift <= 0");
+      }
+      shiftStream = stream;
+      shift = new double [dimShift];
+      capacityShift = this.dimShift = dimShift;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Constructs a structure to contain a randomly shifted version of \texttt{P}.
+  The random shifts will be generated in up to \texttt{dimShift} dimensions,
+  using stream \texttt{stream}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{P}{point set being randomized}
+   \param{dimShift}{dimension of the initial shift}
+   \param{stream}{stream used for generating random shifts}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+\begin{code}
+
+   public int getShiftDimension()\begin{hide} {
+      return dimShift;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Returns the number of dimensions of the current random shift.
+ \end{tabb}
+\begin{code}
+
+   public void addRandomShift (int d1, int d2, RandomStream stream) \begin{hide} {
+      if (null == stream)
+         throw new IllegalArgumentException (
+              PrintfFormat.NEWLINE +
+                  "   Calling addRandomShift with null stream");
+      if (stream != shiftStream)
+         shiftStream = stream;
+      addRandomShift (d1, d2);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Changes the stream used for the random shifts to \texttt{stream}, then
+  refreshes the shift for coordinates \texttt{d1} to \texttt{d2-1}.
+\richard{Il y a 4 m\'ethodes \texttt{addRandomShift}. Peut-\^etre faudrait-il
+en \'eliminer 2, comme dans \texttt{PointSet}.}
+ \end{tabb}
+\begin{code}
+
+   public void addRandomShift (RandomStream stream) \begin{hide} {
+      if (stream != shiftStream)
+         shiftStream = stream;
+      addRandomShift (0, dimShift);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Changes the stream used for the random shifts to \texttt{stream}, then
+  refreshes all coordinates of the random shift, up to its current dimension.
+ \end{tabb}
+\begin{hide}
+\begin{code}
+
+   @Deprecated
+   public void addRandomShift (int d1, int d2)\begin{hide} {
+      if (d1 < 0 || d1 > d2)
+         throw new IllegalArgumentException ("illegal parameter d1 or d2");
+      if (d2 > capacityShift) {
+         int d3 = Math.max (4, capacityShift);
+         while (d2 > d3)
+            d3 *= 2;
+         double[] temp = new double[d3];
+         capacityShift = d3;
+         for (int i = 0; i < d1; i++)
+            temp[i] = shift[i];
+         shift = temp;
+      }
+      dimShift = d2;
+      for (int i = d1; i < d2; i++)
+         shift[i] = shiftStream.nextDouble();
+
+ // Just for testing, to see the single uniform random point
+ //     for(int k = 0; k < d2; k++)
+ //       System.out.println ("shift " + k + " = " + shift[k]);
+ //     System.out.println();
+
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Refreshes the random shift (generates new uniform values for the
+  random shift coordinates) for coordinates \texttt{d1} to \texttt{d2-1}.
+ \end{tabb}
+\begin{code}
+
+   @Deprecated
+   public void addRandomShift() \begin{hide} {
+      addRandomShift (0, dimShift);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Refreshes all coordinates of the random shift, up to its current dimension.
+ \end{tabb}
+\end{hide}
+\begin{code}\begin{hide}
+
+   public String toString() {
+      return "RandShiftedPointSet of: {" + PrintfFormat.NEWLINE
+              + P.toString() + PrintfFormat.NEWLINE + "}";
+   }
+
+   public PointSetIterator iterator() {
+      return new RandShiftedPointSetIterator();
+   }
+
+   // ***************************************************************
+
+   private class RandShiftedPointSetIterator
+                 extends ContainerPointSetIterator {
+
+      public double getCoordinate (int i, int j) {
+         int d1 = innerIterator.getCurCoordIndex();
+         if (dimShift <= d1)
+            // Must extend randomization.
+            addRandomShift (dimShift, 1 + d1);
+         double u = P.getCoordinate(i, j) + shift[j];
+         if (u >= 1.0)
+            u -= 1.0;
+         if (u > 0.0)
+            return u;
+         return EpsilonHalf;  // avoid u = 0
+      }
+
+      public double nextCoordinate() {
+         int d1 = innerIterator.getCurCoordIndex();
+         if (dimShift <= d1)
+            addRandomShift (dimShift,1 + d1 );
+         double u = shift [d1];
+         u += innerIterator.nextCoordinate();
+         if (u >= 1.0)
+            u -= 1.0;
+         if (u > 0.0)
+            return u;
+         return EpsilonHalf;  // avoid u = 0
+      }
+
+   }
+}\end{hide}
+\end{code}

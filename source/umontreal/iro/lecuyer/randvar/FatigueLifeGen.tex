@@ -1,0 +1,147 @@
+\defclass{FatigueLifeGen}
+
+This class implements random variate generators for 
+the \emph{fatigue life} distribution \cite{tBIR69a} with location
+parameter $\mu$, scale parameter $\beta$ and shape
+parameter $\gamma$.
+The density function of this distribution is
+\begin{htmlonly}
+\eq
+   f(x) = [(((x - \mu) / \beta)^{1/2} + (\beta / (x - \mu))^{1/2}) / (2\gamma(x - \mu))]
+          \phi((((x - \mu) / \beta)^{1/2} - (\beta / (x - \mu))^{1/2}) / \gamma),
+  \qquad x > \mu
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+   f(x) = \left[\frac{\sqrt{(x - \mu)/{\beta}} + \sqrt{{\beta}/{(x - \mu)}}}{2\gamma(x - \mu)}\right]
+          \phi\left(\frac{\sqrt{{(x - \mu)}/{\beta}} - \sqrt{{\beta}/{(x - \mu)}}}{\gamma}\right),  \qquad x > \mu
+\eqlabel{eq:fFatigueLife}
+\endeq
+\end{latexonly}%
+where $\phi$ is the probability density of the standard normal distribution.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FatigueLifeGen
+ * Description:  random variate generators for the fatigue life distribution 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class FatigueLifeGen extends RandomVariateGen \begin{hide} {
+   protected double mu;
+   protected double beta;
+   protected double gamma;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public FatigueLifeGen (RandomStream s, double mu, double beta,
+                                          double gamma) \begin{hide} {
+      super (s, new FatigueLifeDist(mu, beta, gamma));
+      setParams (mu, beta, gamma);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a \emph{fatigue life} random variate generator with
+  parameters $\mu =$ \texttt{mu}, $\beta $ = \texttt{beta} and $\gamma$ =
+  \texttt{gamma}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public FatigueLifeGen (RandomStream s, FatigueLifeDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getMu(), dist.getBeta(), dist.getGamma());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double mu, double beta,
+                                    double gamma)\begin{hide} {
+      return FatigueLifeDist.inverseF (mu, beta, gamma, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the {\em fatigue life\/} distribution
+   with location parameter $\mu$, scale parameter $\beta$ and shape parameter
+   $\gamma$.
+\end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\beta$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double getGamma()\begin{hide} {
+      return gamma;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\gamma$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\mu$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double mu, double beta, double gamma) {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+      
+      this.mu = mu;
+      this.beta = beta;
+      this.gamma = gamma;
+   }
+\end{code}
+\begin{tabb}
+   Sets the parameters $\mu$, $\beta$ and $\gamma$ of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

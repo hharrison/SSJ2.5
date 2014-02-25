@@ -1,0 +1,551 @@
+\defclass {FrechetDist}
+
+Extends the class \class{ContinuousDistribution} for the  \emph{Fr\'echet}
+distribution \cite[page 3]{tJOH95b}, with location parameter $\delta$, scale
+ parameter $\beta > 0$, and shape parameter $\alpha > 0$, where we use
+ the notation $z = (x-\delta)/\beta$. It has density
+\begin{htmlonly}
+\eq
+    f (x) = \alpha e^{-z^{-\alpha}} /  ( \beta z^{\alpha +1} ),
+              \qquad \mbox{for } x > \delta
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\[
+f (x) =
+ \frac{\alpha e^{-z^{-\alpha}}}  {\beta z^{\alpha +1}},
+ \qquad  \mbox{for } x > \delta
+\]
+\end{latexonly}
+and distribution function
+\[
+F(x) =
+    e^{-z^{-\alpha}},  \qquad \mbox{for } x > \delta.
+\]
+Both the density and the distribution are  0 for $x \le \delta$.
+
+The mean is given by
+\begin{htmlonly}
+\eq
+E[X] = \delta + \beta \Gamma(1 - 1/\alpha),
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\[
+E[X] = \delta + \beta \Gamma\!\left(1 - \frac1\alpha\right),
+\]
+\end{latexonly}
+where $\Gamma(x)$ is the gamma function. The variance is
+\begin{htmlonly}
+\eq
+\mbox{Var}[X] = \beta^2 [\Gamma(1 - 2/\alpha) - (\Gamma(1 - 1/\alpha))^2].
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\[
+\mbox{Var}[X] = \beta^2 \left[\Gamma\!\left(1 - \frac2\alpha\right) -
+ \Gamma^2\!\left(1 - \frac1\alpha\right)\right].
+\]
+\end{latexonly}
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FrechetDist
+ * Description:  Fréchet distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import optimization.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+public class FrechetDist extends ContinuousDistribution\begin{hide} {
+   private double delta;
+   private double beta;
+   private double alpha;
+
+
+   private static class Optim implements Lmder_fcn {
+      protected double[] x;
+      protected int n;
+
+      public Optim (double[] x, int n) {
+         this.n = n;
+         this.x = x;
+      }
+
+      public void fcn (int m, int n, double[] par, double[] fvec, double[][] fjac, int iflag[])
+      {
+         if (par[1] <= 0.0 || par[2] <= 0.0) {
+            final double BIG = 1.0e100;
+            fvec[1] = BIG;
+            fvec[2] = BIG;
+            fvec[3] = BIG;
+            return;
+         }
+
+         double sum1, sum2, sumb, sum4, sum5;
+         double z, w, v;
+         double alpha = par[1];
+         double beta = par[2];
+         double mu = par[3];
+
+         if (iflag[1] == 1) {
+            sum1 = sum2 = sumb = sum4 = sum5 = 0;
+            for (int i = 0; i < n; i++) {
+               z = (x[i] - mu) / beta;
+               sum1 += 1.0 / z;
+               v = Math.pow(z, -alpha);
+               sum2 += v / z;
+               sumb += v;
+               w = Math.log(z);
+               sum4 += w;
+               sum5 += v * w;
+            }
+
+            fvec[2] = sumb - n;   // eq. for beta
+            fvec[3] = (alpha + 1) * sum1 - alpha * sum2;   // eq. for mu
+            fvec[1] = n / alpha + sum5 - sum4;   // eq. for alpha
+
+         } else if (iflag[1] == 2) {
+            throw new IllegalArgumentException ("iflag = 2");
+            // The 3 X 3 Jacobian must be calculated and put in fjac
+         }
+      }
+   }
+
+
+   private static class Function implements MathFunction {
+      private int n;
+      private double[] x;
+      private double delta;
+      public double sumxi;
+      public double dif;
+
+      public Function (double[] y, int n, double delta) {
+         this.n = n;
+         this.x = y;
+         this.delta = delta;
+         double xmin = Double.MAX_VALUE;
+         for (int i = 0; i < n; i++) {
+            if ((y[i] < xmin) && (y[i] > delta))
+               xmin = y[i];
+         }
+         dif = xmin - delta;
+      }
+
+      public double evaluate (double alpha) {
+         if (alpha <= 0.0) return 1.0e100;
+         double v, w;
+         double sum1 = 0, sum2 = 0, sum3 = 0;
+         for (int i = 0; i < n; i++) {
+            if (x[i] <= delta)
+               continue;
+            v = Math.log(x[i] - delta);
+            w = Math.pow(dif / (x[i] - delta), alpha);
+            sum1 += v;
+            sum2 += w;
+            sum3 += v * w;
+         }
+
+         sum1 /= n;
+         sumxi = sum2 / n;
+         return 1 / alpha + sum3 / sum2 - sum1;
+      }
+   }\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public FrechetDist (double alpha)\begin{hide} {
+      setParams (alpha, 1.0, 0.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructor for the standard \emph{Fr\'echet}
+   distribution with parameters  $\beta$ = 1 and $\delta$ = 0.
+   \end{tabb}
+\begin{code}
+
+   public FrechetDist (double alpha, double beta, double delta)\begin{hide} {
+      setParams (alpha, beta, delta);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{FrechetDist} object with parameters
+  $\alpha$ = \texttt{alpha},  $\beta$ = \texttt{beta} and  $\delta$ = \texttt{delta}.
+   \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (alpha, beta, delta, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (alpha, beta, delta, x);
+   }
+
+   public double barF (double x) {
+      return barF (alpha, beta, delta, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (alpha, beta, delta, u);
+   }
+
+   public double getMean() {
+      return getMean (alpha, beta, delta);
+   }
+
+   public double getVariance() {
+      return getVariance (alpha, beta, delta);
+   }
+
+   public double getStandardDeviation() {
+      return getStandardDeviation (alpha, beta, delta);
+   }\end{hide}
+
+   public static double density (double alpha, double beta, double delta,
+                                 double x)\begin{hide} {
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      final double z = (x - delta)/beta;
+      if (z <= 0.0)
+         return 0.0;
+      double t = Math.pow (z, -alpha);
+      return  alpha * t * Math.exp (-t) / (z * beta);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the density function.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double alpha, double beta, double delta,
+                             double x)\begin{hide} {
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      final double z = (x - delta)/beta;
+      if (z <= 0.0)
+         return 0.0;
+      double t = Math.pow (z, -alpha);
+      return  Math.exp (-t);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes and returns  the distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double alpha, double beta, double delta,
+                              double x)\begin{hide} {
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      final double z = (x - delta)/beta;
+      if (z <= 0.0)
+         return 1.0;
+      double t = Math.pow (z, -alpha);
+      return  -Math.expm1 (-t);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes and returns  the complementary distribution function $1 - F(x)$.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double alpha, double beta, double delta,
+                                  double u)\begin{hide} {
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u not in [0, 1]");
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (u >= 1.0)
+         return Double.POSITIVE_INFINITY;
+      if (u <= 0.0)
+         return delta;
+      double t = Math.pow (-Math.log (u), 1.0/alpha);
+      if (t <= Double.MIN_NORMAL)
+         return Double.MAX_VALUE;
+      return delta + beta / t;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes and returns the inverse distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n, double delta)\begin{hide} {
+      if (n <= 1)
+         throw new IllegalArgumentException ("n <= 1");
+
+      Function func = new Function (x, n, delta);
+      double a = 1e-4;
+      double b = 1.0e12;
+      double alpha = RootFinder.brentDekker (a, b, func, 1e-12);
+      double par[] = new double[2];
+      par[0] = alpha;
+      par[1] = func.dif * Math.pow (func.sumxi, -1.0/alpha);
+      return par;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Given $\delta =$ \texttt{delta}, estimates the parameters $(\alpha, \beta)$
+  of the \emph{Fr\'echet} distribution
+   using the maximum likelihood method with the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\alpha$, $\beta$].
+   \begin{detailed}
+   The maximum likelihood estimators are the values $(\hat\alpha, \hat\beta)$
+   that satisfy the equations:
+   \begin{eqnarray*}
+      \hat\beta & = &  \left(\frac1n \sum_{i=0}^{n-1} (x_i - \delta)^{-\hat\alpha}\right)^{\!\!-1/\hat\alpha} \\[0.5em]
+  \frac1n \sum_{i=0}^{n-1} \ln(x_i - \delta)  & = &   \frac 1 {\hat\alpha}  +
+                              \frac{\sum_{i=0}^{n-1} (x_i - \delta)^{-\hat\alpha}\ln(x_i - \delta)}
+                               {\sum_{i=0}^{n-1} (x_i - \delta)^{-\hat\alpha}}.
+   \end{eqnarray*}
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \param{delta}{location parameter}
+   \return{returns the parameters [$\hat{\alpha}$, $\hat{\beta}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static FrechetDist getInstanceFromMLE (double[] x, int n,
+                                                 double delta)\begin{hide} {
+      double par[] = getMLE (x, n, delta);
+      return new FrechetDist (par[0], par[1], delta);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Given $\delta =$ \texttt{delta}, creates a new instance of a \emph{Fr\'echet}
+distribution with parameters $\alpha$ and $\beta$ estimated using the
+maximum likelihood method based on the $n$ observations $x[i]$,
+$i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \param{delta}{location parameter}
+\end{htmlonly}
+% \begin{code}
+%
+%    public static double[] getMLE (double[] x, int n)\begin{hide} {
+%       if (n <= 1)
+%          throw new IllegalArgumentException ("n <= 1");
+%     throw new UnsupportedOperationException("NOT IMPLEMENTED");
+%     // TO DO:  The Jacobian must be calculated and put in class Optim above
+%     // Then it will be finished.
+%        final int m = 3;
+%       double[] param = new double[m + 1];
+%       param[1] = param[2] = param[3] = 1;
+%
+%       double[] fvec = new double [m + 1];
+%       double[][] fjac = new double[m + 1][m + 1];
+%       int[] iflag = new int[2];
+%       int[] info = new int[2];
+%       int[] ipvt = new int[m + 1];
+%       Optim system = new Optim (x, n);
+%
+%       Minpack_f77.lmder1_f77 (system, m, m, param, fvec, fjac, 1e-5, info, ipvt);
+%
+%       double par[] = new double[m];
+%       par[0] = param[1];
+%       par[1] = param[2];
+%       par[2] = param[3];
+%
+%       return par;
+%    }\end{hide}
+% \end{code}
+% \begin{tabb}
+%    Estimates the parameters $(\alpha, \beta, \delta)$
+%   of the \emph{Fr\'echet} distribution
+%    using the maximum likelihood method with the $n$ observations
+%    $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a three-element
+%     array, in regular order: [$\alpha$, $\beta$, $\delta$].
+%    \begin{detailed}
+%    The maximum likelihood estimators are the values $(\hat\alpha, \hat\beta, \hat{\delta})$
+%    that satisfy the equations:
+%    \begin{eqnarray*}
+%       n & = &  \sum_{i=0}^{n-1} z_i^{-\hat\alpha}, \\[0.5em]
+%      (\hat\alpha + 1)\sum_{i=0}^{n-1} z_i^{-1}   & = &
+%           \hat\alpha \sum_{i=0}^{n-1} z_i^{-\hat\alpha - 1}, \\[0.5em]
+%    \sum_{i=0}^{n-1} \ln (z_i)  & = &   \frac n {\hat\alpha}  +
+%                               {\sum_{i=0}^{n-1} z_i^{-\hat\alpha}\ln(z_i)},
+%    \end{eqnarray*}
+%    where we use the notation $z_i = (x_i - \hat\delta) / \hat\beta$.
+%    \end{detailed}
+% \end{tabb}
+% \begin{htmlonly}
+%    \param{x}{the list of observations used to evaluate parameters}
+%    \param{n}{the number of observations used to evaluate parameters}
+%    \return{returns the parameters [$\hat{\alpha}$, $\hat{\beta}$, $\hat{\delta}$]}
+% \end{htmlonly}
+% \begin{code}
+%
+%    public static FrechetDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+%       double par[] = getMLE (x, n);
+%       return new FrechetDist (par[0], par[1], par[2]);
+%    }\end{hide}
+% \end{code}
+% \begin{tabb}
+% Creates a new instance of a \emph{Fr\'echet}
+% distribution with parameters $\alpha$, $\beta$ and $\delta$ estimated using the
+% maximum likelihood method based on the $n$ observations $x[i]$,
+% $i = 0, 1, \ldots, n-1$.
+% \end{tabb}
+% \begin{htmlonly}
+%    \param{x}{the list of observations to use to evaluate parameters}
+%    \param{n}{the number of observations to use to evaluate parameters}
+% \end{htmlonly}
+\begin{code}
+
+   public static double getMean (double alpha, double beta, double delta)\begin{hide} {
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 1)
+         throw new IllegalArgumentException ("alpha <= 1");
+      double t = Num.lnGamma(1.0 - 1.0/alpha);
+      return delta + beta * Math.exp(t);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the mean of the \emph{Fr\'echet} distribution with
+ parameters $\alpha$, $\beta$ and $\delta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double alpha, double beta,
+                                     double delta)\begin{hide} {
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 2)
+         throw new IllegalArgumentException ("alpha <= 2");
+      double t = Num.lnGamma(1.0 - 1.0/alpha);
+      double mu = Math.exp(t);
+      double v = Math.exp(Num.lnGamma(1.0 - 2.0/alpha));
+      return beta * beta * (v - mu * mu);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the variance of the \emph{Fr\'echet} distribution with parameters
+   $\alpha$, $\beta$ and $\delta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double alpha, double beta,
+                                              double delta)\begin{hide} {
+      return  Math.sqrt(getVariance (alpha, beta, delta));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the standard deviation of the \emph{Fr\'echet} distribution
+with parameters $\alpha$, $\beta$ and $\delta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation}
+\end{htmlonly}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\alpha$  of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\beta$  of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getDelta()\begin{hide} {
+      return delta;
+   }
+\end{hide}
+\end{code}
+ \begin{tabb}
+   Returns the parameter $\delta$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (double alpha, double beta, double delta)\begin{hide} {
+      if (beta <= 0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (alpha <= 0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      this.delta  = delta;
+      this.beta = beta;
+      this.alpha = alpha;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Sets the parameters  $\alpha$, $\beta$  and $\delta$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double[] getParams()\begin{hide} {
+      double[] retour = {alpha, beta, delta};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return an array containing the parameters of the current object
+    in regular order: [$\alpha$, $\beta$, $\delta$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : alpha = " + alpha + ", beta = " + beta + ", delta = " + delta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

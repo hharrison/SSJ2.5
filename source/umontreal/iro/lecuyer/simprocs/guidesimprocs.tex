@@ -1,0 +1,48 @@
+\documentclass [twoside,12pt]{article}
+%\usepackage{myarticle}
+%\usepackage{alltt}
+%\usepackage{html}
+\usepackage{url}
+\usepackage{ssj}
+
+\def\g   {{\;\leftarrow\;}}
+\def\tbu {\tilde{\mbox{\boldmath $u$}}}
+\def\bu  {\mbox{\boldmath $u$}}
+
+%%%%%%%%%%%%%%
+%begin{latexonly}
+\def\fiverm {}
+\input prepictex.tex  \input pictex.tex  \input postpictex.tex
+\valuestolabelleading = -0.1\baselineskip
+%end{latexonly}
+
+% \dateheadtrue
+
+% \includeonly {exemples/Atelier}
+% \includeonly {Process}
+
+% \fulltrue   %%  Writes all the hidden code.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\include{title}
+\pagenumbering{roman}
+\tableofcontents
+
+\pagenumbering{arabic}
+\addtocontents{toc}{\bigskip}
+\include{overview}
+
+\include{ProcessSimulator}
+\include{ThreadProcessSimulator}
+\include{DSOLProcessSimulator}
+\include{SimProcess}
+\include{Resource}
+\include{Bin}
+\include{Condition}
+\include{UserRecord}
+
+\bibliography{simul,random,ift,stat,prob}  %,temp2}  % Dans texmac.
+\bibliographystyle{plain}
+
+\end{document}

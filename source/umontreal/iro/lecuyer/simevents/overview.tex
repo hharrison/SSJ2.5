@@ -1,0 +1,36 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+\latex{\label {sec:overview}}
+
+\begin {htmlonly}
+This package provides the simulation clock and tools to manage the
+future events list.  These are the basic tools for discrete-event
+simulation.  Several different implementations of the event list are
+offered.  Some basic tools for continuous simulation (i.e., solving
+differential equations with respect to time) are also provided.
+\end {htmlonly}
+
+The scheduling part of discrete-event simulations is managed by
+the ``chief-executive'' class \externalclass{umontreal.iro.lecuyer.simevents}{Simulator},
+which contains the simulation clock and the central monitor.
+The event list is taken from one of the implementations of the
+interface \externalclass{umontreal.iro.lecuyer.simevents.eventlist}{EventList},
+which provide different kinds of
+event list implementations.  One can change the default
+\externalclass{umontreal.iro.lecuyer.simevents.eventlist}{SplayTree} event list 
+implementation via the method
+\externalmethod{umontreal.iro.lecuyer.simevents}{Sim}{init}{EventList}.
+The class \externalclass{umontreal.iro.lecuyer.simevents}{Event} provides the facilities
+for creating and scheduling events in the simulation.
+Each type of event must be defined by extending the class
+\externalclass{umontreal.iro.lecuyer.simevents}{Event}.
+The class \externalclass{umontreal.iro.lecuyer.simevents}{Continuous}
+provides elementary tools for continuous simulation,
+where certain variables vary continuously in time according to ordinary
+differential equations.
+
+The class \externalclass{umontreal.iro.lecuyer.simevents}{LinkedListStat}
+ implements {\em doubly linked\/} lists,
+with tools for inserting, removing, and viewing objects in the list,
+and automatic statistical collection.
+These lists can contain any kind of \externalclass{java.lang}{Object}.
+

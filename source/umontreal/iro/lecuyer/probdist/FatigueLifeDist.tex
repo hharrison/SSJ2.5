@@ -1,0 +1,421 @@
+\defclass {FatigueLifeDist}
+
+Extends the class \class{ContinuousDistribution} for 
+the {\em fatigue life\/} distribution \cite{tBIR69a} with location
+parameter $\mu$, scale parameter $\beta$ and shape
+parameter $\gamma$.
+Its density is
+\begin{htmlonly}
+\eq
+   f(x) = [(((x - \mu) / \beta)^{1/2} + (\beta / (x - \mu))^{1/2}) / (2\gamma(x - \mu))]
+          \phi((((x - \mu) / \beta)^{1/2} - (\beta / (x - \mu))^{1/2}) / \gamma),
+    \qquad  \mbox{for } x>\mu, 
+\endeq
+where $\phi$ is the probability density of the standard normal distribution.
+The distribution function is given by
+\eq
+   F(x) = \Phi((((x - \mu) / \beta)^{1/2} - (\beta / (x - \mu))^{1/2}) / \gamma),
+   \qquad \mbox{for } x>\mu, 
+\endeq
+where $\Phi$ is the standard normal distribution function.
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+   f(x) = \left[\frac{\sqrt{\frac{x - \mu}{\beta}} + \sqrt{\frac{\beta}{x - \mu}}}{2\gamma(x - \mu)}\right]
+          \phi\left(\frac{\sqrt{\frac{x - \mu}{\beta}} - \sqrt{\frac{\beta}{x - \mu}}}{\gamma}\right), \qquad  \mbox{for } x>\mu, 
+\eqlabel{eq:fFatigueLife}
+\endeq
+where $\phi$ is the probability density of the standard normal distribution.
+The distribution function is given by
+\eq
+   F(x) = \Phi\left(\frac{\sqrt{\frac{x - \mu}{\beta}} - \sqrt{\frac{\beta}{x - \mu}}}{\gamma}\right), \qquad  \mbox{for } x>\mu, 
+\eqlabel{eq:FFatigueLife}
+\endeq
+where $\Phi$ is the standard normal distribution function.
+\end{latexonly}%
+Restrictions: $\beta > 0$, $\gamma > 0$.
+
+The non-static versions of the methods \texttt{cdf}, \texttt{barF}, 
+and \texttt{inverseF} call the static version of the same name.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FatigueLifeDist
+ * Description:  fatigue life distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.probdist.NormalDist;
+import optimization.*;
+\end{hide}
+
+public class FatigueLifeDist extends ContinuousDistribution\begin{hide} {
+   protected double mu;
+   protected double beta;
+   protected double gamma;
+
+   private static class Optim implements Uncmin_methods
+   {
+      private int n;
+      private double[] xi;
+      private double mu;
+
+      public Optim (double[] x, int n, double min)
+      {
+         this.n = n;
+         this.mu = min;
+         this.xi = new double[n];
+         System.arraycopy (x, 0, this.xi, 0, n);
+      }
+
+      public double f_to_minimize (double[] p)
+      {
+         double sum = 0.0;
+
+         if ((p[1] <= 0.0) || (p[2] <= 0.0))
+            return 1e200;
+      
+         for (int i = 0; i < n; i++)
+            sum -= Math.log (density (mu, p[1], p[2], xi[i]));
+
+         return sum;
+      }
+      
+      public void gradient (double[] x, double[] g)
+      {
+      }
+
+      public void hessian (double[] x, double[][] h)
+      {
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public FatigueLifeDist (double mu, double beta, double gamma)\begin{hide} {
+      setParams (mu, beta, gamma);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a fatigue life distribution with parameters
+   $\mu$, $\beta$ and $\gamma$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return FatigueLifeDist.density (mu, beta, gamma, x);
+   }
+
+   public double cdf (double x) {
+      return FatigueLifeDist.cdf (mu, beta, gamma, x);
+   }
+
+   public double barF (double x) {
+      return FatigueLifeDist.barF (mu, beta, gamma, x);
+   }
+
+   public double inverseF (double u) {
+      return FatigueLifeDist.inverseF (mu, beta, gamma, u);
+   }
+
+   public double getMean() {
+      return FatigueLifeDist.getMean (mu, beta, gamma);      
+   }
+
+   public double getVariance() {
+      return FatigueLifeDist.getVariance (mu, beta, gamma);      
+   }
+
+   public double getStandardDeviation() {
+      return FatigueLifeDist.getStandardDeviation (mu, beta, gamma);      
+   }\end{hide}
+
+   public static double density (double mu, double beta, double gamma,
+                                 double x)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+      if (x <= mu)
+         return 0.0;
+      double y;
+      y = (Math.sqrt ((x - mu) / beta) - Math.sqrt (beta / (x - mu))) / gamma;
+
+      return (((Math.sqrt ((x - mu) / beta) + Math.sqrt (beta / (x - mu))) /
+              (2 * gamma * (x - mu))) * NormalDist.density (0.0, 1.0, y));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density (\ref{eq:fFatigueLife}) for the
+   fatigue life distribution with parameters $\mu$, $\beta$ and $\gamma$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double mu, double beta, double gamma, double x)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+      if (x <= mu)
+         return 0.0;
+
+      return NormalDist.cdf01 ((Math.sqrt ((x - mu) / beta) - Math.sqrt (beta / (x - mu))) / gamma);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the fatigue life distribution
+   function with parameters $\mu$, $\beta$ and $\gamma$.
+ \end{tabb}
+\begin{code}
+   
+   public static double barF (double mu, double beta, double gamma,
+                              double x)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+      if (x <= mu)
+         return 1.0;
+
+      return NormalDist.barF01 ((Math.sqrt ((x - mu) / beta) - Math.sqrt (beta / (x - mu))) / gamma);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the complementary distribution function of the
+   fatigue life distribution with parameters $\mu$, $\beta$ and $\gamma$.
+ \end{tabb}
+\begin{code}
+   
+   public static double inverseF (double mu, double beta, double gamma,
+                                  double u)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+      if (u > 1.0 || u < 0.0)
+          throw new IllegalArgumentException ("u not in [0,1]");
+      if (u <= 0.0)    // if u == 0, in fact
+          return mu;
+      if (u >= 1.0)    // if u == 1, in fact
+          return Double.POSITIVE_INFINITY;
+
+      double w = gamma * NormalDist.inverseF01 (u);
+      double sqrtZ = 0.5 * (w + Math.sqrt (w * w + 4.0));
+
+      return (mu + sqrtZ * sqrtZ * beta);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the inverse of the fatigue life distribution
+   with parameters $\mu$, $\beta$ and $\gamma$.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n, double mu)\begin{hide} {
+      double sum = 0.0;
+      
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double[] parameters = new double[3];
+      double[] xpls = new double[3];
+      double[] param = new double[3];
+      double[] fpls = new double[3];
+      double[] gpls = new double[3];
+      int[] itrcmd = new int[2];
+      double[][] h = new double[3][3];
+      double[] udiag = new double[3];
+
+      Optim system = new Optim (x, n, mu);
+
+      double mean = 0.0;
+      for (int i = 0; i < n; i++)
+         mean += x[i];
+      mean /= (double) n;
+
+      double var = 0.0;
+      for (int i = 0; i < n; i++)
+         var += (x[i] - mean) * (x[i] - mean);
+      var /= (double) n;
+
+      double loc2 = (mean - mu) * (mean - mu);
+      double a = 0.25 * (var - 5 * loc2);
+      double b = (var - loc2);
+      double c = var;
+
+      double delta = b * b - 4.0 * a * c;
+
+      double gamma2 = (- b - Math.sqrt (delta)) / (2.0 * a);
+      param[2] = Math.sqrt (gamma2);
+      param[1] = (mean - mu) / (1.0 + gamma2 / 2.0);
+
+      Uncmin_f77.optif0_f77 (2, param, system, xpls, fpls, gpls, itrcmd, h, udiag);
+
+      for (int i = 1; i < 3; i++)
+         parameters[i] = xpls[i];
+      parameters[0] = mu;
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters ($\mu$, $\beta$, $\gamma$) of the fatigue life
+   distribution using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a three-element
+   array, in regular order: [$\mu$, $\beta$, $\gamma$]. 
+   \begin{detailed}
+   The estimate of the parameters is given by maximizing numerically the
+   log-likelihood function, using the Uncmin package \cite{iSCHa,iVERa}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \param{mu}{the location parameter}
+   \return{returns the parameters [$\hat{\beta}$, $\hat{\gamma}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double mu, double beta, double gamma)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+
+      return (mu + beta * (1 + 0.5 * gamma * gamma));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean
+   $E[X] = \mu + \beta(1 + \gamma^2/2)$
+ of the fatigue life distribution with parameters $\mu$, $\beta$ and $\gamma$.
+\begin{htmlonly}
+   \return{the mean of the fatigue life distribution}
+\end{htmlonly}
+\end{tabb}
+\begin{code}
+
+   public static double getVariance (double mu, double beta, double gamma)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+
+      return (beta * beta * gamma * gamma * (1.0 + 5.0/4.0 * gamma * gamma));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance 
+$\mbox{Var}[X] = \beta^2 \gamma^2 (1 + 5 \gamma^2/4)$ of the fatigue life distribution
+   with parameters $\mu$, $\beta$ and $\gamma$.
+\begin{htmlonly}
+   \return{the variance of the fatigue life distribution}
+\end{htmlonly}
+\end{tabb}
+\begin{code}
+
+   public static double getStandardDeviation (double mu, double beta,
+                                              double gamma)\begin{hide} {
+      return Math.sqrt (FatigueLifeDist.getVariance (mu, beta, gamma));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the fatigue life distribution
+   with parameters $\mu$, $\beta$ and $\gamma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the fatigue life distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\beta$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getGamma()\begin{hide} {
+      return gamma;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\gamma$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\mu$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (double mu, double beta, double gamma)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (gamma <= 0.0)
+         throw new IllegalArgumentException ("gamma <= 0");
+      
+      this.mu = mu;
+      this.beta = beta;
+      this.gamma = gamma;
+      supportA = mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters $\mu$, $\beta$ and $\gamma$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {mu, beta, gamma};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\mu$, $\beta$, $\gamma$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : mu = " + mu + ", beta = " + beta + ", gamma = " + gamma;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

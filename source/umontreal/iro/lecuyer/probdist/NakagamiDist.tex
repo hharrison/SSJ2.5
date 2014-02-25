@@ -1,0 +1,354 @@
+\defclass {NakagamiDist}
+
+Extends the class \class{ContinuousDistribution} for
+the {\em Nakagami\/} distribution with location parameter $a$,
+scale parameter $\lambda > 0$ and shape parameter $c > 0$.
+The density is
+\begin{htmlonly}
+\eq
+   f(x) = 2\lambda^c / \Gamma(c) \; (x-a)^{2c-1}\; e^{-\lambda (x-a)^{2}}
+   \qquad \mbox {for  } x > a,
+\endeq
+\end{htmlonly}
+\begin{latexonly} 
+\eq 
+  f(x) = \frac{2\lambda^c}{\Gamma(c)}
+   (x-a)^{2c-1}
+   e^{-{\lambda}(x-a)^{2}}
+   \qquad \mbox {for  } x > a,\eqlabel{eq:fnakagami}
+\endeq
+\end{latexonly}
+$$
+f(x) = 0 \qquad \mbox{ for } x \le a,
+$$
+where $\Gamma$ is the gamma function.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NakagamiDist
+ * Description:  Nakagami distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package  umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public class NakagamiDist extends ContinuousDistribution\begin{hide} {
+   protected double a;              // Location parameter
+   protected double lambda;         // Scale parameter
+   protected double c;              // Shape parameter
+   private double factor;
+   private double ratio;            // Gamma(c + 1/2)/Gamma(c)
+
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public NakagamiDist (double a, double lambda, double c)\begin{hide} {
+      setParams (a, lambda, c);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Constructs a \texttt{NakagamiDist} object with parameters $a =$
+   \texttt{a},  $\lambda =$ \texttt{lambda} and $c =$ \texttt{c}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      if (x <= a) return 0.0;
+      return 2.0 * Math.exp( factor
+                             + Math.log(x-a)*(2.0*c-1.0)
+                             - lambda*(x-a)*(x-a) );
+   }
+
+   public double cdf (double x) {
+      return cdf (a, lambda, c, x);
+   }
+
+   public double barF (double x) {
+      return barF (a, lambda, c, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (a, lambda, c, u);
+   }
+
+   public double getMean() {
+      return a + ratio/Math.sqrt(lambda);
+   }
+
+   public double getVariance() {
+      return (c - ratio*ratio)/lambda;
+   }
+
+   public double getStandardDeviation() {
+      return Math.sqrt(getVariance ());
+   }\end{hide}
+
+   public static double density (double a, double lambda, double c,
+                                 double x)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (x <= a)
+         return 0.0;
+
+      return 2.0 * Math.exp( Math.log(lambda)*c - Num.lnGamma(c)
+                             +  Math.log(x-a)*(2.0*c-1.0)
+                             - lambda*(x-a)*(x-a) );
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function of the {\em Nakagami\/} distribution.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \param{x}{the value at which the density is evaluated}
+   \return{returns the density function}
+\end{htmlonly}
+\begin{code}
+
+   public static double cdf (double a, double lambda, double c, double x)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (x <= a)
+         return 0.0;
+
+      return GammaDist.cdf(c, 12, lambda*(x-a)*(x-a));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the distribution function.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \param{x}{the value at which the distribution is evaluated}
+   \return{returns the cdf function}
+\end{htmlonly}
+\begin{code}
+
+   public static double barF (double a, double lambda, double c, double x)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (x <= a)
+         return 1.0;
+      return GammaDist.barF(c, 12, lambda*(x-a)*(x-a));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the complementary distribution function.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \param{x}{the value at which the complementary distribution is evaluated}
+   \return{returns the complementary distribution function}
+\end{htmlonly}
+\begin{code}
+
+   public static double inverseF (double a, double lambda, double c,
+                                  double u)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (u > 1.0 || u < 0.0)
+         throw new IllegalArgumentException ("u not in [0,1]");
+      if (u <= 0.0) return a;
+      if (u >= 1.0)
+         return Double.POSITIVE_INFINITY;
+      double res = GammaDist.inverseF(c, 12, u);
+      return a + Math.sqrt(res/lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the inverse of the distribution function.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \param{u}{the value at which the inverse distribution is evaluated}
+   \return{returns the inverse distribution function}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double a, double lambda, double c)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      return a + Num.gammaRatioHalf(c) / Math.sqrt(lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean
+ $$
+E[X] = a + \frac{1}{\sqrt{\lambda}}\; \frac{\Gamma(c+1/2)}{\Gamma(c)}.
+$$
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \return{returns the mean}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double a, double lambda, double c)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      double rat = Num.gammaRatioHalf(c);
+      return (c - rat*rat) / lambda;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+ $$
+\mbox{Var}[X] = \frac{1}{\lambda} \left[c -
+\left(\frac{\Gamma(c+1/2)}{\Gamma(c)}\right)^2\right].
+$$
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \return{returns the variance}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double a, double lambda,
+                                              double c) \begin{hide} {
+      return Math.sqrt (NakagamiDist.getVariance (a, lambda, c));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the standard deviation of the Nakagami distribution with
+   parameters $a$, $\lambda$ and $c$.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \return{returns the standard deviation}
+\end{htmlonly}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the location parameter $a$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{returns the location parameter}
+\end{htmlonly}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the scale parameter $\lambda$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{returns the scale parameter}
+\end{htmlonly}
+\begin{code}
+
+   public double getC()\begin{hide} {
+      return c;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the shape parameter $c$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{returns the shape parameter}
+\end{htmlonly}
+\begin{code}
+
+    public void setParams (double a, double lambda, double c)\begin{hide} {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      this.a = a;
+      this.lambda = lambda;
+      this.c = c;
+      factor = (Math.log(lambda)*c - Num.lnGamma(c));
+      ratio = Num.gammaRatioHalf(c);
+    } \end{hide}
+\end{code}
+\begin{tabb} Sets the parameters $a$, $\lambda$ and $c$ of this object.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {a, lambda, c};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$a$, $\lambda$, $c$].
+\end{tabb}
+\begin{htmlonly}
+   \return{returns the parameters [$a$, $\lambda$, $c$]}
+\end{htmlonly}
+\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : a = " + a + ", lambda = " + lambda
+                                  + ", c = " + c;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}
+\begin{htmlonly}
+   \return{returns a \texttt{String} containing information about the current distribution.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

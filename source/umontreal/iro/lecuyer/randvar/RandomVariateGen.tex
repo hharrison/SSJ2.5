@@ -1,0 +1,184 @@
+\defclass {RandomVariateGen}
+
+This is the base class for all random variate generators over the real line.
+It specifies the signature of the \method{nextDouble}{} method, which is
+normally called to generate a real-valued random variate whose distribution
+has been previously selected.
+A random variate generator object can be created simply by invoking the
+constructor of this class with previously created
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} and
+\externalclass{umontreal.iro.lecuyer.probdist}{Distribution}
+objects, or by invoking the constructor of a subclass.
+By default, all random variates will be generated via
+inversion by calling the
+\externalmethod{umontreal.iro.lecuyer.probdist}{Distribution}{inverseF}{}
+method for the distribution, even though this can be inefficient in some cases.
+For some of the distributions, there are subclasses with special and
+more efficient methods to generate the random variates.
+
+%% The generation algorithm can be changed for a given distribution object
+%% by calling an appropriate method on it.
+%% Each distribution also has a static method for generating random variates,
+%% which also uses inversion by default, unless specified otherwise.
+%% The generating algorithm can be changed by invoking an appropriate static
+%% method.  To avoid side effects, it is recommended to set the static algorithm
+%% once and keep it for the duration of the program.
+%% \pierre{Another good reason for using subclasses instead!}
+%% If one wants to generate random variates with more than one algorithms,
+%% one should create separate objects.
+
+For generating many random variates, creating an object and calling
+the non-static method is more efficient when the generating algorithm
+involves a significant setup.
+When no work is done at setup time, the static methods are usually
+slightly faster.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandomVariateGen
+ * Description:  base class for all random variate generators over the reals 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.RandomStream;
+import umontreal.iro.lecuyer.probdist.Distribution;\end{hide}
+
+public class RandomVariateGen \begin{hide} {
+
+   protected RandomStream stream;
+   // the stream used for generating random variates
+
+   protected Distribution dist;
+   // the distribution used by this generator
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}\begin{hide}
+ // This constructor is needed for subclasses with no associated distribution.
+   protected RandomVariateGen() {}\end{hide}
+
+   public RandomVariateGen (RandomStream s, Distribution dist) \begin{hide} {
+      this.stream = s;
+      this.dist   = dist;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new random variate generator from the
+    distribution \texttt{dist}, using stream \texttt{s}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{s}{random stream used for generating uniforms}
+   \param{dist}{continuous distribution object of the generated values}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public double nextDouble() \begin{hide} {
+      return dist.inverseF (stream.nextDouble());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Generates a random number from the continuous distribution
+    contained in this object.
+    By default, this method uses inversion by calling the
+    \externalmethod{umontreal.iro.lecuyer.probdist}{ContinuousDistribution}{inverseF}{}
+    method of the distribution object.
+    Alternative generating methods are provided in subclasses.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the generated value}
+\end{htmlonly}
+\begin{code}
+
+   public void nextArrayOfDouble (double[] v, int start, int n) \begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n must be positive.");
+      for (int i = 0; i < n; i++)
+         v[start + i] = nextDouble();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Generates \texttt{n} random numbers from the continuous distribution
+   contained in this object.  These numbers are stored in the array \texttt{v},
+   starting from index \texttt{start}.
+   By default, this method calls \method{nextDouble()}{} \texttt{n}
+   times, but one can override it in subclasses for better efficiency.
+ \end{tabb}
+\begin{htmlonly}
+   \param{v}{array in which the variates will be stored}
+   \param{start}{starting index, in \texttt{v}, of the new variates}
+   \param{n}{number of variates to generate}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStream getStream() \begin{hide} { return stream; }
+\end{hide}
+\end{code}
+  \begin{tabb}  Returns the \class{RandomStream} used by this generator.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the stream associated to this object}
+\end{htmlonly}
+\begin{code}
+
+   public void setStream (RandomStream stream)\begin{hide} {
+      this.stream = stream;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the \class{RandomStream} used by this generator to \texttt{stream}.
+\end{tabb}
+\begin{code}
+
+   public Distribution getDistribution() \begin{hide} {
+      return dist;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Returns the \class{Distribution} used by this generator.
+\end{tabb}
+\begin{htmlonly}
+   \return{the distribution associated to that object}
+\end{htmlonly}
+\begin{code}
+
+   public String toString ()\begin{hide} {
+      if (dist != null)
+         return getClass().getSimpleName() + " with  " + dist.toString();
+      else
+         return getClass().getSimpleName() ;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current generator.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

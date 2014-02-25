@@ -1,0 +1,87 @@
+\defclass {ConstantIntDist}
+
+Extends the class \class{UniformIntDist} for a {\emph{constant}
+discrete distribution taking a single integer value with probability 1.
+Its mass function is
+\begin{latexonly}
+\eq
+   p(x) = \left\{\begin{array}{ll}
+     1, &  \qquad \mbox {for } x = c,\\[5pt]
+     0, &  \qquad\mbox {elsewhere. }
+  \end{array}\right. \eqlabel{eq:fcons}
+\endeq
+Its distribution function is
+\eq
+   F(x) = \left\{\begin{array}{ll}
+     0, & \qquad\mbox { for } x < c\\[5pt]
+     1, & \qquad\mbox { for } x \ge c.
+  \end{array}\right. \eqlabel{eq:cdfconst}
+\endeq
+\end{latexonly}
+\begin{htmlonly}
+\eq
+   p(x) = 1,  \qquad \mbox {for } x = c,
+\endeq
+and $p(x) = 0$ elsewhere.
+\end{htmlonly}%
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ConstantIntDist
+ * Description:  constant integer distribution
+ * Environment:  Java
+ * Software:     SSJ
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Éric Buist
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+
+
+public class ConstantIntDist extends UniformIntDist\begin{hide} {
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public ConstantIntDist (int c)\begin{hide} {
+      super (c, c);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a new constant distribution with probability 1 at \texttt{c}.
+  \end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString () {
+      return getClass().getSimpleName() + " : c = " + i;
+   }
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}
+

@@ -1,0 +1,430 @@
+\defclass {TriangularDist}
+
+Extends the class \class{ContinuousDistribution} for
+the {\em triangular\/} distribution\latex{ (see \cite[page 297]{tJOH95b} 
+and \cite[page 317]{sLAW00a})} with domain $[a,b]$ and \emph{mode} 
+(or shape parameter) $m$, where  $a\le m\le b$. 
+The density function is
+\begin{htmlonly}
+\[\begin{array}{rll}
+ f(x) =& 2(x-a)/[(b-a)(m-a)]&\qquad\mbox{ for }a\le x\le m,\\ 
+ f(x) =& 2(b-x)/[(b-a)(b-m)]&\qquad\mbox{ for }m\le x\le b, \\
+ f(x) =& 0&\qquad\mbox{ elsewhere,}
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+    f(x) = \left \{\begin{array}{ll}
+           \frac {2(x-a)}{(b-a)(m-a)}  & \mbox { if } a\le x\le m, \\ [5pt]
+           \frac {2(b-x)}{(b-a)(b-m)} & \mbox { if } m\le x\le b, \\ [5pt]
+            0 & \mbox { elsewhere, }
+          \end{array}\right.         \eqlabel{eq:ftrian}
+\endeq
+\end{latexonly}
+the distribution function is
+\begin{htmlonly}
+\[\begin{array}{rll}
+F (x) =& 0  &\qquad\mbox { for } x < a, \\ [5pt]
+F (x) =& (x - a)^2/[(b - a)(m - a)]  &\qquad\mbox { if } a\le x\le m, \\ [5pt]
+F (x) =& 1 - (b - x)^2/[(b - a)(b - m)]  &\qquad\mbox { if } m\le x\le b, \\[5pt]
+F (x) =& 1  &\qquad\mbox { for } x > b,
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+F (x) = \left\{\begin{array}{ll}
+   0 & \mbox { for } x < a, \\ [5pt]
+   \frac{(x - a)^2}{(b - a)(m - a)} & \mbox { if } a\le x\le m, \\ [5pt]
+   1 - \frac{(b - x)^2}{(b - a)(b - m)} & \mbox { if } m\le x\le b, \\[5pt]
+   1 & \mbox { for } x > b,
+\end{array}\right.
+\endeq
+\end{latexonly}
+and the inverse distribution function is given by
+\begin{htmlonly}
+\[\begin{array}{rll}
+F^{-1}(u) =& a + \sqrt{(b - a)(m - a)u}  &\qquad\mbox { if } 0\le u\le (m-a)/(b-a),
+\\ [5pt]
+F^{-1}(u)=& b - \sqrt{(b - a)(b - m)(1 - u)}  &\qquad\mbox { if } (m-a)/(b-a\le u
+\le 1.
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+F^{-1}(u) = \left\{\begin{array}{ll}
+   a + \sqrt{(b - a)(m - a)u} & \mbox { if } 0\le u\le \frac{m-a}{b-a},
+\\ [5pt]
+   b - \sqrt{(b - a)(b - m)(1 - u)} & \mbox { if } \frac{m-a}{b-a}\le u
+\le 1.
+\end{array}\right.
+\endeq
+\end{latexonly}
+
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        TriangularDist
+ * Description:  triangular distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;\begin{hide}
+
+import java.util.Arrays;
+\end{hide}
+
+
+public class TriangularDist extends ContinuousDistribution\begin{hide} {
+   private double a;
+   private double b;
+   private double m;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public TriangularDist()\begin{hide} {
+      setParams (0.0, 1.0, 0.5);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{TriangularDist} object with default parameters
+   $a=0$, $b=1$, and $m=0.5$.
+  \end{tabb}
+\begin{code}
+
+   public TriangularDist (double m)\begin{hide} {
+      setParams (0.0, 1.0, m);
+   }\end{hide}
+\end{code}
+ \begin{tabb} Constructs a \texttt{TriangularDist} object with parameters $a = 0$ ,
+ $b = 1$ and $m$ = \texttt{m}.
+ \end{tabb}
+\begin{code}
+
+   public TriangularDist (double a, double b, double m)\begin{hide} {
+      setParams (a, b, m);
+   }\end{hide}
+\end{code}
+ \begin{tabb} Constructs a \texttt{TriangularDist} object with
+   parameters $a$, $b$ and $m$.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (a, b, m, x);
+   }
+       
+   public double cdf (double x) {
+      return cdf (a, b, m, x);
+   }
+
+   public double barF (double x) {
+      return barF (a, b, m, x);
+   }
+     
+   public double inverseF (double u){
+      return inverseF (a, b, m, u);
+   }
+
+   public double getMean() {
+      return TriangularDist.getMean (a, b, m);
+   }
+
+   public double getVariance() {
+      return TriangularDist.getVariance (a, b, m);
+   }
+
+   public double getStandardDeviation() {
+      return TriangularDist.getStandardDeviation (a, b, m);
+   }\end{hide}
+
+   public static double density (double a, double b, double m, double x)\begin{hide} {
+      if (m < a || m > b)
+         throw new IllegalArgumentException ("m is not in [a,b]");
+      if (x < a || x > b)
+         return 0.0;
+      else if (x <= m && m != a)
+         return 2.0*(x - a)/((b - a)*(m - a));
+      else
+         return 2.0*(b - x)/((b - a)*(b - m));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function.
+\end{tabb}
+\begin{code}      
+
+   public static double cdf (double a, double b, double m, double x)\begin{hide} {
+      if (m < a || m > b)
+         throw new IllegalArgumentException ("m is not in [a,b]");
+      if (x <= a)
+         return 0.0;
+      else if (x <= m && m != a)
+         return (x - a)*(x - a)/((b - a)*(m - a));
+      else if (x < b)
+         return 1.0 - (b - x)*(b - x)/((b - a)*(b - m));
+      else
+         return 1.0;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the  distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double a, double b, double m, double x)\begin{hide} {
+      if (m < a || m > b)
+         throw new IllegalArgumentException ("m is not in [a,b]");
+      if (x <= a)
+         return 1.0;
+      else if (x <= m && m != a)
+         return 1.0 - (x - a)*(x - a)/((b - a)*(m - a));
+      else if (x < b)
+         return (b - x)*(b - x)/((b - a)*(b - m));
+      else
+         return 0.0;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the complementary distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double a, double b, double m, double u)\begin{hide} {
+      if (m < a || m > b)
+         throw new IllegalArgumentException ("m is not in [a,b]");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u is not in [0,1]");
+      if (u <= 0.0)
+         return a;
+      if (u >= 1.0)
+         return b;
+       // the code is taken and adapted from unuran
+       // file /distributions/c_triangular_gen.c
+       double h = (m - a)/(b - a);
+       return u <= h && m != a ? a + Math.sqrt ((b - a)*(m - a)*u) 
+                : b - Math.sqrt ((b - a)*(b - m)*(1 - u));
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the inverse distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n, double a, double b)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      double[] Y = new double[n];   // sorted x[i]
+      System.arraycopy (x, 0, Y, 0, n);
+      Arrays.sort (Y);
+
+      int rmax = -1;
+      double prodmax = -1.0e300;
+      final double ba = b - a;
+      double z;
+      int i;
+      for (int r = 0; r < n; r++) {
+         z = (Y[r] - a) / ba;
+         if ((z <= (double)r/n) || (z >= (double)(r + 1)/n))
+            continue;    // MLE cannot be there
+         double prod = 1.0;
+         double d = Y[r] - a;
+         for (i = 0; i < r; i++)
+            prod *= (Y[i] - a)/d;
+         
+         d = b - Y[r];
+         for (i = r+1; i < n; i++)
+            prod *= (b - Y[i])/d;
+
+         if (prod > prodmax) {
+            prodmax = prod;
+            rmax = r;
+         }
+      }
+      
+      if (rmax < 0)
+         throw new UnsupportedOperationException (
+            "   data cannot fit a triangular distribution");
+
+      double[] param = new double[1];
+      param[0] = Y[rmax];
+      return param;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $m$ of the triangular distribution using the
+   maximum likelihood method, from the $n$ observations $x[i]$,
+   $i = 0, 1,\ldots, n-1$. The estimated parameter is returned in a one-element
+   array: [$\hat m$].  See \cite{tOLI72a,tHUA07a,tKOT04a}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \param{a}{lower limit of range}
+   \param{b}{upper limit of range}
+   \return{returns the parameter [$m$]}
+\end{htmlonly}
+\begin{code}
+
+   public static TriangularDist getInstanceFromMLE (double[] x, int n,
+                                                    double a, double b)\begin{hide} {
+      double param[] = getMLE (x, n, a, b);
+      return new TriangularDist (a, b, param[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Creates a new instance of a triangular distribution with parameters
+  \texttt{a} and \texttt{b}.  $m$ is estimated using the maximum
+  likelihood method based on the $n$ observations
+  $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \param{a}{lower limit of range}
+   \param{b}{upper limit of range}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double a, double b, double m)\begin{hide} {
+      if ((a == 0.0 && b == 1.0) && (m < 0 || m > 1))
+         throw new IllegalArgumentException ("m is not in [0,1]");
+      else if (m < a || m > b) 
+         throw new IllegalArgumentException ("m is not in [a,b]");
+
+      return ((a + b + m) / 3.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = (a + b + m)/3$
+   of the triangular distribution with parameters $a$, $b$, $m$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the triangular distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double a, double b, double m)\begin{hide} {
+      if ((a == 0.0 && b == 1.0) && (m < 0 || m > 1))
+         throw new IllegalArgumentException ("m is not in [0,1]");
+      else if (m < a || m > b) 
+         throw new IllegalArgumentException ("m is not in [a,b]");
+
+      return ((a * a + b * b + m * m - a * b - a * m - b * m) / 18.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance 
+   $\mbox{Var}[X] = (a^2 + b^2 + m^2 - ab - am - bm)/18$
+   of the triangular distribution with parameters $a$, $b$, $m$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the triangular distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double a, double b, double m)\begin{hide} {
+      return Math.sqrt (TriangularDist.getVariance (a, b, m));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the triangular distribution with parameters $a$, $b$, $m$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the triangular distribution}
+\end{htmlonly}
+\begin{code}      
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $a$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $b$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getM()\begin{hide} {
+      return m;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $m$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public void setParams (double a, double b, double m)\begin{hide} {
+      if ((a == 0.0 && b == 1.0) && (m < 0 || m > 1))
+         throw new IllegalArgumentException ("m is not in [0,1]");
+      else if (a >= b)
+         throw new IllegalArgumentException ("a >= b");
+      else if (m < a || m > b) 
+         throw new IllegalArgumentException ("m is not in [a,b]");
+      this.a = a;
+      this.b = b;
+      this.m = m;
+      supportA = a;
+      supportB = b;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Sets the value of the parameters $a$, $b$ and $m$ for this object.
+ \end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {a, b, m};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$a$, $b$, $m$].
+\end{tabb}
+\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : a = " + a + ", b = " + b + ", m = " + m;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

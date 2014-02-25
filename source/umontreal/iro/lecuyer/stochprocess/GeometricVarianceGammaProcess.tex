@@ -1,0 +1,290 @@
+%
+%  Pierre Tremblay, July 2003.
+%
+
+\defclass {GeometricVarianceGammaProcess}
+
+This class represents a \emph{geometric variance gamma} process $S(t)$
+(see \cite[page 86]{fMAD98a}). This stochastic process is defined by the
+equation
+\eq
+S(t) = S(0) \mbox{ exp}(\mu t + X(t; \sigma, \nu, \theta) + \omega t),
+\label{GeoVGeqn}
+\endeq
+where $X$ is a variance gamma process and
+\eq
+\omega = (1/\nu) \mbox{ ln}( 1 - \theta \nu - \sigma^{2} \nu /2).
+\label{omegaEqn}
+\endeq
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GeometricVarianceGammaProcess
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Pierre Tremblay
+ * @since        July 2003
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stochprocess;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.randvar.*;
+
+\end{hide}
+
+public class GeometricVarianceGammaProcess extends StochasticProcess \begin{hide} {
+    protected VarianceGammaProcess vargamma;
+    protected double        theta,
+                            nu,
+                            mu,
+                            sigma,
+                            omega,
+                            muPlusOmega;
+    protected double[]      mudt;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public GeometricVarianceGammaProcess (double s0, double theta,
+                                         double sigma, double nu,
+                                         double mu, RandomStream stream) \begin{hide} {
+        vargamma = new VarianceGammaProcess (0.0, theta, sigma, nu, stream);
+        setParams (s0, theta, sigma, nu, mu);
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Constructs a new \texttt{GeometricVarianceGammaProcess} with parameters
+$\theta = \texttt{theta}$, $\sigma = \texttt{sigma}$, $\nu = \texttt{nu}$,
+$\mu = \texttt{mu}$ and initial value $S(t_{0}) = \texttt{s0}$.
+The \texttt{stream} is  used to generate the \class{VarianceGammaProcess} object used to implement
+$X$ in (\ref{GeoVGeqn}).
+\end{tabb}
+\begin{code}
+
+   public GeometricVarianceGammaProcess (double s0, double mu,
+                                         VarianceGammaProcess vargamma)
+ \begin{hide} {
+        this.vargamma = vargamma;
+        setParams (s0, vargamma.getTheta (), vargamma.getSigma (),
+                   vargamma.getNu (), mu);
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Constructs a new \texttt{GeometricVarianceGammaProcess}.
+The parameters $\theta, \sigma, \nu$ are set to the parameters of the
+ \class{VarianceGammaProcess} \texttt{vargamma}. The parameter $\mu$
+is set to \texttt{mu} and the initial values $S(t_{0}) = \texttt{s0}$.
+\end{tabb}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{hide}\begin{code}
+
+   public double nextObservation() {
+        double nextX  = vargamma.nextObservation();
+        observationIndex = vargamma.getCurrentObservationIndex();
+        // Could be different than simply 'observationIndex++' because of the
+        // possibility of Gamma/Brownian bridge
+        observationCounter++;
+
+        double s = x0 * Math.exp (muPlusOmega * (t[observationIndex] - t[0])
+                                  + nextX);
+        path[observationIndex] = s;
+        return s;
+    }
+
+   public double[] generatePath() {
+        double s = x0;
+        resetStartProcess();
+        double[] vgpath = vargamma.generatePath();
+        for (int i = 0; i < d; i++) {
+            s *= Math.exp (mudt[i] + vgpath[i+1] - vgpath[i]);
+            path[i+1] = s;
+        }
+        observationIndex = d;
+        observationCounter++;
+        return path;
+    }
+    // allows the user to create a path by specifiying the uniform random numbers to be used
+   public double[] generatePath (double[] uniform01) {
+        double s = x0;
+        resetStartProcess();
+
+        double[] vgpath = vargamma.generatePath(uniform01);
+        for (int i = 0; i < d; i++) {
+            s *= Math.exp (mudt[i] + vgpath[i+1] - vgpath[i]);
+            path[i+1] = s;
+        }
+        observationIndex = d;
+        observationCounter++;
+        return path;
+    }
+
+
+    // method not verified by JS...  old stuff
+   public double getCurrentUpperBound()  {
+        // Find index for last observation generated (chronologically)
+        int j = 0; // By default, t0 !
+        int i = observationCounter - 1;
+        double tForIthObserv;
+        while (i > 0) {
+            tForIthObserv = t[observationIndexFromCounter[i]];
+            if (tForIthObserv <= t[observationCounter] && tForIthObserv > t[j])
+                j = i;
+            i--;
+        }
+
+        // Calculate bound following recipe
+        double u = 0.0;
+        GammaProcess gpos = ((VarianceGammaProcessDiff) vargamma).getGpos();
+        double[] gposPath = gpos.getPath();
+        double deltaGpos = gposPath[observationIndex] - gposPath[j];
+        double s = path[observationIndex];
+        if (muPlusOmega < 0)
+             u = s * Math.exp (deltaGpos);
+        else u = s * Math.exp (muPlusOmega * (t[observationIndex] - t[j])
+                               + deltaGpos);
+        return u;
+    }
+\end{code}
+% \begin{tabb}
+% Returns the upper bound defined as $U_{i}$ in eqns (11) and (12) of
+% (CITE:AVRAM03), for $i$ the current observation index.
+% It has the property that $S(t) \leq U_{i}$
+% for $t_{j} \leq t \leq t_{i}$, where $j$ is the index of .
+% \emph{Warning:} The variance gamma process $X$ must be an instance
+% of \texttt{VarianceGammaProcessDiff} in order for this upper bound to be well defined.
+% \end{tabb}
+\end{hide}\begin{code}
+
+   public void resetStartProcess() \begin{hide} {
+        observationIndex   = 0;
+        observationCounter = 0;
+        vargamma.resetStartProcess();
+    }\end{hide}
+\end{code}
+\begin{tabb} Resets the \texttt{GeometricaVarianceGammaProcess},
+but also applies the \texttt{resetStartProcess} method to the
+\class{VarianceGammaProcess} object used to generate this process.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double s0, double theta, double sigma, double nu,
+                          double mu) \begin{hide} {
+        this.x0    = s0;
+        this.theta = theta;
+        this.sigma = sigma;
+        this.nu    = nu;
+        this.mu    = mu;
+        if (observationTimesSet) init(); // Otherwise no need to.
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Sets the parameters
+$S(t_{0}) = \texttt{s0}$, $\theta = \texttt{theta}$, $\sigma = \texttt{sigma}$,
+$\nu = \texttt{nu}$ and $\mu = \texttt{mu}$ of the process.
+\emph{Warning}: This method will recompute some quantities stored internally,
+which may be slow if called repeatedly.
+\end{tabb}
+\begin{code}
+
+   public double getTheta() \begin{hide} { return theta; }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the value of the parameter $\theta$.
+\end{tabb}
+\begin{code}
+
+   public double getMu() \begin{hide} { return mu; }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the value of the parameter $\mu$.
+\end{tabb}
+\begin{code}
+
+   public double getNu() \begin{hide} { return nu; }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the value of the parameter $\nu$.
+\end{tabb}
+\begin{code}
+
+   public double getSigma() \begin{hide} { return sigma; }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the value of the parameter $\sigma$.
+\end{tabb}
+\begin{code}
+
+   public double getOmega() \begin{hide} { return omega; }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the value of the quantity $\omega$ defined in (\ref{omegaEqn}).
+\end{tabb}
+\begin{code}
+
+   public VarianceGammaProcess getVarianceGammaProcess() \begin{hide} {
+        return vargamma;
+}\end{hide}
+\end{code}
+\begin{tabb} Returns a reference to the variance gamma process $X$ defined
+in the constructor.
+\end{tabb}
+\begin{code}\begin{hide}
+
+    protected void init() {
+        super.init();
+        if (1 <= theta*nu + sigma*sigma*nu / 2.0)
+           throw new IllegalArgumentException ("theta*nu + sigma*sigma*nu / 2 >= 1");
+        omega = Math.log (1 - theta*nu - sigma*sigma*nu / 2.0) / nu;
+        muPlusOmega = mu + omega;
+
+        if (observationTimesSet) {
+            // Telling the variance gamma proc. about the observ. times
+            vargamma.setObservationTimes (t, d);
+
+            // We need to know in which order the observations are generated
+            this.observationIndexFromCounter
+                = vargamma.getArrayMappingCounterToIndex();
+
+            mudt = new double[d];
+            for (int i = 0; i < d; i++)
+                mudt[i] = muPlusOmega * (t[i+1] - t[i]);
+        }
+    }
+
+
+   public void setStream (RandomStream stream)  {
+        vargamma.setStream(stream);
+   }
+
+
+   public RandomStream getStream () {
+      return vargamma.getStream();
+   }
+
+}
+\end{hide}
+\end{code}

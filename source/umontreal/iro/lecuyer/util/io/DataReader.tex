@@ -1,0 +1,206 @@
+\defclass{DataReader}
+
+Data reader interface.
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        DataReader
+ * Description:  Data reader interface
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger 
+ * @since        August 2009
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util.io;
+\begin{hide}
+import java.io.IOException;
+import java.util.Map;
+\end{hide}
+
+public interface DataReader \begin{hide} {
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading atomic data}
+\begin{code}
+
+   public String readString (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its \texttt{String} value.
+\end{tabb}
+\begin{code}
+
+   public int readInt (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its \texttt{int} value.
+\end{tabb}
+\begin{code}
+
+   public float readFloat (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its \texttt{float} value.
+\end{tabb}
+\begin{code}
+
+   public double readDouble (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its \texttt{double} value.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading one-dimensional arrays}
+\begin{code}
+
+   public String[] readStringArray (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{String}'s.
+\end{tabb}
+\begin{code}
+
+   public int[] readIntArray (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{int}'s.
+\end{tabb}
+\begin{code}
+
+   public float[] readFloatArray (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{float}'s.
+\end{tabb}
+\begin{code}
+
+   public double[] readDoubleArray (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{double}'s.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading two-dimensional arrays}
+\begin{code}
+
+   public String[][] readStringArray2D (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{String}'s.
+\end{tabb}
+\begin{code}
+
+   public int[][] readIntArray2D (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{int}'s.
+\end{tabb}
+\begin{code}
+
+   public float[][] readFloatArray2D (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{float}'s.
+\end{tabb}
+\begin{code}
+
+   public double[][] readDoubleArray2D (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{double}'s.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading fields of unknown type}
+\begin{code}
+
+   public Map<String, DataField> readAllNextFields() throws IOException;
+\end{code}
+\begin{tabb}
+Reads all remaining fields in the file and returns a hashmap indexed
+by field labels. Anonymous fields are mapped to \verb|"_data01_"|, \verb|"_data02_"|, \ldots
+\end{tabb}
+\begin{code}
+   
+   public Map<String, DataField> readAllFields() throws IOException;
+\end{code}
+\begin{tabb}
+Reads all fields in the file and returns a hashmap indexed
+by field labels. Anonymous fields are mapped to \verb|"_data01_"|, \verb|"_data02_"|, \ldots
+\end{tabb}
+\begin{code}
+   
+   public DataField readNextField() throws IOException;
+\end{code}
+\begin{tabb}
+Reads the next available field.
+\end{tabb}
+\begin{htmlonly}
+\return{a newly created DataField instance or \text{null} if not found}
+\end{htmlonly}
+\begin{code}
+
+   public DataField readField (String label) throws IOException;
+\end{code}
+\begin{tabb}
+Reads the first field labeled as \texttt{label}.
+\end{tabb}
+\begin{htmlonly}
+\return{a newly created DataField instance or \text{null} if not found}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Other methods}
+
+\begin{code}
+
+   public void close() throws IOException;
+\end{code}
+\begin{tabb}
+Closes the input stream.
+\end{tabb}
+\begin{code}
+
+   public void reset() throws IOException;
+\end{code}
+\begin{tabb}
+Resets the reader to its initial state, i.e.\ goes back to the beginning of the data stream, if possible.
+\end{tabb}
+\begin{code}
+   
+   public boolean dataPending() throws IOException;
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if there remains data to be read.
+\end{tabb}
+
+
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

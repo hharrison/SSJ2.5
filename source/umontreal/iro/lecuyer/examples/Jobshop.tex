@@ -1,0 +1,79 @@
+\section {A job shop model}
+\label {sec:jobshop}
+
+This example is adapted from \cite[Section 2.6]{sLAW00a},
+and from \cite{sLEC88a}.
+A job shop contains $M$ groups of machines, the $m$th group having 
+$s_m$ identical machines, for $m=1,\dots,M$.  
+It is modeled as a network of queues:
+each group has a single FIFO queue, with $s_m$ identical servers for the
+$m$th group.  There are $N$ types of tasks arriving to the shop
+at random.  Tasks of type $n$ arrive according to a Poisson process
+with rate $\lambda_n$ per hour, for $n=1,\dots,N$.
+Each type of task requires a fixed sequence of operations,
+where each operation must be performed on a specific type of machine
+and has a deterministic duration.
+A task of type $n$ requires $p_n$ operations, to be performed on
+machines $m_{n,1},m_{n,2},\dots,m_{n,p_n}$, in that order, and whose
+respective durations are $d_{n,1},d_{n,2},\dots,d_{n,p_n}$, in hours.
+A task can pass more than once on the same machine type, so $p_n$ may
+exceed $M$.
+
+We want to simulate the job shop for $T$ hours,
+assuming that it is initially empty, and start collecting statistics
+only after a warm-up period of $T_0$ hours.
+We want to compute: (a) the average sojourn time in the shop for
+each type of task and 
+(b) the average utilization rate, average length of the waiting
+queue, and average waiting time, for each type of machine,
+over the time interval $[T_0,T]$.
+For the average sojourn times and waiting times, the counted
+observations are the sojourn times and waits that {\em end\/} during
+the time interval $[T_0,T]$.
+Note that the only randomness in this model is in the task
+arrival process.
+
+The program \texttt{Jobshop} in Listing~\ref{lst:Jobshop} performs this
+simulation.  Each group of machine is viewed as a resource, with
+capacity $s_m$ for the group $m$.
+The different {\em types\/} of task are objects of the class \texttt{TaskType}.
+This class is used to store the parameters of the different types:
+their arrival rate, the number of operations, the machine type 
+and duration for each operation, and a statistical collector for
+their sojourn times in the shop.
+(In the program, the machine types and task types are numbered
+from 0 to $M-1$ and from 0 to $N-1$, respectively,
+because array indices in Java start at 0.)
+
+The tasks that circulate in the shop are objects of the class \texttt{Task}.
+The \texttt{actions} method in class \texttt{Task} describes the behavior
+of a task from its arrival until it exits the shop.
+Each task, upon arrival, schedules the arrival of the next task of the
+same type.  The task then runs through the list of its operations.
+For each operation, it requests the appropriate type of machine,
+keeps it for the duration of the operation, and releases it.
+When the task terminates, it sends its sojourn time as a new observation
+to the collector \texttt{statSojourn}.
+
+Before starting the simulation, the class \texttt{Jobshop} first
+schedules two events: One for the end of the simulation and one
+for the end of the warm-up period.  The latter simply reinitializes
+the statistical collectors.
+
+With this implementation, the event list always
+contain $N$ ``task arrival'' events, one for each type of task.
+An alternative implementation would be that each task schedules
+another task arrival in a number of hours that is an exponential r.v.\
+with rate $\lambda$, where $\lambda = \lambda_0 + \cdots + \lambda_{N-1}$
+is the global arrival rate, and then the type of each arriving task is 
+$n$ with probability $\lambda_n/\lambda$, independently of the others.
+Initially, a {\em single\/} arrival would be scheduled by the class
+\texttt{Jobshop}.
+This approach is stochastically equivalent to the current implementation
+(see, e.g., \cite{sBRA87a,pWOL89a}), but the event list contains only
+one ``task arrival'' event at a time.
+On the other hand, there is the additional work of generating the task
+type on each arrival.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\lstinputlisting[label=lst:Jobshop,caption={A job shop simulation}]{Jobshop.java}

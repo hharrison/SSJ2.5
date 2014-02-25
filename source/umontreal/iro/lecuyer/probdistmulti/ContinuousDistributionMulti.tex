@@ -1,0 +1,93 @@
+\defclass {ContinuousDistributionMulti}
+
+Classes implementing continuous multi-dimensional distributions should inherit 
+from this class. Such distributions are characterized by a \emph{density}
+ function $f(x_1, x_2, \ldots, x_d)$;
+thus the signature of a \texttt{density} method is supplied here.
+All array indices start at 0.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ContinuousDistributionMulti
+ * Description:  mother class for continuous multidimensional distributions 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdistmulti;
+\begin{hide}
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import umontreal.iro.lecuyer.util.Num;
+\end{hide}
+
+public abstract class ContinuousDistributionMulti\begin{hide} {
+   protected int dimension;
+\end{hide}
+
+
+   public abstract double density (double[] x);
+\end{code}
+\begin{tabb} Returns $f(x_1, x_2, \ldots, x_d)$, the probability density of
+  $X$ evaluated at the point
+ $x$, where $x = \{x_1, x_2, \ldots, x_d\}$. The convention is that 
+  $\texttt{x[i-1]} = x_i$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{value at which the density is evaluated}
+   \return{density function evaluated at \texttt{x}}
+\end{htmlonly}
+\begin{code}
+
+   public int getDimension()\begin{hide} {
+      return dimension;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the dimension $d$ of the distribution.
+\end{tabb}
+\begin{code}
+
+   public abstract double[] getMean();
+\end{code}
+\begin{tabb}
+   Returns the mean vector of the distribution, defined as $\mu_{i} = E[X_i]$.
+\end{tabb}
+\begin{code}
+
+   public abstract double[][] getCovariance();
+\end{code}
+\begin{tabb}
+   Returns the variance-covariance matrix of the distribution, defined as\\
+   $\sigma_{ij} = E[(X_i - \mu_i)(X_j - \mu_j)]$.
+\end{tabb}
+\begin{code}
+
+   public abstract double[][] getCorrelation();
+\end{code}
+\begin{tabb}
+   Returns the correlation matrix of the distribution, defined as
+      $\rho_{ij} = \sigma_{ij}/\sqrt{\sigma_{ii}\sigma_{jj}}$.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

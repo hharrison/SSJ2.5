@@ -1,0 +1,125 @@
+\defclass {Distribution}
+
+This interface should be implemented by all classes supporting 
+discrete and continuous distributions. % over the \emph{real numbers}.
+It specifies the signature of methods that compute
+%%the density $f(x)$, 
+the distribution function $F(x)$,
+%=P[X\le x]$, 
+the complementary distribution function $\bar F(x)$,
+and the inverse distribution function $ F^{-1} (u)$.
+%for a random variable $X$ having a univariate continuous distribution.
+%
+%For distributions over integers, use the class 
+%\externalclass{umontreal.iro.lecuyer.probdist}{DiscreteDistributionInt}.
+It also specifies the signature of methods that returns the mean,
+the variance and the standard deviation.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Distribution
+ * Description:  interface for all discrete and continuous distributions
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+
+
+public interface Distribution\begin{hide} {\end{hide}
+
+   public double cdf (double x);
+\end{code}
+\begin{tabb} Returns the distribution function $F(x)$.
+%% \eq
+%%   F(x) = P[X\le x] = \int_{-\infty}^x f(s)ds.
+%% \endeq
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{value at which the distribution function is evaluated}
+   \return{distribution function evaluated at \texttt{x}}
+\end{htmlonly}
+\begin{code}
+
+   public double barF (double x);
+\end{code}
+\begin{tabb} Returns $\bar F(x) = 1 - F(x)$.
+\end{tabb}
+\begin{htmlonly}
+ \param{x}{value at which the complementary distribution function is evaluated}
+ \return{complementary distribution function evaluated at \texttt{x}}
+\end{htmlonly}
+\begin{code}
+
+   public double inverseF (double u);
+\end{code}
+\begin{tabb}  Returns the inverse distribution function
+   $F^{-1}(u)$, defined in (\ref{eq:inverseF}).
+%%  = \inf\{x\in\RR : F(x)\ge u\}$,  
+%%    where $0\le u\le 1$.
+%   The default implementation uses binary search to find the inverse of a
+%   generic continuous distribution function $F$, evaluated at $u$.
+%   The returned value has approximately \texttt{decPrec} decimal digits of
+%   precision.
+%%
+%   If \texttt{detail} is true, the method will print detailed information
+%   about the inversion process.
+% \pierre{Va imprimer o\`u?  Probablement \`a enlever.}
+%   Restriction: $0 \le u \le 1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{u}{value in the interval $(0,1)$ for which the inverse 
+     distribution function is evaluated}
+   \return{the inverse distribution function evaluated at \texttt{u}}
+%  \exception{IllegalArgumentException}{if $u$ is  not in the interval $(0,1)$}
+%  \exception{ArithmeticException}{if the inverse cannot be computed,
+%    for example if it would give infinity in a theoritical context}
+\end{htmlonly}
+\begin{code}
+
+   public double getMean();
+\end{code}
+\begin{tabb}   Returns the mean of the distribution function.
+\end{tabb}
+\begin{code}
+
+   public double getVariance();
+\end{code}
+\begin{tabb}   Returns the variance of the distribution function.
+\end{tabb}
+\begin{code}
+
+   public double getStandardDeviation();
+\end{code}
+\begin{tabb}   Returns the standard deviation of the distribution function.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams();
+\end{code}
+\begin{tabb}  Returns the parameters of the distribution function in the same
+ order as in the constructors.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

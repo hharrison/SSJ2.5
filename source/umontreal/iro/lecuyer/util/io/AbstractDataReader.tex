@@ -1,0 +1,218 @@
+\defclass {AbstractDataReader}
+
+This abstract class implements shared functionality for data readers.
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}\begin{hide}
+/*
+ * Class:        AbstractDataReader
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger 
+ * @since        August 2009
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util.io;
+\begin{hide}
+import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
+\end{hide}
+
+public abstract class AbstractDataReader implements DataReader \begin{hide} {
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading atomic data}
+
+\begin{code}
+
+   public String readString (String label) throws IOException \begin{hide} {
+      return readField(label).asString();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its \texttt{String} value.
+\end{tabb}
+\begin{code}
+
+   public int readInt (String label) throws IOException \begin{hide} {
+      return readField(label).asInt();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its \texttt{int} value.
+\end{tabb}
+\begin{code}
+   
+   public float readFloat (String label) throws IOException \begin{hide} {
+      return readField(label).asFloat();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its \texttt{float} value.
+\end{tabb}
+\begin{code}
+
+   public double readDouble (String label) throws IOException \begin{hide} {
+      return readField(label).asDouble();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its \texttt{double} value.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading one-dimensional arrays}
+\begin{code}
+
+   public String[] readStringArray (String label) throws IOException \begin{hide} {
+      return readField(label).asStringArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{String}'s.
+\end{tabb}
+\begin{code}
+
+   public int[] readIntArray (String label) throws IOException \begin{hide} {
+      return readField(label).asIntArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{int}'s.
+\end{tabb}
+\begin{code}
+
+   public float[] readFloatArray (String label) throws IOException \begin{hide} {
+      return readField(label).asFloatArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{float}'s.
+\end{tabb}
+\begin{code}
+
+   public double[] readDoubleArray (String label) throws IOException \begin{hide} {
+      return readField(label).asDoubleArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a one-dimensional array of \texttt{double}'s.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading two-dimensional arrays}
+\begin{code}
+
+   public String[][] readStringArray2D (String label) throws IOException \begin{hide} {
+      return readField(label).asStringArray2D();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{String}'s.
+\end{tabb}
+\begin{code}
+
+   public int[][] readIntArray2D (String label) throws IOException \begin{hide} {
+      return readField(label).asIntArray2D();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{int}'s.
+\end{tabb}
+\begin{code}
+
+   public float[][] readFloatArray2D (String label) throws IOException \begin{hide} {
+      return readField(label).asFloatArray2D();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{float}'s.
+\end{tabb}
+\begin{code}
+
+   public double[][] readDoubleArray2D (String label) throws IOException \begin{hide} {
+      return readField(label).asDoubleArray2D();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads first field labeled as \texttt{label} and returns its value as a two-dimensional array of \texttt{double}'s.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Reading fields of unknown type}
+\begin{code}
+
+   public Map<String, DataField> readAllNextFields() throws IOException \begin{hide} {
+
+      HashMap<String,DataField> fields = new HashMap<String,DataField>();
+      
+      int iAnonymous = 0;
+      
+      while (dataPending()) {
+
+         DataField data = readNextField();
+
+         String key = data.getLabel();
+         if (key == null)
+            key = String.format("_data%02d_", ++iAnonymous);
+         fields.put(key, data);
+
+      }
+      
+      return fields;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads all remaining fields in the file and returns a hashmap indexed
+by field labels. Anonymous fields are mapped to \verb|"_data01_"|, \verb|"_data02_"|, \ldots
+\end{tabb}
+\begin{code}
+
+   public Map<String, DataField> readAllFields() throws IOException \begin{hide} {
+      reset();
+      return readAllNextFields();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Reads all fields in the file and returns a hashmap indexed
+by field labels. Anonymous fields are mapped to \verb|"_data01_"|, \verb|"_data02_"|,  \ldots
+\end{tabb}
+
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

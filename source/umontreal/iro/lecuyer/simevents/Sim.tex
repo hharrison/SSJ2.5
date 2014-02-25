@@ -1,0 +1,175 @@
+\defclass {Sim}
+
+This static class contains the executive of a discrete-event simulation.
+It maintains the simulation clock and starts executing the events 
+%and processes
+in the appropriate order.
+Its methods permit one to start, stop, and (re)initialize the simulation,
+and read the simulation clock.
+
+Starting from SSJ-2.0, the \texttt{Sim} class now uses
+the default simulator returned by the \texttt{getDefaultSimulator()}
+method in the \class{Simulator} class. Although the \texttt{Sim} class is 
+perfectly adequate for simple simulations, the \class{Simulator} class
+is more general and supports more functionnalities.
+For example, if one needs to have more than one simulation clock and event list,
+one will have to use the \class{Simulator} class instead of the simpler
+\texttt{Sim} class.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Sim
+ * Description:  contains the executive of a discrete-event simulation
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simevents;\begin{hide}
+import umontreal.iro.lecuyer.simevents.eventlist.EventList;
+import umontreal.iro.lecuyer.simevents.eventlist.SplayTree;
+import umontreal.iro.lecuyer.simevents.Event;
+import umontreal.iro.lecuyer.simevents.Simulator;\end{hide}
+
+public final class Sim \begin{hide} {
+
+   // Prevents construction of this object
+   private Sim() {}   
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double time() \begin{hide} {
+      return Simulator.getDefaultSimulator().time();
+   }\end{hide}
+\end{code}
+   \begin{tabb} Returns the current value of the simulation clock. \end{tabb}
+\begin{htmlonly}
+   \return{the current simulation time}
+\end{htmlonly}
+\begin{code}
+
+   public static void init() \begin{hide} {
+     // This has to be done another way in order to separate events and processes.
+      Simulator.getDefaultSimulator().init();
+   }\end{hide}
+\end{code}
+  \begin{tabb} Reinitializes the simulation executive by clearing up the event
+   list, and resetting the simulation clock to zero.
+   This method must not be used to initialize process-driven
+   simulation; \clsexternalmethod{umontreal.iro.lecuyer.simprocs}{SimProcess}{init}{}
+   must be used instead.
+  \end{tabb}
+\begin{code}
+ 
+   public static void init (EventList evlist) \begin{hide} {
+     Simulator.getDefaultSimulator().init(evlist);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Same as \method{init}{}, but also chooses \texttt{evlist} as the 
+    event list to be used. For example, calling 
+    \texttt{init(new DoublyLinked())} initializes the simulation
+    with a doubly linked linear structure for the event list.
+   This method must not be used to initialize process-driven
+   simulation; 
+\clsexternalmethod{}{umontreal.iro.lecuyer.simprocs}{DSOLProcessSimulator}{init}{}~\texttt{(EventList)} or \\
+\clsexternalmethod{}{umontreal.iro.lecuyer.simprocs}{ThreadProcessSimulator}{init}{}~\texttt{(EventList)} 
+   must be used instead.
+  \end{tabb}
+\begin{htmlonly}
+   \param{evlist}{selected event list implementation}
+\end{htmlonly}
+\begin{code}
+
+   public static EventList getEventList()\begin{hide} {
+      return Simulator.getDefaultSimulator().getEventList();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Gets the currently used event list.
+\end{tabb}
+\begin{htmlonly}
+   \return{the currently used event list}
+\end{htmlonly}
+\begin{hide}
+\begin{code}
+   protected static Event removeFirstEvent() {
+       return Simulator.getDefaultSimulator().removeFirstEvent();
+   }
+\end{code}
+\begin{tabb}  This method is used by the package
+  \externalclass{umontreal.iro.lecuyer}{simprocs};
+  \emph{it should not be used directly by a simulation program}.
+  It removes the first event from the event list and sets the simulation
+  clock to its event time.
+\end{tabb}
+\begin{htmlonly}
+   \return{the first planned event, or \texttt{null} if there is no such event}
+\end{htmlonly}
+\end{hide}
+\begin{code}
+
+   public static void start() \begin{hide} {
+      Simulator.getDefaultSimulator().start();
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Starts the simulation executive.
+   There must be at least one \texttt{Event} in the
+   event list when this method is called.
+  \end{tabb}
+\begin{code}
+
+   public static void stop() \begin{hide} {
+      Simulator.getDefaultSimulator().stop();
+   }\end{hide}
+\end{code}
+  \begin{tabb} Tells the simulation executive to stop as soon as it takes control,
+   and to return control to the program that called \method{start}{}.
+   This program will then continue
+   executing from the instructions right after its call to \texttt{Sim.start}.
+   If an \class{Event} is currently executing (and this event has just called
+   \texttt{Sim.stop}), the executive will take
+   control when the event terminates its execution.
+%   If a \texttt{SimProcess} is currently executing, the executive will take
+%   control when the process terminates or suspends itself by invoking
+%   one of its methods such as \texttt{delay}, \texttt{suspend}, 
+%   \texttt{request}, etc.
+  \end{tabb}
+\begin{code}\begin{hide}
+
+   // Used to passivate and activate the main process.
+   // See the SimProcess.dispatch() and SimThread.actions()
+ 
+//    protected static void activate() { 
+ //       synchronized (eventList) {eventList.notify(); } 
+ //    }
+         
+//     protected static void passivate() {
+//         synchronized (eventList) {
+  //          try { eventList.wait(); } catch (InterruptedException e) {}
+  //       }
+  //   }
+}
+\end{hide}\end{code}

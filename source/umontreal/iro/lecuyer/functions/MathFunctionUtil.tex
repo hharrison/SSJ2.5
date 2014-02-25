@@ -1,0 +1,482 @@
+\defclass{MathFunctionUtil}
+
+Provides utility methods for computing
+derivatives and integrals of functions.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        MathFunctionUtil
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Éric Buist
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.functions;\begin{hide}
+
+import umontreal.iro.lecuyer.util.Misc;
+\end{hide}
+
+public class MathFunctionUtil\begin{hide} {
+\end{hide}
+
+   public static double H = 1e-6;
+\end{code}
+\begin{tabb} Step length in $x$ to compute derivatives. Default: $10^{-6}$.
+\end{tabb}
+\begin{code}\begin{hide}
+   private MathFunctionUtil() {}
+
+   // For Gauss-Lobatto: nodes Cg and weights Wg
+   private static final double[] Cg = { 0, 0.17267316464601142812, 0.5,
+                                           0.82732683535398857188, 1 };
+   private static final double[] Wg = { 0.05, 0.27222222222222222222,
+                  0.35555555555555555555, 0.27222222222222222222, 0.05 };
+
+
+   private static double[] fixBounds (MathFunction func, double a,
+                                      double b, int numIntervals) {
+   // For functions which are 0 on parts of [a, b], shorten the interval
+   // [a, b] to the non-zero part of f(x). Returns the shortened interval.
+
+       final double h = (b - a)/numIntervals;
+       double x = b;
+       while ((0 == func.evaluate (x)) && (x > a))
+           x -= h;
+       if (x < b)
+           b = x + h;
+
+       x = a;
+       while ((0 == func.evaluate (x)) && (x < b))
+           x += h;
+       if (x > a)
+          a = x - h;
+       double[] D = {a, b};
+       return D;
+   }\end{hide}
+
+   public static int NUMINTERVALS = 1024;
+\end{code}
+\begin{tabb} Default number of intervals for Simpson's integral.
+\end{tabb}
+\begin{code}
+
+   public static double derivative (MathFunction func, double x)\begin{hide} {
+      if (func instanceof MathFunctionWithFirstDerivative)
+         return ((MathFunctionWithFirstDerivative)func).derivative (x);
+      else if (func instanceof MathFunctionWithDerivative)
+         return ((MathFunctionWithDerivative)func).derivative (x, 1);
+      else
+         return finiteCenteredDifferenceDerivative (func, x, H);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the first derivative of the function \texttt{func}
+ evaluated at \texttt{x}. If the given function implements
+ \class{MathFunctionWithFirstDerivative}, this method calls
+\clsexternalmethod{}{MathFunctionWithFirst\-Derivative}{derivative}{}~\texttt{(double)}.
+ Otherwise, if the function implements \class{MathFunction\-WithDerivative},
+ this method calls
+\clsexternalmethod{}{MathFunctionWithDerivative}{derivative}{}~\texttt{(double, int)}.
+If the function does not implement any of these two interfaces, the method
+ uses \method{finiteCenteredDifferenceDerivative}{}~\texttt{(MathFunction,
+ double, double)} to obtain an estimate of the derivative.
+\end{tabb}
+\begin{htmlonly}
+   \param{func}{the function to derivate.}
+   \param{x}{the evaluation point.}
+   \return{the first derivative.}
+\end{htmlonly}
+\begin{code}
+
+   public static double derivative (MathFunction func, double x, int n)\begin{hide} {
+      if (n == 0)
+         return func.evaluate (x);
+      else if (n == 1)
+         return derivative (func, x);
+      else if (func instanceof MathFunctionWithDerivative)
+         return ((MathFunctionWithDerivative)func).derivative (x, n);
+      else if (n % 2 == 0)
+         return finiteCenteredDifferenceDerivative (func, x, n, H);
+      else
+         return finiteDifferenceDerivative (func, x, n, H);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $n$th derivative of function
+ \texttt{func} evaluated at \texttt{x}.
+ If $n=0$, this returns $f(x)$.
+ If $n=1$, this calls
+ \method{derivative}{}~\texttt{(MathFunction, double)}
+ and returns the resulting first derivative.
+ Otherwise,
+ if the function implements
+ \class{MathFunctionWithDerivative},
+ this method calls
+\clsexternalmethod{}{MathFunctionWithDerivative}{derivative}{}~\texttt{(double, int)}.
+ If the function does not implement this
+ interface,
+ the method uses
+ \method{finiteCenteredDifferenceDerivative}{}~\texttt{(MathFunction, double, int, double)}
+ if $n$ is even, or
+ \method{finiteDifferenceDerivative}{}~\texttt{(MathFunction, double, int, double)}
+ if $n$ is odd,
+ to obtain a numerical approximation of the derivative.
+\end{tabb}
+\begin{htmlonly}
+   \param{func}{the function to derivate.}
+   \param{x}{the evaluation point.}
+   \param{n}{the order of the derivative.}
+   \return{the $n$th derivative.}
+\end{htmlonly}
+\begin{code}
+
+   public static double finiteDifferenceDerivative (
+                 MathFunction func, double x, int n, double h)\begin{hide} {
+      if (n < 0)
+         throw new IllegalArgumentException
+         ("n must not be negative");
+      if (n == 0)
+         return func.evaluate (x);
+      final double err = Math.pow (h, 1.0 / n);
+      final double[] values = new double[n+1];
+      for (int i = 0; i < values.length; i++)
+         values[i] = func.evaluate (x + i*err);
+      for (int j = 0; j < n; j++) {
+         for (int i = 0; i < n - j; i++)
+            values[i] = values[i + 1] - values[i];
+      }
+      return values[0] / h;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Computes and returns an estimate
+ of the $n$th derivative of the
+ function $f(x)$.
+ This method estimates
+ \[\frac{d^nf(x)}{dx^n},\]
+ the $n$th derivative of $f(x)$
+ evaluated at $x$.
+ This method first computes
+ $f_i=f(x+i\epsilon)$, for $i=0,\ldots,n$, with
+ $\epsilon=h^{1/n}$.
+ The estimate is then given by
+ $\Delta^nf_0/h$, where
+ $\Delta^nf_i=\Delta^{n-1}f_{i+1} - \Delta^{n-1}f_i$, and
+ $\Delta f_i = f_{i+1} - f_i$.
+\end{tabb}
+\begin{htmlonly}
+   \param{func}{the function to derivate.}
+   \param{x}{the evaluation point.}
+   \param{n}{the order of the derivative.}
+   \param{h}{the error.}
+   \return{the estimate of the derivative.}
+\end{htmlonly}
+\begin{code}
+
+   public static double finiteCenteredDifferenceDerivative (
+                 MathFunction func, double x, double h)\begin{hide} {
+      final double fplus = func.evaluate (x + h);
+      final double fminus = func.evaluate (x - h);
+      return (fplus - fminus) / (2*h);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns $(f(x + h) - f(x - h))/(2h)$,
+ an estimate of the first derivative of $f(x)$
+ using centered differences.
+\end{tabb}
+\begin{htmlonly}
+   \param{func}{the function to derivate.}
+   \param{x}{the evaluation point.}
+   \param{h}{the error.}
+   \return{the estimate of the first derivative.}
+\end{htmlonly}
+\begin{code}
+
+   public static double finiteCenteredDifferenceDerivative (
+                 MathFunction func, double x, int n, double h)\begin{hide} {
+      if (n < 0)
+         throw new IllegalArgumentException
+         ("n must not be negative");
+      if (n == 0)
+         return func.evaluate (x);
+      if (n % 2 == 1)
+         throw new IllegalArgumentException ("n must be even");
+      final double err = Math.pow (h, 1.0 / n);
+      return finiteDifferenceDerivative (func, x - n*err / 2, n, h);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Computes and returns an estimate of the $n$th derivative of the
+ function $f(x)$ using finite centered differences.
+ If $n$ is even, this method returns
+\method{finiteDifferenceDerivative}{MathFunction, double, int, double}~\texttt{(func, x - $\epsilon$*n/2, n, h)}, with $h=\epsilon^n$.
+\end{tabb}
+\begin{htmlonly}
+   \param{func}{the function to derivate.}
+   \param{x}{the evaluation point.}
+   \param{n}{the order of the derivative.}
+   \param{h}{the error.}
+   \return{the estimate of the derivative.}
+\end{htmlonly}
+\begin{code}
+
+   public static double[][] removeNaNs (double[] x, double[] y)\begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException();
+      int numNaNs = 0;
+      for (int i = 0; i < x.length; i++)
+         if (Double.isNaN (x[i]) || Double.isNaN (y[i]))
+            ++numNaNs;
+      if (numNaNs == 0)
+         return new double[][] { x, y };
+      final double[] nx = new double[x.length - numNaNs];
+      final double[] ny = new double[y.length - numNaNs];
+      int j = 0;
+      for (int i = 0; i < x.length; i++)
+         if (!Double.isNaN (x[i]) && !Double.isNaN (y[i])) {
+            nx[j] = x[i];
+            ny[j++] = y[i];
+         }
+      return new double[][] { nx, ny };
+   }\end{hide}
+\end{code}
+\begin{tabb}   Removes any point \texttt{(NaN, y)} or \texttt{(x, NaN)} from
+ \texttt{x} and \texttt{y}, and returns a 2D array containing the filtered
+ points. This method filters each pair (\texttt{x[i]}, \texttt{y[i]})
+ containing at least one NaN element. It constructs a 2D array containing
+ the two filtered arrays, whose size is smaller than or equal to
+ \texttt{x.length}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $X$ coordinates.}
+   \param{y}{the $Y$ coordinates.}
+   \return{the filtered $X$ and $Y$ arrays.}
+\end{htmlonly}
+\begin{code}
+
+   public static double integral (MathFunction func, double a, double b) \begin{hide} {
+      if (func instanceof MathFunctionWithIntegral)
+         return ((MathFunctionWithIntegral)func).integral (a, b);
+      else
+         return simpsonIntegral (func, a, b, NUMINTERVALS);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the integral of the function \texttt{func} over $[a, b]$.
+ If the given function implements \class{MathFunctionWithIntegral},
+ this returns
+ \clsexternalmethod{umontreal.iro.lecuyer.functions}{MathFunctionWithIntegral}{integral}{}~\texttt{(double, double)}.
+ Otherwise, this calls
+ \method{simpsonIntegral}{}~\texttt{(MathFunction, double, double, int)}
+ with \method{NUMINTERVALS}{} intervals.
+\end{tabb}
+\begin{htmlonly}
+   \param{func}{the function to integrate.}
+   \param{a}{the lower bound.}
+   \param{b}{the upper bound.}
+   \return{the value of the integral.}
+\end{htmlonly}
+\begin{code}
+
+   public static double simpsonIntegral (MathFunction func, double a,
+                                         double b, int numIntervals) \begin{hide} {
+      if (numIntervals % 2 != 0)
+         throw new IllegalArgumentException
+         ("numIntervals must be an even number");
+      if (Double.isInfinite (a) || Double.isInfinite (b) ||
+         Double.isNaN (a) || Double.isNaN (b))
+         throw new IllegalArgumentException
+             ("a and b must not be infinite or NaN");
+      if (b < a)
+         throw new IllegalArgumentException ("b < a");
+      if (a == b)
+         return 0;
+      double[] D = fixBounds (func, a, b, numIntervals);
+      a = D[0];
+      b = D[1];
+      final double h = (b - a) / numIntervals;
+      final double h2 = 2*h;
+      final int m = numIntervals / 2;
+      double sum = 0;
+      for (int i = 0; i < m - 1; i++) {
+         final double x = a + h + h2*i;
+         sum += 4*func.evaluate (x) + 2*func.evaluate (x + h);
+      }
+      sum += func.evaluate (a) + func.evaluate (b) + 4*func.evaluate (b - h);
+      return sum * h / 3;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ Computes and returns an approximation of the integral of \texttt{func} over
+ $[a, b]$, using the Simpson's $1/3$ method with \texttt{numIntervals}
+ intervals. This method estimates
+\[\int_a^b f(x)dx,\]
+ where $f(x)$ is the function defined by \texttt{func} evaluated at $x$,
+ by dividing $[a, b]$ in $n=$~\texttt{numIntervals} intervals of length
+ $h=(b - a)/n$. The integral is estimated by
+\[\frac{h}{3}(f(a)+4f(a+h)+2f(a+2h)+4f(a+3h)+\cdots+f(b))\]
+This method assumes that $a\le b<\infty$, and $n$ is even.
+\end{tabb}
+\begin{htmlonly}
+\param{func}{the function being integrated.}
+\param{a}{the left bound}
+\param{b}{the right bound.}
+\param{numIntervals}{the number of intervals.}
+\return{the approximate value of the integral.}
+\end{htmlonly}
+\begin{code}
+
+   public static double gaussLobatto (MathFunction func, double a, double b,
+                                      double tol)\begin{hide} {
+      if (b < a)
+         throw new IllegalArgumentException ("b < a");
+      if (Double.isInfinite (a) || Double.isInfinite (b) ||
+          Double.isNaN (a) || Double.isNaN (b))
+         throw new IllegalArgumentException ("a or b is infinite or NaN");
+      if (a == b)
+         return 0;
+      double r0 = simpleGaussLob (func, a, b);
+      final double h = (b - a)/2;
+      double r1 = simpleGaussLob (func, a, a + h) +
+                  simpleGaussLob (func, a + h, b);
+      if (Math.abs(r0 - r1) <= tol)
+         return r1;
+      return gaussLobatto (func, a, a + h, tol) +
+             gaussLobatto (func, a + h, b, tol);
+   }
+
+
+   private static double simpleGaussLob (MathFunction func, double a, double b) {
+      // Gauss-Lobatto integral over [a, b] with 5 nodes
+      if (a == b)
+         return 0;
+      final double h = b - a;
+      double sum = 0;
+      for (int i = 0; i < 5; i++) {
+         sum += Wg[i] * func.evaluate(a + h*Cg[i]);
+      }
+      return h*sum;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ Computes and returns a numerical approximation of the integral of
+  $f(x)$ over $[a, b]$, using Gauss-Lobatto adaptive quadrature with
+   5 nodes, with tolerance \texttt{tol}. This method estimates
+\[
+\int_a^b f(x)dx,
+\]
+ where $f(x)$ is the function defined by \texttt{func}.
+Whenever the estimated error is larger than \texttt{tol}, the interval
+$[a, b]$ will be halved in two smaller intervals, and  the method will
+ recursively call itself on the two smaller intervals until the estimated
+ error is smaller than \texttt{tol}.
+\end{tabb}
+\begin{htmlonly}
+\param{func}{the function being integrated.}
+\param{a}{the left bound}
+\param{b}{the right bound.}
+\param{tol}{error.}
+\return{the approximate value of the integral.}
+\end{htmlonly}
+\begin{code}
+
+   public static double gaussLobatto (MathFunction func, double a, double b,
+                                      double tol, double[][] T) \begin{hide} {
+      if (b < a)
+         throw new IllegalArgumentException ("b < a");
+      if (a == b) {
+         T[0] = new double [1];
+         T[1] = new double [1];
+         T[0][0] = a;
+         T[1][0] = 0;
+         return 0;
+      }
+
+      int n = 1;         // initial capacity
+      T[0] = new double [n];
+      T[1] = new double [n];
+      T[0][0] = a;
+      T[1][0] = 0;
+      int[] s = {0};    // actual number of intervals
+      double res = innerGaussLob (func, a, b, tol, T, s);
+      n = s[0] + 1;
+      double[] temp = new double[n];
+      System.arraycopy (T[0], 0, temp, 0, n);
+      T[0] = temp;
+      temp = new double[n];
+      System.arraycopy (T[1], 0, temp, 0, n);
+      T[1] = temp;
+      return res;
+   }
+
+
+   private static double innerGaussLob (MathFunction func, double a, double b,
+                                        double tol, double[][] T, int[] s) {
+      double r0 = simpleGaussLob (func, a, b);
+      final double h = (b - a) / 2;
+      double r1 = simpleGaussLob (func, a, a + h) +
+                  simpleGaussLob (func, a + h, b);
+      if (Math.abs(r0 - r1) <= tol) {
+         ++s[0];
+         int len = s[0];
+         if (len >= T[0].length) {
+            double[] temp = new double[2 * len];
+            System.arraycopy (T[0], 0, temp, 0, len);
+            T[0] = temp;
+            temp = new double[2 * len];
+            System.arraycopy (T[1], 0, temp, 0, len);
+            T[1] = temp;
+         }
+         T[0][len] = b;
+         T[1][len] = r1;
+         return r1;
+      }
+
+      return innerGaussLob (func, a, a + h, tol, T, s) +
+             innerGaussLob (func, a + h, b, tol, T, s);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Similar to method
+\method{gaussLobatto}{}\texttt{(MathFunction, double, double, double)}, but
+also returns in \texttt{T[0]} the subintervals of integration, and in
+\texttt{T[1]}, the partial values of the integral over the corresponding
+ subintervals. Thus \texttt{T[0][0]} $= x_0 = a$ and \texttt{T[0][n]}
+  $=x_n =b$; \texttt{T[1][i]} contains the value of the integral over
+  the subinterval $[x_{i-1}, x_i]$; we also have \texttt{T[1][0]} $=0$.
+ The sum over all \texttt{T[1][i]}, for $i=1, \ldots, n$ gives the
+ value of the integral over $[a,b]$, which is the value returned by this
+ method. \emph{WARNING:} The user \emph{must reserve}  the 2 elements
+ of the first dimension (\texttt{T[0]} and \texttt{T[1]})
+ before calling this method.
+ % The user program must call
+ %    double[][] T = new double[2][1];
+ % before calling gaussLobatto.
+\end{tabb}
+\begin{htmlonly}
+\param{func}{function being integrated}
+\param{a}{left bound of interval}
+\param{b}{right bound of interval}
+\param{tol}{error}
+\param{T}{$(x,y)$ = (values of partial intervals,partial values of integral)}
+\return{value of the integral}
+\end{htmlonly}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

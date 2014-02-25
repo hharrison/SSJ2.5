@@ -1,0 +1,199 @@
+\defclass {YListChart}
+
+% This class in necessary because of the ambiguity in the constructors with
+% a variable number of arguments in the mother class. Without this class,
+% when one gives only 1 array[][] as argument for one curve, the wrong
+% constructor is called and we get instead 2 curves with arguments array[],
+% array[]. That is why I removed the constructor
+%  XYLineChart (String, String, String, double[]... data)
+% from the mother class and created this class.
+
+This class extends the class
+\externalclass{umontreal.iro.lecuyer.charts}{XYLineChart}.
+Each \class{YListChart} object is associated with a
+\externalclass{umontreal.iro.lecuyer.charts}{YListSeriesCollection} data set.
+The data is given as one or more lists of $y$-coordinates.
+The $x$-coordinates are
+regularly-spaced multiples of the indices of the data points.
+
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        YListChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;
+
+public class YListChart extends XYLineChart \begin{hide} {
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+
+   public YListChart() \begin{hide} {
+      super();
+      // dataset = new XYListSeriesCollection();
+      // init (null, null, null);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Empty constructor.
+\end{tabb}
+\begin{code}
+
+   public YListChart (String title, String XLabel, String YLabel,
+                      double[]... data) \begin{hide} {
+      super();
+      dataset = new YListSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{YListChart} instance with set of points \texttt{data}.
+   \texttt{title} is a title, \texttt{XLabel} is a short description of
+   the $x$-axis, and \texttt{YLabel}  a short description of the $y$-axis.
+   The input vectors represents a set of plotting data. More specifically,
+   each vector \texttt{data} represents a $y$-coordinates set.
+   Position in the vector will form the $x$-coordinates.
+   Indeed, the value \texttt{data}$[j]$ corresponds to the point
+   $(j+1, \texttt{data}[j])$ (but rescaled) on the chart.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public YListChart (String title, String XLabel, String YLabel,
+                      boolean flag, double[]... data) \begin{hide} {
+      super();
+      dataset = new YListSeriesCollection(flag, data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Similar to the constructor %
+ \latex{\method{YListChart}{String,String,String,double[]}
+  \texttt{(title, XLabel, YLabel, data)}} above.  %
+     Except that if \texttt{flag} is \texttt{true}, the points are
+ $(j+1, \mbox{\texttt{data}}[j])$ for each series;
+  but if \texttt{flag} is \texttt{false},
+  the points are $((j+1)/n, \mbox{\texttt{data}}[j])$, where $n$ is
+  the number of points of each series in \texttt{data}.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{flag}{to choose the step between $x$-coordinates}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public YListChart (String title, String XLabel, String YLabel,
+                      double[] data, int numPoints) \begin{hide} {
+      super();
+      dataset = new YListSeriesCollection(data, numPoints);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{YListChart} instance with a set of points
+   \texttt{data}.
+   \texttt{title} is a title, \texttt{XLabel} is a short description of
+   the $x$-axis, and \texttt{YLabel}  a short description of the $y$-axis.
+   The input vector represents a set of plotting data.
+   Position in the vector gives the $x$-coordinates of the curve.
+   The value \texttt{data}$[j]$ corresponds to the point
+   $(j+1$, \texttt{data}$[j]$) (but rescaled on the chart) for the curve.
+   However, only \emph{the first} \texttt{numPoints} of \texttt{data}
+    will be considered to plot the curve.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{point set.}
+   \param{numPoints}{number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public YListChart (String title, String XLabel, String YLabel,
+                      double h, double[] data, int numPoints) \begin{hide} {
+      super();
+      dataset = new YListSeriesCollection(h, data, numPoints);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Similar to the constructor %
+  \latex{\method{YListChart}{String,String,String,double[],int}
+  \texttt{(title, XLabel, YLabel, data, numPoints)}} %
+   above, but the points are $(h(j+1),\ \mbox{\texttt{data}}[j])$.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{h}{step between $x$-coordinates}
+   \param{data}{point set.}
+   \param{numPoints}{number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public YListChart (String title, String XLabel, String YLabel,
+                      double[][] data, int numPoints) \begin{hide} {
+      super();
+      dataset = new YListSeriesCollection(data, numPoints);
+      init (title, XLabel, YLabel);
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{YListChart} instance with set of points \texttt{data}.
+   \texttt{title} is a title, \texttt{XLabel} is a short description of
+   the $x$-axis, and \texttt{YLabel}  a short description of the $y$-axis.
+   The input vectors represents a set of plotting data. More specifically,
+   for a $n$-row matrix \texttt{data}, each row \texttt{data}$[i],
+   i=0,\ldots, n-1$, represents a $y$-coordinate set for a curve.
+   Position in the vector gives the $x$-coordinates of the curves.
+   Indeed, the value \texttt{data}$[i][j]$ corresponds to the point
+   $(j+1$, \texttt{data}$[i][j]$) (but rescaled on the chart) for curve $i$.
+   However, only \emph{the first} \texttt{numPoints} of each \texttt{data}$[i]$
+    will be considered to plot each curve.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+   \param{numPoints}{number of points to plot}
+\end{htmlonly}

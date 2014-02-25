@@ -1,0 +1,388 @@
+\defclass {InverseGaussianDist}
+
+Extends the class \class{ContinuousDistribution} for 
+the {\em inverse Gaussian\/} distribution with location parameter
+$\mu > 0$ and scale parameter $\lambda > 0$.
+Its density is
+\begin{htmlonly}
+\eq
+   f(x) = \sqrt{\lambda / (2\pi x^{3})} e^{-\lambda(x - \mu)^2 / (2\mu^2x)},
+\qquad\mbox{ for } x > 0.
+\endeq
+The distribution function is given by
+\eq
+   F(x) = \Phi\left(\sqrt{\lambda/{x}}({x}/{\mu} - 1)\right) +
+  e^{{2\lambda}/{\mu}}\Phi\left(-\sqrt{{\lambda}/{x}}({x}/{\mu} + 1)\right),
+\endeq
+where $\Phi$ is the standard normal distribution function.
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+ f(x) = \sqrt{\frac{\lambda}{2\pi x^{3}}}\; e^{{-\lambda(x - \mu)^2}/{(2\mu^2x)}},
+\qquad\mbox {for } x > 0.
+\eqlabel{eq:fInverseGaussian}
+\endeq
+The distribution function is given by
+\eq
+   F(x) = \Phi\left(\sqrt{\frac{\lambda}{x}}\left(\frac{x}{\mu} - 1\right)\right) +
+          e^{({2\lambda}/{\mu})}\Phi\left(-\sqrt{\frac{\lambda}{x}}\left(\frac{x}{\mu} + 1\right)\right),
+\eqlabel{eq:FInverseGaussian}
+\endeq
+where $\Phi$ is the standard normal distribution function.
+\end{latexonly}%
+
+The non-static versions of the methods \texttt{cdf}, \texttt{barF}, 
+and \texttt{inverseF} call the static version of the same name.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        InverseGaussianDist
+ * Description:  inverse Gaussian distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.probdist.NormalDist;
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+ \end{hide}
+
+public class InverseGaussianDist extends ContinuousDistribution\begin{hide} {
+   protected double mu;
+   protected double lambda;
+
+   private static class Function implements MathFunction {
+      protected double mu;
+      protected double lambda;
+      protected double u;
+
+      public Function (double mu, double lambda, double u) {
+         this.mu = mu;
+         this.lambda = lambda;
+         this.u = u;
+      }
+
+      public double evaluate (double x) {
+         return u - cdf(mu, lambda, x);
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public InverseGaussianDist (double mu, double lambda)\begin{hide} {
+      setParams (mu, lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs the {\em inverse Gaussian\/} distribution with parameters $\mu$ and $\lambda$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (mu, lambda, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (mu, lambda, x);
+   }
+
+   public double barF (double x) {
+      return barF (mu, lambda, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (mu, lambda, u);
+   }
+
+   public double getMean() {
+      return getMean (mu, lambda);
+   }
+
+   public double getVariance() {
+      return getVariance (mu, lambda);
+   }
+
+   public double getStandardDeviation() {
+      return getStandardDeviation (mu, lambda);
+   }\end{hide}
+
+   public static double density (double mu, double lambda, double x)\begin{hide} {
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (x <= 0.0)
+         return 0.0;
+
+      double sqrtX = Math.sqrt (x);
+
+      return (Math.sqrt (lambda / (2 * Math.PI)) / (sqrtX * sqrtX * sqrtX) *
+              Math.exp (-lambda * (x - 2 * mu + (mu * mu / x)) / (2 * mu * mu)));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function (\ref{eq:fInverseGaussian}) for the
+     inverse gaussian distribution with parameters $\mu$ and $\lambda$,
+     evaluated at $x$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double mu, double lambda, double x)\begin{hide} {
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (x <= 0.0)
+         return 0.0;
+      double temp = Math.sqrt (lambda / x);
+      double z = temp * (x / mu - 1.0);
+      double w = temp * (x / mu + 1.0);
+
+      // C'est bien un + dans    exp (2 * lambda / mu)
+      return (NormalDist.cdf01 (z) +
+              Math.exp (2 * lambda / mu) * NormalDist.cdf01 (-w));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the distribution function (\ref{eq:FInverseGaussian})
+   of the inverse gaussian distribution with parameters $\mu$ and
+   $\lambda$, evaluated at $x$.
+ \end{tabb}
+\begin{code}
+   
+   public static double barF (double mu, double lambda, double x)\begin{hide} {
+      return 1.0 - cdf (mu, lambda, x);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the complementary distribution function of the inverse gaussian distribution
+   with parameters $\mu$ and $\lambda$, evaluated at $x$.
+ \end{tabb}
+\begin{code}
+   
+   public static double inverseF (double mu, double lambda, double u)\begin{hide} {
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u must be in [0,1]");
+      if (u == 1.0)
+         return Double.POSITIVE_INFINITY;
+      if (u == 0.0)
+         return 0.0;
+
+      Function f = new Function (mu, lambda, u);
+
+      // Find interval containing root = x*
+      double sig = getStandardDeviation(mu, lambda);
+      double x0 = 0.0;
+      double x = mu;
+      double v = cdf(mu, lambda, x);
+      while (v < u) {
+         x0 = x;
+         x += 3.0*sig;
+         v = cdf(mu, lambda, x);
+      }
+
+      return RootFinder.brentDekker (x0, x, f, 1e-12);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the inverse of the inverse gaussian distribution
+   with parameters $\mu$ and $\lambda$.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double parameters[];
+      parameters = new double[2];
+      double sum = 0;
+      for (int i = 0; i < n; i++) {
+         sum += x[i];   
+      }
+      parameters[0] = sum / (double) n;
+
+      sum = 0;
+      for (int i = 0; i < n; i++) {
+         sum += ((1.0 / (double) x[i]) - (1.0 / parameters[0]));
+      }
+      parameters[1] = (double) n / (double) sum;
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $(\mu, \lambda)$ of the inverse gaussian distribution
+   using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\mu$, $\lambda$]. 
+   \begin{detailed}
+   The maximum likelihood estimators are the values $(\hat\mu , \hat\lambda)$ 
+   that satisfy the equations:
+   \begin{eqnarray*}
+      \hat{\mu} & = & \bar{x}_n \\[5pt]
+      \frac{1}{\hat{\lambda}} & = & \frac{1}{n} \sum_{i=1}^{n}
+    \left(\frac{1}{x_i} - \frac{1}{\hat{\mu}}\right),
+   \end{eqnarray*}
+   where $\bar x_n$ is the average of $x[0],\dots,x[n-1]$, 
+    \cite[page 271]{tJOH95a}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{\mu}$, $\hat{\lambda}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static InverseGaussianDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new InverseGaussianDist (parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of an inverse gaussian distribution with parameters
+   $\mu$ and $\lambda$ estimated using the maximum likelihood method based on
+   the $n$ observations $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double mu, double lambda)\begin{hide} {
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+
+      return mu;      
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean $E[X] = \mu$ of the
+   inverse gaussian distribution with parameters $\mu$ and $\lambda$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the inverse gaussian distribution $E[X] = \mu$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double mu, double lambda)\begin{hide} {
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+
+      return (mu * mu * mu / lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance $\mbox{Var}[X] = \mu^3/\lambda$ of
+   the inverse gaussian distribution with parameters $\mu$ and $\lambda$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the inverse gaussian distribution
+   $\mbox{Var}[X] = \mu^3 / \lambda$
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double mu, double lambda)\begin{hide} {
+      return Math.sqrt (getVariance (mu, lambda));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the inverse gaussian distribution with parameters $\mu$ and $\lambda$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the inverse gaussian distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\lambda$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\mu$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (double mu, double lambda)\begin{hide} {
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+
+      this.mu = mu;
+      this.lambda = lambda;
+      supportA = 0.0;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters $\mu$ and $\lambda$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {mu, lambda};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\mu$, $\lambda$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : mu = " + mu + ", lambda = " + lambda;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

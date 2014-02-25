@@ -1,0 +1,345 @@
+\defclass{DataField}
+
+This class represents a data field from a file read by an instance of a class
+ implementing \class{DataReader}.
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        DataField
+ * Description:  Represents a data field
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger 
+ * @since        August 2009
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util.io;
+\begin{hide}
+import java.lang.reflect.Array;
+\end{hide}
+
+public class DataField \begin{hide} {
+   protected String label;
+   protected Object data;
+   protected int effectiveLength;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+   public DataField (String label, Object data) \begin{hide} {
+      this(label, data, -1);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Constructor. Creates a field named \texttt{label} of value \texttt{data}.
+\end{tabb}
+\begin{htmlonly}
+\param{label}{name of the field}
+\param{data}{value of the field}
+\end{htmlonly}
+\begin{code}
+   
+   public DataField (String label, Object data, int effectiveLength) \begin{hide} {
+      this.label = label;
+      this.data = data;
+      this.effectiveLength = effectiveLength;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Constructor. Creates a field named \texttt{label} of value \texttt{data}.
+ \texttt{effectiveLength} is the number of significant elements contained in
+ \texttt{data} if it is an array.
+\end{tabb}
+\begin{htmlonly}
+\param{label}{name of the field}
+\param{data}{value of the field}
+\param{effectiveLength}{number of significant elements contained in \texttt{data}}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Information on the field}
+
+\begin{code}
+   public String getLabel() \begin{hide} {
+      return label;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the field label (or name).
+\end{tabb}
+\begin{code}
+
+   public Class getType() \begin{hide} {
+      return data.getClass();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the type of the field.
+\end{tabb}
+\begin{code}
+   
+   public boolean isAtomic() \begin{hide} {
+      return !isArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field value is atomic data.
+\end{tabb}
+\begin{code}
+   
+   public boolean isArray() \begin{hide} {
+      return data.getClass().isArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field contains an array.
+\end{tabb}
+\begin{code}
+
+   public boolean isArray2D() \begin{hide} {
+      return isArray() && Array.get(data, 0).getClass().isArray();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field contains a two-dimensional array.
+\end{tabb}
+\begin{code}
+   
+   public int getArrayLength() \begin{hide} {
+      if (!isArray()) return -1;
+      if (effectiveLength < 0) return Array.getLength(data);
+      return effectiveLength;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the length of the array contained by the field, or \texttt{-1}
+  if it is not an array.
+\end{tabb}
+\begin{code}
+
+   public boolean isString() \begin{hide} {
+      return (data instanceof String);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field value is an atomic \texttt{String}.
+\end{tabb}
+\begin{code}
+
+   public boolean isInt() \begin{hide} {
+      return (data instanceof Integer);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field value is an atomic \texttt{int}.
+\end{tabb}
+\begin{code}
+   
+   public boolean isFloat() \begin{hide} {
+      return (data instanceof Float);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field value is an atomic \texttt{float}.
+\end{tabb}
+\begin{code}
+
+   public boolean isDouble() \begin{hide} {
+      return (data instanceof Double);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns \texttt{true} if the field value is an atomic \texttt{double}.
+\end{tabb}
+      
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Obtaining the value as atomic data}
+
+\begin{code}
+
+   public String asString() \begin{hide} {
+      return (data instanceof String) ? (String)data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as \texttt{String}, or \texttt{null} if it is not
+  of type \texttt{String}.
+See \method{isString}{}.
+\end{tabb}
+\begin{code}
+   
+   public int asInt() \begin{hide} {
+      return (data instanceof Integer) ? ((Integer)data).intValue() : 0;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as \texttt{int} or \texttt{0} if it is not of type \texttt{int}
+See \method{isInt}{}.
+\end{tabb}
+\begin{code}
+   
+   public float asFloat() \begin{hide} {
+      return (data instanceof Float) ? ((Float)data).floatValue() : 0;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as \texttt{float} or \texttt{0} if it is not of type \texttt{float}
+See \method{isFloat}{}.
+\end{tabb}
+\begin{code}
+   
+   public double asDouble() \begin{hide} {
+      return (data instanceof Double) ? ((Double)data).doubleValue() : 0;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as \texttt{double} or \texttt{0} if it is not of type \texttt{double}
+See \method{isDouble}{}.
+\end{tabb}
+
+   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Obtaining the value as a one-dimensional array}
+
+\begin{code}
+
+   public String[] asStringArray() \begin{hide} {
+      return (data instanceof String[]) ? (String[])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as one-dimensional \texttt{String} array or \texttt{null} if it is not of type \texttt{String[]}.
+\end{tabb}
+\begin{code}
+      
+   public int[] asIntArray() \begin{hide} {
+      return (data instanceof int[]) ? (int[])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as one-dimensional \texttt{int} array or \texttt{null} if it is not of type \texttt{int[]}.
+\end{tabb}
+\begin{code}
+   
+   public float[] asFloatArray() \begin{hide} {
+      return (data instanceof float[]) ? (float[])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as one-dimensional \texttt{float} array or \texttt{null} if it is not of type \texttt{float[]}.
+\end{tabb}
+\begin{code}
+   
+   public double[] asDoubleArray() \begin{hide} {
+      return (data instanceof double[]) ? (double[])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as one-dimensional \texttt{double} array or \texttt{null} if it is not of type \texttt{double[]}.
+\end{tabb}
+   
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Obtaining the value as a two-dimensional array}
+
+\begin{code}
+   
+   public String[][] asStringArray2D() \begin{hide} {
+      return (data instanceof String[][]) ? (String[][])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as two-dimensional \texttt{String} array or \texttt{null} if it is not of type \texttt{String[][]}.
+\end{tabb}
+\begin{code}
+
+   public int[][] asIntArray2D() \begin{hide} {
+      return (data instanceof int[][]) ? (int[][])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as two-dimensional \texttt{int} array or \texttt{null} if it is not of type \texttt{int[][]}.
+\end{tabb}
+\begin{code}
+   
+   public float[][] asFloatArray2D() \begin{hide} {
+      return (data instanceof float[][]) ? (float[][])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as two-dimensional \texttt{float} array or \texttt{null} if it is not of type \texttt{float[][]}.
+\end{tabb}
+\begin{code}
+
+   public double[][] asDoubleArray2D() \begin{hide} {
+      return (data instanceof double[][]) ? (double[][])data : null;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value as two-dimensional \texttt{double} array or \texttt{null} if it is not of type \texttt{double[][]}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Obtaining the value as an \texttt{Object}}
+
+\begin{code}
+   public Object asObject() \begin{hide} {
+      return data;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns the value of the field as an \texttt{Object}.
+\end{tabb}
+   
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

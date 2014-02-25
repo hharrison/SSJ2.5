@@ -1,0 +1,464 @@
+\defclass{LoglogisticDist}
+
+Extends the class \class{ContinuousDistribution} for the
+{\em Log-Logistic\/} distribution with shape parameter $\alpha > 0$
+and scale parameter $\beta > 0$.
+Its density is
+\begin{htmlonly}
+\eq
+   f(x) = (\alpha (x / \beta)^{\alpha - 1}) / (\beta [1 + (x / \beta)^\alpha]^2)
+\qquad \qquad  \mbox{for } x > 0
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+   f(x) = \frac{\alpha (x / \beta)^{\alpha - 1}}{\beta [1 + (x / \beta)^\alpha]^2}
+\qquad \qquad  \mbox{for } x > 0
+\eqlabel{eq:floglogistic}
+\endeq
+\end{latexonly}
+and its distribution function is
+\begin{htmlonly}
+\eq
+   F(x) = 1 / (1 + (x / \beta)^{-\alpha})
+\qquad \qquad  \mbox{for } x > 0.
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+   F(x) = \frac{1}{1 + (\frac{x}{\beta})^{-\alpha}}
+\qquad \qquad  \mbox{for } x > 0.
+\eqlabel{eq:Floglogistic}
+\endeq
+\end{latexonly}
+The complementary distribution is
+\begin{htmlonly}
+\eq
+   \bar F(x) = 1 / (1 + (x / \beta)^{\alpha})
+\qquad \qquad  \mbox{for } x > 0.
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  \bar  F(x) = \frac{1}{1 + (\frac{x}{\beta})^{\alpha}}
+\qquad \qquad  \mbox{for } x > 0.
+\eqlabel{eq:Fbarloglogistic}
+\endeq
+\end{latexonly}
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LoglogisticDist
+ * Description:  log-logistic distribution
+ * Environment:  Java
+ * Software:     SSJ
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+import umontreal.iro.lecuyer.util.Misc;
+import optimization.*;
+\end{hide}
+
+public class LoglogisticDist extends ContinuousDistribution\begin{hide} {
+   private double alpha;
+   private double beta;
+
+   private static class Optim implements Uncmin_methods
+   {
+      private int n;
+      private double[] xi;
+
+      public Optim (double[] x, int n)
+      {
+         this.n = n;
+         this.xi = new double[n];
+         System.arraycopy (x, 0, this.xi, 0, n);
+      }
+
+      public double f_to_minimize (double[] p)
+      {
+         if ((p[1] <= 0.0) || (p[2] <= 0.0))
+            return 1e200;
+
+         double sum = 0.0;
+         for (int i = 0; i < n; i++) {
+	    double tmp = density (p[1], p[2], xi[i]);
+            if (tmp > 0.0)
+	        sum -= Math.log (tmp);
+            else
+	        sum += 709.0;    // log (Double.MIN_VALUE)
+	 }
+         return sum;
+      }
+
+      public void gradient (double[] x, double[] g)
+      {
+      }
+
+      public void hessian (double[] x, double[][] h)
+      {
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public LoglogisticDist (double alpha, double beta)\begin{hide} {
+      setParams (alpha, beta);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a log-logistic distribution with parameters
+   $\alpha$ and $\beta$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{hide}
+\begin{code}
+
+   public double density (double x) {
+      return density (alpha, beta, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (alpha, beta, x);
+   }
+
+   public double barF (double x) {
+      return barF (alpha, beta, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (alpha, beta, u);
+   }
+
+   public double getMean() {
+      return getMean (alpha, beta);
+   }
+
+   public double getVariance() {
+      return getVariance (alpha, beta);
+   }
+
+   public double getStandardDeviation() {
+      return getStandardDeviation (alpha, beta);
+   }
+\end{code}
+\end{hide}\begin{code}
+   public static double density (double alpha, double beta, double x)\begin{hide} {
+      double denominateur;
+
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (x <= 0.0 || x >= Double.MAX_VALUE / 2.0)
+         return 0.0;
+
+      if (x <= beta) {
+         double v = Math.pow (x / beta, alpha);
+         denominateur = 1.0 + v;
+         denominateur *= denominateur * beta;
+         return alpha * v * beta / (x * denominateur);
+      } else {
+         double v = Math.pow (beta / x, alpha);
+         denominateur = 1.0 + v;
+         denominateur *= denominateur * beta;
+         return alpha * v * beta / (x * denominateur);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function (\ref{eq:floglogistic})
+  for a log-logisitic distribution with parameters $\alpha$
+  and $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double alpha, double beta, double x)\begin{hide} {
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (x <= 0.0)
+         return 0.0;
+      if (x >= Double.MAX_VALUE / 2.0)
+         return 1.0;
+      double z = x/beta;
+      if (z >= 1.0)
+         return 1.0 / (1.0 + Math.pow (1.0/z, alpha));
+      double v = Math.pow (z, alpha);
+      return v/(v + 1.0);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Computes the distribution function (\ref{eq:Floglogistic}) of the
+   log-logistic distribution with parameters $\alpha$ and $\beta$.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double alpha, double beta, double x)\begin{hide} {
+      double power;
+
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (x <= 0.0)
+         return 1.0;
+      if (x >= Double.MAX_VALUE / 2.0)
+         return 0.0;
+
+      double z = x/beta;
+      if (z <= 1.0)
+         return 1.0 / (1.0 + Math.pow (z, alpha));
+      double v = Math.pow (1.0/z, alpha);
+      return v/(v + 1.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+   Computes the complementary distribution function (\ref{eq:Fbarloglogistic})
+   of the log-logistic distribution with parameters $\alpha$ and $\beta$.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double alpha, double beta, double u)\begin{hide} {
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u not in (0, 1]");
+      if (u >= 1.0)
+         return Double.POSITIVE_INFINITY;
+      if (u <= 0.0)
+         return 0.0;
+
+      if (u <= 0.5)
+         return (beta * Math.pow (u / (1.0 - u), 1.0 / alpha));
+      else
+         return (beta / Math.pow ((1.0 - u)/ u, 1.0 / alpha));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the inverse of the log-logistic distribution
+   with parameters $\alpha$ and $\beta$.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      double sum = 0.0;
+
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      Optim system = new Optim (x, n);
+
+      double[] parameters = new double[2];
+      double[] xpls = new double[3];
+      double[] param = new double[3];
+      double[] fpls = new double[3];
+      double[] gpls = new double[3];
+      int[] itrcmd = new int[2];
+      double[][] a = new double[3][3];
+      double[] udiag = new double[3];
+
+      param[2] = EmpiricalDist.getMedian (x, n);
+
+      if (param[2] < 0) throw new IllegalArgumentException ("median < 0");
+      if (param[2] <= 0) param[2] = 1.0;
+
+      int m = Math.round ((float) n / 4.0f);
+      double q1 = Misc.quickSelect (x, n, m);
+
+      if (q1 < 0) throw new IllegalArgumentException ("x[i] < 0");
+      if (q1 > 0)
+          param[1] = Math.log (3) / (Math.log(param[2]) - Math.log(q1));
+      else
+          param[1] = 1.0;
+
+      Uncmin_f77.optif0_f77 (2, param, system, xpls, fpls, gpls, itrcmd, a, udiag);
+
+      for (int i = 0; i < 2; i++)
+         parameters[i] = xpls[i+1];
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $(\alpha,\beta)$ of the log-logistic distribution
+   using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\alpha$, $\beta$].
+   \begin{detailed}
+   The estimate of the parameters is given by maximizing numerically the
+   log-likelihood function, using the Uncmin package \cite{iSCHa,iVERa}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \return{returns the parameters [$\hat{\alpha}$, $\hat{\beta}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static LoglogisticDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new LoglogisticDist (parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a log-logistic distribution with parameters
+   $\alpha$ and $\beta$ estimated using the maximum likelihood method based on
+   the $n$ observations $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double alpha, double beta)\begin{hide} {
+      double theta;
+
+      if (alpha <= 1.0)
+         throw new IllegalArgumentException ("alpha <= 1");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      theta = Math.PI / alpha;
+
+      return (beta * theta / Math.sin (theta));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean
+\begin{latexonly}
+ $E[X] = \beta \theta \,\mbox{cosec}(\theta), \mbox{ where } \theta = \pi/\alpha,$
+\end{latexonly}
+   of the log-logistic distribution with parameters $\alpha$ and $\beta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the log-logistic distribution
+   $E[X] = \beta \theta \,\mbox{cosec}(\theta),
+   \mbox{ where } \theta = \pi / \alpha$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double alpha, double beta)\begin{hide} {
+      double theta;
+
+      if (alpha <= 2.0)
+         throw new IllegalArgumentException ("alpha <= 2");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      theta = Math.PI / alpha;
+
+      return (beta * beta * theta * ((2.0 / Math.sin (2.0 * theta)) -
+                   (theta / (Math.sin (theta) * Math.sin (theta)))));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+\begin{latexonly}
+   $\mbox{Var}[X] = \beta^2 \theta (2 \mbox{cosec}(2 \theta) -
+   \theta[\mbox{cosec}(\theta)]^2), \mbox{ where } \theta = {\pi/\alpha},$
+\end{latexonly}
+   of the log-logistic distribution with parameters $\alpha$ and $\beta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the log-logistic distribution
+   $\mbox{Var}[X] = \beta^2 \theta (2 \mbox{cosec}(2 \theta) -
+   \theta[\mbox{cosec}(\theta)]^2), \mbox{ where } \theta = \pi / \alpha$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double alpha, double beta)\begin{hide} {
+      return Math.sqrt (getVariance (alpha, beta));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the log-logistic
+   distribution with parameters $\alpha$ and $\beta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the log-logistic distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Return the parameter $\alpha$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\beta$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public void setParams (double alpha, double beta)\begin{hide} {
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      this.alpha  = alpha;
+      this.beta = beta;
+      supportA = 0.0;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Sets the parameters $\alpha$ and $\beta$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {alpha, beta};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\alpha$, $\beta$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : alpha = " + alpha + ", beta = " + beta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

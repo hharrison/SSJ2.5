@@ -1,0 +1,235 @@
+
+\section{Overview of SSJ}
+
+SSJ is an organized set of packages whose purpose is to facilitate 
+stochastic simulation programming in the Java language.
+The facilities offered are grouped into different packages, 
+each one having its own user's guide as a \texttt{.pdf} file.
+This is the official documentation.
+There is also a simplified on-line documentation in HTML 
+format, produced via \texttt{javadoc}.
+Early descriptions of SSJ are given in \cite{sLEC02a,sLEC05a}.
+Some of the tools can also be used for modeling (e.g., selecting
+and fitting distributions).
+SSJ is still growing actively.
+New packages, classes, and methods will be added in 
+forthcoming years and others will be refined.
+
+
+
+\input{packdep.tex}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{comment}
+
+% Three packages are used for uniform and non-uniform random number
+% generation, one for the uniform random number generators, one for the
+% probability distributions and one for the non-uniform random number
+% generation.  It is also possible to replace the streams of uniform
+% random numbers with highly uniform point sets for Quasi-Monte Carlo
+% \cite{vLEC02a} simulation.
+% As opposed to most random number generation libraries, it
+% is also possible to compute densities, distribution functions and
+% inverse distribution functions for all supported distributions.
+% The \externalclass{umontreal.iro.lecuyer}{simevents}
+% and \externalclass{umontreal.iro.lecuyer}{simprocs} packages make the
+% heart of the SSJ library.
+% They provide an efficient framework for stochastic simulation,
+% supporting the event view, proces view, continuous simulation, and arbitrary 
+% mixtures of these.
+% The other packages allow one to perform miscellaneous tasks, such as
+% statistical collection and goodness of fit tests.
+
+\subsection*{random number generation}
+
+Random numbers feed simulation models and allow one to compute
+statistics.  To generate random numbers from
+any probability distribution, uniform random numbers are required.
+Such numbers are uniformly distributed in the $[0,1)$ interval, i.e.,
+the probability of getting a given number $x$ in that interval is the same
+for all values of $x\in[0,1)$.  Any generated number $x$ is also
+independent from any previous or future generated numbers.  Although
+the generated uniforms are not truly independent since one uniform is
+obtained from the previous uniforms by a mathematical formula, one can
+consider them independent for simulation purposes.  Selection of a
+random number generator is based on several criteria such as
+uniformity, performance, and portability \cite{rLEC01d}.
+The package
+\externalclass{umontreal.iro.lecuyer}{rng} contains the needed tools
+to generate such numbers.  It defines an interface called
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} implemented by
+any random number generator supported by SSJ.  This interface allows
+one to easily interchange random number generators since they are
+accessed through the same set of methods specified by the interface.
+Only the random number generator setup depends on the type of
+generator that was chosen.
+
+If one wants to replace uniform random numbers with low-discrepancy
+point sets for variance reduction, the package
+\externalclass{umontreal.iro.lecuyer}{hups} contains all the necessary
+facilities.  Such highly uniform point sets all inherit from the
+\externalclass{umontreal.iro.lecuyer.hups}{PointSet} which provides a
+\externalclass{umontreal.iro.lecuyer.hups}{PointSetIterator} extending
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream}.  The
+replacement can be easily done without modifying the model
+implementation, except the setup-time code.
+
+To generate non-uniform random numbers, one must select a probability
+distribution based on the empirical data \cite{sLAW00a}.
+SSJ does not provide
+probability distribution estimation tools, but goodness of fit tests are
+included to help in model validation.  The package
+\externalclass{umontreal.iro.lecuyer}{probdist} contains several
+standard, commonly-used, probability distributions.  It supports
+discrete and continuous distributions through two different abstract
+base classes:
+\externalclass{umontreal.iro.lecuyer.probdist}{ContinuousDistribution}
+and
+\externalclass{umontreal.iro.lecuyer.probdist}{DiscreteDistribution},
+respectively.  Again, since the distributions inherit from a common
+class, their access can be independent from the selected distribution,
+except for the setup case.  One can compute the density/mass, distribution,
+complementary, and inverse distribution functions.  These facilities
+are also accessible through static methods implemented in each
+distribution class if one does not want to create objects or needs
+distributions whose parameters vary in time.
+However, setup-time operations must be performed for each operation,
+which can be inefficient for certain distributions.
+
+To generate non-uniform random numbers, the packages
+\externalclass{umontreal.iro.lecuyer}{rng} (or
+\externalclass{umontreal.iro.lecuyer}{hups}) and
+\externalclass{umontreal.iro.lecuyer}{probdist} must be used
+together.  The simplest generation method is to generate a uniform
+random number using a generator implementing
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} (or get a
+coordinate using a point set iterator) and to apply
+inversion by using the selected
+\externalclass{umontreal.iro.lecuyer}{probdist} distribution's
+\externalmethod{umontreal.iro.lecuyer.probdist}{ContinuousDistribution}{inverseF}{} method.
+However, inversion is not the only generation method and sometimes not
+the most efficient.  For some distributions, closed-form inverse functions
+or fast inversion algorithms exist.
+For others, inversion is performed using
+binary or even linear search.  In such cases, the performance
+and precision depends on the complexity of the distribution function
+which is calculated several times for one inverse.
+The package
+\externalclass{umontreal.iro.lecuyer}{randvar} acts as glue between
+uniform random number generators and probability distributions.  Continuous
+or discrete random number generators also inherits from common base
+classes, namely
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} and
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}.
+All generators use a random stream and a probability
+distribution for their construction.  As opposed to
+\externalclass{umontreal.iro.lecuyer}{probdist}, one can directly
+instantiate
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} or
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}.
+However, in such cases, only inversion generation method will be
+available.  To use an alternate generation method, one must
+instantiate a specialized generator class and switch to the given
+generation algorithm using an object method.
+Each specialized class also provides static method which perform
+the same action.  Although they allow one to avoid object creation,
+their signatures are specific to the used distribution and they have
+to perform setup-time operations on each variate generation, which
+can become inefficient.
+The \externalclass{umontreal.iro.lecuyer}{randvar} package also
+provides the class
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateTrans} to
+apply transformations to a generator.  This allows, for example, to
+generate variates from a truncated distribution.
+
+\subsection*{Performing simulation}
+
+SSJ supports discrete-event, process-driven, continuous or mixed
+simulation.  The discrete-event and continuous simulation are managed
+by the package \externalclass{umontreal.iro.lecuyer}{simevents}.  This
+package manages the simulation clock and the event list, two essential
+components for all discrete-event simulations.  The simulation clock
+tracks the simulation time whereas the event list stores the
+scheduled events to execute them in the right order.
+Events are user-defined subclasses of
+\externalclass{umontreal.iro.lecuyer.simevents}{Event}.  When an event
+occurs, any type of actions can then be taken.  The package
+provides a class called
+\externalclass{umontreal.iro.lecuyer.simevents}{List} which implements
+a linked list supporting statistical collection.  Continuous
+simulation can be performed using the class
+\externalclass{umontreal.iro.lecuyer.simevents}{Continuous}.  It uses
+the event framework to resolve differential equations numerically at
+fixed steps in the simulation time.
+
+Process-driven simulation requires a separate package called
+\externalclass{umontreal.iro.lecuyer}{simprocs}.  This package
+provides the base class
+\externalclass{umontreal.iro.lecuyer.simprocs}{SimProcess} which must
+be extended by any process.  A simulation process is an autonomous
+object which executes tasks and interacts with other simulation
+processes.  To allow such interactions, the package provides some
+synchronization tools such as a resource, a bin, and a condition.
+The process-driven simulation framework relies on the event-driven
+framework.  Processes start, resume and wake up on scheduled events.
+One can then easily mix event-driven and process-driven simulation.
+
+\subsection*{Other tools}
+
+The package \externalclass{umontreal.iro.lecuyer}{stat} provides basic
+tools for statistical collection.  Statistics are collected using
+statistical probes, i.e, objects implementing the abstract class
+\externalclass{umontreal.iro.lecuyer.stat}{StatProbe}.  Two types of
+probes are supported.  The
+\externalclass{umontreal.iro.lecuyer.stat}{Tally} allows to collect
+observations of the form $X_1,\dots,X_n$ whereas
+\externalclass{umontreal.iro.lecuyer.simevents}{Accumulate} collects
+statistics for a continuous variable evolving in simulation time.
+During the simulation, one can add observations to such probes.  After
+the simulation, measures can be obtained, such as sample average,
+sample standard deviation or confidence interval.  A statistical
+report can be obtained for all probes.  The package also provides
+a way to detach statistical collection from the model implementation
+by using bound properties.
+
+To test a proposed model against empirical data, goodness of fit tests
+are provided in the package
+\externalclass{umontreal.iro.lecuyer}{gof}.  
+Such tests, e.g.\ Kolmogorov-Smirnov
+or Anderson-Darling, compute a statistic using the
+empirical observations and the proposed distribution.  The empirical
+observations are given as an array whereas the
+distribution is given as a
+\externalclass{umontreal.iro.lecuyer}{probdist} object.  From the computed
+statistic, it is possible to compute the $p$-value which is useful to
+evaluate the significance of the test.
+
+\subsection*{Related documentation}
+
+The \texttt{example.pdf} file, in the \texttt{doc/pdf} subdirectory of
+the SSJ distribution, explains simulation examples implemented using
+SSJ.  This may be the best starting point to learn SSJ.
+\begin{htmlonly}
+% This should be removed if we find a way to display blbliographical
+% references in HTML
+% LaTeX2HTML can do it when it is run for a LaTeX document, but it does not
+% work for a single bibliography shared by several documents.
+% Texjava processes each Java class as a separate, standalone, LaTeX document.
+One can find additional information and references in the PDF version
+of this documentation, available in the {\tt doc/pdf} subdirectory
+of the SSJ distribution.
+\end{htmlonly}
+\begin{latexonly}
+% In Javadoc, this is visible to the user as hyperlinks.  In LaTeX,
+% this is separated filed.
+Every package introduced here contains its own reference documentation
+as a PDF file, in the \texttt{doc/pdf} subdirectory.
+This documentation describes in more details how to
+use the package and provides a description of each class and method.
+\end{latexonly}
+
+
+\end{comment}
+%%%%%%%%%%%%%%%%%%%%%%

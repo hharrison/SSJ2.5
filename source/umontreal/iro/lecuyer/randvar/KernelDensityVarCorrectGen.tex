@@ -1,0 +1,116 @@
+\defclass{KernelDensityVarCorrectGen}
+
+This class is a variant of \class{KernelDensityGen}{}, but with
+a rescaling of the empirical distribution so that the variance
+of the density used to generate the random variates is equal
+to the empirical variance,
+ as suggested by \latex{\cite{tSIL86a}}\html{Silverman}.
+
+Let $\bar x_n$ and $s_n^2$ be the sample mean and sample variance 
+of the observations.
+The distance between each generated random variate and the 
+sample mean $\bar x_n$ is multiplied by the correcting factor
+$1/\sigma_e$, where $\sigma_e^2 = 1 + (h\sigma_k/s_n)^2$.
+The constant $\sigma_k^2$ must be passed to the constructor.
+Its value can be found in \latex{Table~\ref{tab:kernels}}
+\html{the Table in \class{KernelDensityGen}{}} for some popular
+kernels.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        KernelDensityVarCorrectGen
+ * Description:  random variate generators for distributions obtained via
+                 kernel density estimation methods
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.rng.RandomStream;\end{hide}
+
+public class KernelDensityVarCorrectGen extends KernelDensityGen\begin{hide} {
+
+   protected double sigmak2;   // Value of sigma_k^2.
+   protected double mean;      // Sample mean of the observations.
+   protected double invSigmae; // 1 / sigma_e.
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public KernelDensityVarCorrectGen (RandomStream s, EmpiricalDist dist,
+                                      RandomVariateGen kGen, double h,
+                                      double sigmak2)\begin{hide} {
+      super (s, dist, kGen, h);
+      this.sigmak2 = sigmak2;
+      mean = dist.getSampleMean();
+      double var = dist.getSampleVariance();
+      invSigmae = 1.0 / Math.sqrt (1.0 + h * h * sigmak2 / var);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator for a kernel density estimated 
+    from the observations given by the empirical distribution \texttt{dist},
+    using stream \texttt{s} to select the observations,
+    generator \texttt{kGen} to generate the added noise from the kernel
+    density, bandwidth \texttt{h}, and $\sigma_k^2 =$ \texttt{sigmak2} used for
+    the variance correction.
+  \end{tabb}
+\begin{code}
+
+   public KernelDensityVarCorrectGen (RandomStream s, EmpiricalDist dist,
+                                      NormalGen kGen)\begin{hide} {
+      this (s, dist, kGen, 0.77639 * getBaseBandwidth (dist), 1.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+    This constructor uses a gaussian kernel and the default 
+    bandwidth suggested in Table~\ref{tab:kernels} for the gaussian 
+    distribution.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}\begin{hide}
+
+   public void setBandwidth (double h) {
+      if (h < 0)
+         throw new IllegalArgumentException ("h < 0");
+      bandwidth = h;
+      double var = ((EmpiricalDist) dist).getSampleVariance();
+      invSigmae = 1.0 / Math.sqrt (1.0 + h * h * sigmak2 / var);
+   }
+
+   public double nextDouble() {
+      double x = mean + invSigmae * (dist.inverseF (stream.nextDouble())
+                  - mean + bandwidth * kernelGen.nextDouble());
+      if (positive)
+         return Math.abs (x);
+      else
+         return x;
+   }
+}\end{hide}
+\end{code}

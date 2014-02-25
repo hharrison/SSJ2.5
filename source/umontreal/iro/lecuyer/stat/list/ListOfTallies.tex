@@ -1,0 +1,398 @@
+\defclass{ListOfTallies}
+
+Represents a list of tally statistical collectors.
+Each element of the list is an instance of \externalclass{umontreal.iro.lecuyer.stat}{Tally},
+and a vector of observations can be added with
+the \method{add}{(double[])} method.
+This class defines factory methods to fill a newly-constructed list
+with \texttt{Tally} or \texttt{TallyStore} instances.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ListOfTallies
+ * Description:  List of statistical collectors.
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Éric Buist 
+ * @since        2007
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stat.list;\begin{hide}
+
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import cern.colt.list.DoubleArrayList;
+import cern.colt.matrix.DoubleMatrix1D;
+import cern.colt.matrix.DoubleMatrix2D;
+
+import umontreal.iro.lecuyer.stat.Tally;
+import umontreal.iro.lecuyer.stat.TallyStore;
+\end{hide}
+
+
+public class ListOfTallies<E extends Tally> extends ListOfStatProbes<E>\begin{hide} {
+\end{hide}
+\end{code}
+\subsubsection*{Constructors}
+\begin{code}
+
+   public ListOfTallies()\begin{hide} {
+      super();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new empty list of tallies.
+\end{tabb}
+\begin{code}
+
+   public ListOfTallies (String name)\begin{hide} {
+      super (name);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new empty list of tallies with name \texttt{name}.
+\end{tabb}
+\begin{htmlonly}
+   \param{name}{the name of the new list.}
+\end{htmlonly}
+\subsubsection*{Methods}
+\begin{code}
+
+   public static ListOfTallies<Tally> createWithTally (int size)\begin{hide} {
+      ListOfTallies<Tally> list = new ListOfTallies<Tally>();
+      for (int i = 0; i < size; i++)
+         list.add (new Tally());
+      return list;
+   }\end{hide}
+\end{code}
+\begin{tabb}  This factory method constructs and returns a list of tallies with \texttt{size} instances of
+   \class{Tally}.
+\end{tabb}
+\begin{htmlonly}
+   \param{size}{the size of the list.}
+   \return{the created list.}
+\end{htmlonly}
+\begin{code}
+
+   public static ListOfTallies<TallyStore> createWithTallyStore (int size)\begin{hide} {
+      ListOfTallies<TallyStore> list = new ListOfTallies<TallyStore>();
+      for (int i = 0; i < size; i++)
+         list.add (new TallyStore());
+      return list;
+   }\end{hide}
+\end{code}
+\begin{tabb}  This factory method constructs and returns a list of tallies with \texttt{size} instances of
+   \class{TallyStore}.
+\end{tabb}
+\begin{htmlonly}
+   \param{size}{the size of the list.}
+   \return{the created list.}
+\end{htmlonly}
+\begin{code}
+
+   public void add (double[] x)\begin{hide} {
+      int l = size();
+      if (x.length != l)
+         throw new IllegalArgumentException
+            ("Incompatible array length: given " +
+            x.length + ", required " + l);
+      if (collect)
+         for (int i = 0; i < l; i++) {
+            double v = x[i];
+            Tally ta = get (i);
+            if (!Double.isNaN (v) && ta != null)
+               ta.add (v);
+         }
+         notifyListeners (x);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Adds the observation \texttt{x[i]} in
+ tally \texttt{i} of this list, for \texttt{i = 0,\ldots, size() - 1}.
+ No observation is added if the value is \texttt{Double.NaN},
+ or if collecting is turned OFF.
+ If broadcasting is ON, the given array is notified
+ to all registered observers.
+ The given array \texttt{x} not being stored by this object,
+ it can be freely used and modified after the call to this method.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the array of observations.}
+   \exception{NullPointerException}{if \texttt{x} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the length of
+    \texttt{x} does not correspond to \texttt{size()}.}
+\end{htmlonly}
+\begin{code}
+
+   public int numberObs()\begin{hide} {
+      if (size() == 0)
+         return 0;
+      Tally t0 = get (0);
+      return t0 == null ? 0 : t0.numberObs();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Assuming that each tally in this list contains
+ the same number of observations, returns
+ the number of observations in tally~0, or
+  0 if this list is empty.
+\end{tabb}
+\begin{htmlonly}
+   \return{the number of observations.}
+\end{htmlonly}
+\begin{code}
+
+   public boolean areAllNumberObsEqual()\begin{hide} {
+      final int l = size();
+      int n = numberObs();
+      for (int i = 1; i < l; i++) {
+         Tally t = get (i);
+         if (t.numberObs() != n)
+            return false;
+      }
+      return true;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Tests that every tally in this list contains the
+ same number of observations.
+ This returns \texttt{true} if and only if all
+ tallies have the same number of observations, or if this list is empty.
+ If observations are always added using the
+ \method{add}{(double[])} method from this class, and not
+ \externalmethod{umontreal.iro.lecuyer.stat}{Tally}{add}{(double)} from
+   \class{Tally}, this method always  returns \texttt{true}.
+\end{tabb}
+\begin{htmlonly}
+   \return{the success indicator of the test.}
+\end{htmlonly}
+\begin{code}
+
+   public void average (double[] r)\begin{hide} {
+      final int l = size();
+      for (int i = 0; i < l; i++) {
+          // Manual check to avoid repetitive logs when all tallies
+          // have 0 observation.
+         Tally ta = get (i);
+         double v = ta == null || ta.numberObs() == 0 ? Double.NaN : ta.average();
+         r[i] = v;
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}   Computes the average for each tally
+ in this list, and stores the averages in the array \texttt{r}.
+ If the tally \texttt{i} has no observation,
+ the \texttt{Double.NaN} value is stored
+ in the array, at index~\texttt{i}.
+\end{tabb}
+\begin{code}
+
+   public void variance (double[] v)\begin{hide} {
+      if (size() != v.length)
+         throw new IllegalArgumentException
+            ("Invalid length of given array");
+      for (int i = 0; i < v.length; i++) {
+         Tally tally = get (i);
+         if (tally == null || tally.numberObs() < 2)
+            v[i] = Double.NaN;
+         else
+            v[i] = tally.variance();
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}   For each tally in this list, computes
+ the sample variance, and stores the variances into the array \texttt{v}.
+ If, for some tally~\texttt{i}, there are not enough
+ observations for estimating the variance,
+ \texttt{Double.NaN} is stored in the array.
+\end{tabb}
+\begin{htmlonly}
+   \param{v}{the array to be filled with sample variances.}
+   \exception{NullPointerException}{if \texttt{v} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if \texttt{v.length}
+    does not correspond to \externalmethod{umontreal.iro.lecuyer.stat.list}{ListOfStatProbes}{size}{()}.}
+\end{htmlonly}
+\begin{code}
+
+   public void standardDeviation (double[] std)\begin{hide} {
+      if (size() != std.length)
+         throw new IllegalArgumentException
+            ("Invalid length of given array");
+      for (int i = 0; i < std.length; i++) {
+         Tally tally = get (i);
+         if (tally == null || tally.numberObs() < 2)
+            std[i] = Double.NaN;
+         else
+            std[i] = tally.standardDeviation();
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}   For each tally in this list, computes
+ the sample standard deviation, and stores the standard deviations
+ into the array \texttt{std}.
+ This is equivalent to calling \method{variance}{(double[])} and
+ performing a square root on every element
+ of the filled array.
+\end{tabb}
+\begin{htmlonly}
+   \param{std}{the array to be filled with standard deviations.}
+   \exception{NullPointerException}{if \texttt{std} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if \texttt{std.length}
+    does not correspond to \texttt{size()}.}
+\end{htmlonly}
+\begin{code}
+
+   public double covariance (int i, int j)\begin{hide} {
+      if (i == j)
+         return get (i).variance();
+
+      TallyStore tallyi = (TallyStore)get (i);
+      TallyStore tallyj = (TallyStore)get (j);
+      return tallyi.covariance (tallyj);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the empirical covariance of the observations in tallies
+ with indices \texttt{i} and \texttt{j}.  If $x_1,\ldots,x_n$ represent the
+ observations in tally \texttt{i} whereas $y_1,\ldots,y_n$ represent the
+ observations in tally \texttt{j}, then the covariance is given by
+ \[ S_{X, Y} =
+ \frac{1}{n-1}\sum_{k=1}^n (x_k - \bar{X}_n)(y_k - \bar{Y}_n)
+ = \frac{1}{n-1}\left(\sum_{k=1}^n x_ky_k - \frac{1}{n}
+  \sum_{k=1}^n x_k\sum_{r=1}^n y_r\right).\]
+   This returns \texttt{Double.NaN}
+   if the tallies do not contain the same number of observations, or
+ if they contain less than two observations.
+ This method throws an exception if the
+ underlying tallies are not capable of storing
+ observations, i.e. if the tallies are not TallyStores.
+ The \class{ListOfTalliesWithCovariance}
+ subclass provides an alternative implementation
+ of this method which does not require the
+ observations to be stored.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the index of the first tally.}
+   \param{j}{the index of the second tally.}
+   \return{the value of the covariance.}
+   \exception{ArrayIndexOutOfBoundsException}{if one or both
+    indices are out of bounds.}
+\end{htmlonly}
+\begin{code}
+
+   public double correlation (int i, int j)\begin{hide} {
+      if (i == j)
+         return 1.0;
+      double cov = covariance (i, j);
+      Tally tallyi = get (i);
+      Tally tallyj = get (j);
+      if (tallyi == null || tallyj == null)
+         return Double.NaN;
+      return cov/Math.sqrt (tallyi.variance()*tallyj.variance());
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the empirical correlation between
+ the observations in tallies with indices \texttt{i} and \texttt{j}.
+ If the tally \texttt{i} contains a sample of the random
+ variate $X$ and the tally \texttt{j} contains a sample of $Y$,
+ this corresponds to
+ \[\mathrm{Cor}(X, Y)=\Cov(X, Y)
+ /\sqrt{\Var(X)\Var(Y)}.\]
+ 
+ This method uses \method{covariance}{(int, int)}
+ to obtain an estimate of the covariance, and
+ \externalmethod{umontreal.iro.lecuyer.stat}{Tally}{variance}{()} in
+class \class{Tally} to obtain the sample variances.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the index of the first tally.}
+   \param{j}{the index of the second tally.}
+   \return{the value of the correlation.}
+   \exception{ArrayIndexOutOfBoundsException}{if one or both
+    indices are out of bounds.}
+\end{htmlonly}
+\begin{code}
+
+   public void covariance (DoubleMatrix2D c)\begin{hide} {
+      int l = size();
+      if (c.rows() != l)
+         throw new IllegalArgumentException
+            ("Invalid number of rows in covariance matrix");
+      if (c.columns() != l)
+         throw new IllegalArgumentException
+            ("Invalid number of columns in covariance matrix");
+      for (int i1 = 0; i1 < l; i1++)
+         c.setQuick (i1, i1, get (i1).variance());
+      for (int i1 = 0; i1 < l - 1; i1++)
+         for (int i2 = i1 + 1; i2 < l; i2++) {
+            double cov = covariance (i1, i2);
+            c.setQuick (i1, i2, cov);
+            c.setQuick (i2, i1, cov);
+         }
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs and returns the sample covariance matrix
+ for the tallies in this list.  The given $d\times d$ matrix \texttt{c},
+ where $d=$~\texttt{size()},
+ is filled with the computed sample covariances.
+ Element \texttt{c.get (i, j)} corresponds to
+ the result of
+ \texttt{covariance (i, j)}.
+\end{tabb}
+\begin{htmlonly}
+   \param{c}{the matrix to be filled with the sample covariances.}
+   \exception{NullPointerException}{if \texttt{c} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the number of rows or columns
+    in \texttt{c} does not correspond to \texttt{size()}.}
+\end{htmlonly}
+\begin{code}
+
+   public void correlation (DoubleMatrix2D c)\begin{hide} {
+      int l = size();
+      if (c.rows() != l)
+         throw new IllegalArgumentException
+            ("Invalid number of rows in correlation matrix");
+      if (c.columns() != l)
+         throw new IllegalArgumentException
+            ("Invalid number of columns in correlation matrix");
+      for (int i1 = 0; i1 < l; i1++)
+         c.setQuick (i1, i1, 1.0);
+      for (int i1 = 0; i1 < l - 1; i1++)
+         for (int i2 = i1 + 1; i2 < l; i2++) {
+            double cor = correlation (i1, i2);
+            c.setQuick (i1, i2, cor);
+            c.setQuick (i2, i1, cor);
+         }
+   }\end{hide}
+\end{code}
+\begin{tabb}   Similar to \method{covariance}{(DoubleMatrix2D)} for computing
+ the sample correlation matrix.
+\end{tabb}
+\begin{htmlonly}
+   \param{c}{the matrix to be filled with the correlations.}
+   \exception{NullPointerException}{if \texttt{c} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the number of rows or columns in \texttt{c}
+    does not correspond to \externalmethod{umontreal.iro.lecuyer.stat.list}{ListOfStatProbes}{size}{()}.}
+\end{htmlonly}
+\begin{code}
+
+   public ListOfTallies<E> clone()\begin{hide} {
+      return (ListOfTallies<E>)super.clone();
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}   Clones this object.   This makes a shallow copy
+  of this list, i.e., this does not clone all the tallies in the list.
+  The created clone is modifiable, even if the original list is unmodifiable.
+\end{tabb}

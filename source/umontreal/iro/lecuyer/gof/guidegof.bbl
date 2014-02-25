@@ -1,0 +1,104 @@
+\begin{thebibliography}{10}
+
+\bibitem{tAND95b}
+N.~H. Anderson and D.~M. Titterington.
+\newblock A comparison of two statistics for detecting clustering in one
+  dimension.
+\newblock {\em Journal of Statistical Computation and Simulation}, 53:103--125,
+  1995.
+
+\bibitem{tAND52a}
+T.~W. Anderson and D.~A. Darling.
+\newblock Asymptotic theory of certain goodness of fit criteria based on
+  stochastic processes.
+\newblock {\em Annals of Mathematical Statistics}, 23:193--212, 1952.
+
+\bibitem{tDAR83a}
+D.~A. Darling.
+\newblock On the asymptotic distribution of {W}atson's statistic.
+\newblock {\em The Annals of Statistics}, 11(4):1263--1266, 1983.
+
+\bibitem{tDUR73a}
+J.~Durbin.
+\newblock {\em Distribution Theory for Tests Based on the Sample Distribution
+  Function}.
+\newblock SIAM CBMS-NSF Regional Conference Series in Applied Mathematics.
+  SIAM, Philadelphia, PA, 1973.
+
+\bibitem{tGLA89a}
+J.~Glaz.
+\newblock Approximations and bounds for the distribution of the scan statistic.
+\newblock {\em Journal of the American Statistical Association}, 84:560--566,
+  1989.
+
+\bibitem{tGLA01a}
+J.~Glaz, J.~Naus, and S.~Wallenstein.
+\newblock {\em Scan statistics}.
+\newblock Springer Series in Statistics. Springer, New York, NY, 2001.
+
+\bibitem{rKNU98a}
+D.~E. Knuth.
+\newblock {\em The Art of Computer Programming, Volume 2: Seminumerical
+  Algorithms}.
+\newblock Addison-Wesley, Reading, MA, third edition, 1998.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{iLEC01t}
+P.~L'Ecuyer and R.~Simard.
+\newblock {\em {TestU01}: A Software Library in {ANSI C} for Empirical Testing
+  of Random Number Generators}, 2002.
+\newblock Software {user's} guide. Available at
+  \url{http://www.iro.umontreal.ca/~lecuyer}.
+
+\bibitem{tLEW61a}
+P.~A.~W. Lewis.
+\newblock Distribution of the {A}nderson-{D}arling statistic.
+\newblock {\em Annals of Mathematical Statistics}, 32:1118--1124, 1961.
+
+\bibitem{rMAR85a}
+G.~Marsaglia.
+\newblock A current view of random number generators.
+\newblock In {\em Computer Science and Statistics, Sixteenth Symposium on the
+  Interface}, pages 3--10, North-Holland, Amsterdam, 1985. Elsevier Science
+  Publishers.
+
+\bibitem{tREA88a}
+T.~R.~C. Read and N.~A.~C. Cressie.
+\newblock {\em Goodness-of-Fit Statistics for Discrete Multivariate Data}.
+\newblock Springer Series in Statistics. Springer-Verlag, New York, NY, 1988.
+
+\bibitem{tSTE70a}
+M.~A. Stephens.
+\newblock Use of the {K}olmogorov-{S}mirnov, {C}ram{\'e}r-{V}on {M}ises and
+  related statistics without extensive tables.
+\newblock {\em Journal of the Royal Statistical Society, Series B},
+  33(1):115--122, 1970.
+
+\bibitem{tSTE86b}
+M.~S. Stephens.
+\newblock Tests based on {EDF} statistics.
+\newblock In R.~B. D'Agostino and M.~S. Stephens, editors, {\em Goodness-of-Fit
+  Techniques}. Marcel Dekker, New York and Basel, 1986.
+
+\bibitem{tSTE86a}
+M.~S. Stephens.
+\newblock Tests for the uniform distribution.
+\newblock In R.~B. D'Agostino and M.~S. Stephens, editors, {\em Goodness-of-Fit
+  Techniques}, pages 331--366. Marcel Dekker, New York and Basel, 1986.
+
+\bibitem{tWAL87a}
+S.~R. Wallenstein and N.~Neff.
+\newblock An approximation for the distribution of the scan statistic.
+\newblock {\em Statistics in Medicine}, 6:197--207, 1987.
+
+\bibitem{tWAT76a}
+G.~S. Watson.
+\newblock Optimal invariant tests for uniformity.
+\newblock In {\em Studies in Probability and Statistics}, pages 121--127. North
+  Holland, Amsterdam, 1976.
+
+\end{thebibliography}

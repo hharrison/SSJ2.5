@@ -1,0 +1,341 @@
+\defclass {LaplaceDist}
+
+Extends the class \class{ContinuousDistribution} for
+the {\em Laplace\/} distribution\latex{ (see, e.g., \cite[page 165]{tJOH95b})}.
+It has location parameter $\mu$ and scale parameter $\beta > 0$.
+The density function is given by
+\begin{htmlonly}
+\eq
+  f(x) = e^{-|x - \mu|/\beta}/(2\beta)
+   \qquad\mbox{ for }-\infty < x < \infty.
+                                                    \eqlabel{eq:flaplace}
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  f(x) = \frac{e^{-|x - \mu|/\beta}}{2\beta}
+   \qquad\mbox{ for }-\infty < x < \infty.
+                                                    \eqlabel{eq:flaplace}
+\endeq
+\end{latexonly}
+The distribution function is
+\begin{htmlonly}
+\[\begin{array}{rll}
+  F (x) =& (1/2) e^{(x - \mu)/\beta}  &\qquad\mbox { if } x\le\mu, \\[5pt]
+  F (x) =&  1 - (1/2) e^{(\mu - x)/\beta} &\qquad\mbox { otherwise, }
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  F (x) = \left\{\begin{array}{ll}
+          \frac12 e^{(x - \mu)/\beta} & \mbox { if } x\le\mu, \\[5pt]
+    1 - \frac12 e^{(\mu - x)/\beta} & \mbox { otherwise, }
+\end{array}\right.
+\endeq
+\end{latexonly}
+and its inverse is
+\begin{htmlonly}
+\[\begin{array}{rll}
+ F^{-1} (u) =& \beta\log (2u) + \mu  &\qquad\mbox { if } 0\le u\le 1/2, \\[5pt]
+ F^{-1} (u) =&  \mu - \beta\log (2(1-u))  &\qquad\mbox { otherwise. }
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+F^{-1} (u) = \left\{\begin{array}{ll}
+   \beta\log (2u) + \mu & \mbox { if } 0\le u\le \frac12, \\[5pt]
+   \mu - \beta\log (2(1-u)) & \mbox { otherwise. }
+\end{array}\right.
+\endeq
+\end{latexonly}
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LaplaceDist
+ * Description:  Laplace distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;\begin{hide}
+
+import umontreal.iro.lecuyer.util.Num;\end{hide}
+
+public class LaplaceDist extends ContinuousDistribution\begin{hide} {
+   private double mu;
+   private double beta;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public LaplaceDist()\begin{hide} {
+      mu = 0;
+      beta = 1;
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{LaplaceDist} object with default
+ parameters $\mu = 0$  and $\beta = 1$.
+\end{tabb}
+\begin{code}
+
+   public LaplaceDist (double mu, double beta)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      this.mu = mu;
+      this.beta = beta;
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{LaplaceDist} object with parameters
+ $\mu$ = \texttt{mu} and $\beta$ = \texttt{beta}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (mu, beta, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (mu, beta, x);
+   }
+
+   public double barF (double x) {
+      return barF (mu, beta, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (mu, beta, u);
+   }
+
+   public double getMean() {
+      return LaplaceDist.getMean (mu, beta);
+   }
+
+   public double getVariance() {
+      return LaplaceDist.getVariance (mu, beta);
+   }
+
+   public double getStandardDeviation() {
+      return LaplaceDist.getStandardDeviation (mu, beta);
+   }\end{hide}
+
+   public static double density (double mu, double beta, double x)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      return Math.exp (-Math.abs (x - mu)/beta)/(2.0*beta);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the Laplace density function.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double mu, double beta, double x)\begin{hide} {
+      if (x <= mu)
+         return Math.exp ((x - mu)/beta)/2.0;
+      else
+         return 1.0 - Math.exp ((mu - x)/beta)/2.0;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Computes the Laplace distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double mu, double beta, double x)\begin{hide} {
+      if (x <= mu)
+         return 1.0 - Math.exp ((x - mu)/beta)/2.0;
+      else
+         return Math.exp ((mu - x)/beta)/2.0;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the Laplace complementary distribution function.
+\end{tabb}
+\begin{code}\begin{hide}
+  //====================================================
+  // code taken and adapted from unuran
+  // file /distribution/c_laplca_gen.c
+  //====================================================\end{hide}
+
+   public static double inverseF (double mu, double beta, double u)\begin{hide} {
+     // transform to random variate
+     if (u < 0.0 || u > 1.0)
+        throw new IllegalArgumentException ("u should be in [0,1]");
+     if (u <= 0.0)
+        return Double.NEGATIVE_INFINITY;
+     if (u >= 1.0)
+        return Double.POSITIVE_INFINITY;
+
+     double x = (u>0.5) ? -Math.log(2.-2*u) : Math.log(2*u);
+     return mu + beta*x;
+   }\end{hide}
+\end{code}
+\begin{tabb}Computes the inverse Laplace distribution function.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double parameters[];
+      parameters = new double[2];
+
+      parameters[0] = EmpiricalDist.getMedian (x, n);
+
+      double sum = 0.0;
+      for (int i = 0; i < n; i++)
+         sum += Math.abs (x[i] - parameters[0]);
+      parameters[1] = sum / (double) n;
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Estimates the parameters $(\mu, \beta)$ of the Laplace distribution
+  using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\mu$, $\beta$].
+ \begin{detailed}
+   The maximum likelihood estimators are the values $(\hat\mu , \hat\beta)$
+   that satisfy the equations:
+ \begin{eqnarray*}
+      \hat{\mu} & = & \mbox{the median of } \{x_1,\ldots,x_n\}\\
+      \hat{\beta} & = & \frac{1}{n} \sum_{i=1}^{n} |x_i - \hat{\mu}|.
+ \end{eqnarray*}
+   See \cite[page 172]{tJOH95b}.
+ \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{\mu}$, $\hat{\beta}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static LaplaceDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new LaplaceDist (parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a Laplace distribution with parameters $\mu$
+   and $\beta$ estimated using the maximum likelihood method based on the
+   $n$ observations $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double mu, double beta)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = \mu$ of the Laplace
+   distribution with parameters $\mu$ and $\beta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the Laplace distribution $E[X] = \mu$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double mu, double beta)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      return (2.0 * beta * beta);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance $\mbox{Var}[X] = 2 \beta^2$
+   of the Laplace distribution with parameters $\mu$ and $\beta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Laplace distribution $\mbox{Var}[X] = 2 \beta^2$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double mu, double beta)\begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+
+      return (Num.RAC2 * beta);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the Laplace
+   distribution with parameters $\mu$ and $\beta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the Laplace distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\mu$.
+\end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {mu, beta};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\mu$, $\beta$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : mu = " + mu+ ", beta = " + beta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

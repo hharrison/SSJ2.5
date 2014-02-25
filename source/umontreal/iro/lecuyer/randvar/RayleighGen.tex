@@ -1,0 +1,142 @@
+\defclass {RayleighGen}
+
+This class implements random variate generators for the
+{\em Rayleigh\/} distribution.
+ Its density is
+\begin{latexonly}
+\[
+ f(x) = \left\{
+\begin{array}{ll}
+   \frac{(x-a)}{\beta^2}\, e^{-(x-a)^2/2\beta^2} \quad
+ &  \mbox{ for } x \ge  a \\[6pt]
+    0  & \mbox{ for } x < a,
+\end{array}
+   \right.
+\]
+\end{latexonly}
+\begin{htmlonly}
+\begin{eqnarray*}
+  f(x) &=& {(x-a)}\, e^{-(x-a)^2/(2\beta^2)} / {\beta^2}
+ \qquad\mbox{for } x \ge a \\[8pt]
+   f(x) &=& 0  \qquad\mbox{for } x < a,
+\end{eqnarray*}
+\end{htmlonly}
+where $\beta > 0$.
+
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RayleighGen
+ * Description:  random variate generators for the Rayleigh distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class RayleighGen extends RandomVariateGen \begin{hide} {
+   private double a;
+   private double beta;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public RayleighGen (RandomStream s, double a, double beta) \begin{hide} {
+      super (s, new RayleighDist(a, beta));
+      setParams (a, beta);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a Rayleigh random variate generator with parameters
+ $a =$ \texttt{a} and $\beta =$ \texttt{beta}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public RayleighGen (RandomStream s, double beta) \begin{hide} {
+      this (s, 0.0, beta);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a Rayleigh random variate generator with parameters
+ $a = 0$ and $\beta = $ \texttt{beta}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public RayleighGen (RandomStream s, RayleighDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getA(), dist.getSigma());
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the Rayleigh distribution \texttt{dist}
+   and stream \texttt{s}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double a, double beta) \begin{hide} {
+       return RayleighDist.inverseF (a, beta, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Uses inversion to generate a new variate from the Rayleigh
+   distribution with parameters $a = $~\texttt{a} and
+   $\beta = $~\texttt{beta}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $a$.
+\end{tabb}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double a, double beta) \begin{hide} {
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      this.a  = a;
+      this.beta = beta;
+   }\end{hide}
+\end{code}
+\begin{tabb} Sets the parameters $a = $~\texttt{a} and $\beta=$~\texttt{beta}
+ for this object.
+\end{tabb}
+\begin{code}\begin{hide}
+}
+\end{hide}
+\end{code}

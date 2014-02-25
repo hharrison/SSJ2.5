@@ -1,0 +1,577 @@
+\defmodule {BitMatrix}
+
+This class implements matrices of bits of arbitrary dimensions. Basic
+facilities for bits operations, multiplications and exponentiations are
+provided.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BitMatrix
+ * Description:  implements matrices of bits and their operations
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util; \begin{hide}
+
+import java.io.Serializable;
+\end{hide}
+
+
+public class BitMatrix implements Serializable, Cloneable \begin{hide} {
+
+   static final long serialVersionUID = 2472769969919959608L;
+
+   private BitVector[] rows;        //rows vectors
+
+   private int r, c;                //number of rows / columns
+
+ \end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+   public BitMatrix (int r, int c) \begin{hide} {
+      rows = new BitVector[r];
+      for(int i = 0; i < r; i++)
+         rows[i] = new BitVector(c);
+      this.r = r;
+      this.c = c;
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{BitMatrix} with \texttt{r} rows and
+  \texttt{c} columns filled with 0's.
+\end{tabb}
+\begin{htmlonly}
+  \param{r}{the number of rows}
+  \param{c}{the number of columns}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix (BitVector[] rows) \begin{hide} {
+      this.rows = new BitVector[rows.length];
+      for(int i = 0; i < rows.length; i++)
+         this.rows[i] = new BitVector(rows[i]);
+      this.r = rows.length;
+      this.c = r > 0 ? rows[0].size() : 0;
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{BitMatrix} using the data in \texttt{rows}.
+  Each of the \class{BitVector} will be one of the rows of the
+  \texttt{BitMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \param{rows}{the rows of the new \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix (int[][] data, int r, int c) \begin{hide} {
+      this.rows = new BitVector[r];
+      for(int i = 0; i < r; i++)
+         this.rows[i] = new BitVector(data[i],c);
+      this.r = r;
+      this.c = c;
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{BitMatrix} with \texttt{r} rows and \texttt{c}
+  columns using the data in \texttt{data}. Note that the orders of the
+  bits for the rows are using the same order than for the \class{BitVector}.
+  This does mean that the first bit is the lowest order bit of the last
+  \texttt{int} in the row and the last bit is the highest order bit of the
+  first \texttt{int} int the row.
+\end{tabb}
+\begin{htmlonly}
+  \param{data}{the data of the new \texttt{BitMatrix}}
+  \param{r}{the number of rows}
+  \param{c}{the number of columns}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix (BitMatrix that) \begin{hide} {
+      this.r = that.r;
+      this.c = that.c;
+      this.rows = new BitVector[this.r];
+      for(int i = 0; i < this.r; i++)
+         this.rows[i] = new BitVector(that.rows[i]);
+   } \end{hide}
+\end{code}
+\begin{tabb} Copy constructor.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the \texttt{BitMatrix} to copy}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+   public Object clone() \begin{hide} {
+      try{
+         BitMatrix c = (BitMatrix)super.clone();
+         c.rows = (BitVector[])rows.clone();
+         for(int i = 0; i < rows.length; i++)
+            c.rows[i] = (BitVector)rows[i].clone();
+         return c;
+      } catch(CloneNotSupportedException e) {
+         IllegalStateException ne = new IllegalStateException();
+         ne.initCause(e);
+         throw ne;
+      }
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a copy of the \texttt{BitMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \return{a deep copy of the \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public boolean equals (BitMatrix that) \begin{hide} {
+      if(this.r != that.r || this.c != that.c)
+         return false;
+      for(int i = 0; i < r; i++)
+         if(!this.rows[i].equals(that.rows[i]))
+            return false;
+      return true;
+   } \end{hide}
+\end{code}
+\begin{tabb} Verifies that \texttt{this} and  \texttt{that} are strictly
+ identical. They must both have the same dimensions and data.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the \texttt{BitMatrix} to compare}
+  \return{if the two \texttt{BitMatrix} are identical}
+\end{htmlonly}
+\begin{code}
+
+   public String toString() \begin{hide} {
+      StringBuffer sb = new StringBuffer();
+
+      // on affiche les bits sur les lignes dans l'order inverse de l'ordre
+      // affiche pour le BitVector pour que le bit a (0,0) soit en haut
+      // a gauche
+
+      sb.append("{ ");
+      for(int i = 0; i < rows.length - 1; i++) {
+         for(int j = 0; j < rows[i].size(); j++)
+            sb.append(rows[i].getBool(j) ? "1" : "0");
+         sb.append(PrintfFormat.NEWLINE + "  ");
+      }
+      if(r > 0) {
+         for(int j = 0; j < c; j++)
+            sb.append(rows[r-1].getBool(j) ? "1" : "0");
+         sb.append(" }");
+      } else
+         sb.append(" }");
+
+      return sb.toString();
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a \class{String} containing all the data of
+  the \texttt{BitMatrix}. The result is displayed in a matrix form, with
+  each row being put on a different line. Note that the bit at (0,0) is
+  at the upper left of the matrix, while the bit at (0) in a
+  \class{BitVector} is the least significant bit.
+\end{tabb}
+\begin{htmlonly}
+  \return{the content of the \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public String printData() \begin{hide} {
+      StringBuffer sb = new StringBuffer();
+
+      sb.append("{ ");
+      for(int i = 0; i < r; i++)
+          {
+              sb.append("{");
+              for(int j = 0; j < (c + 31) / 32; j++)
+                  {
+                      sb.append(rows[i].getInt(j));
+                      if(j != (c - 1) / 32)
+                          sb.append(", ");
+                  }
+              sb.append("}");
+              if(i != r - 1)
+                  sb.append("," + PrintfFormat.NEWLINE + "  ");
+          }
+      sb.append(" }");
+
+      return sb.toString();
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a \class{String} containing all the data of
+  the \texttt{BitMatrix}. The data is displayed in the same format as are the
+  \texttt{int[][]} in \texttt{Java} code. This allows the user to print the
+  representation of a \texttt{BitMatrix} to be put, directly in the source
+  code, in the constructor \texttt{BitMatrix(int[][], int, int)}. The output
+  is not designed to be human-readable.
+\end{tabb}
+\begin{htmlonly}
+  \return{the content of the \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public int numRows() \begin{hide} {
+      return r;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the number of rows of the \texttt{BitMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \return{the number of rows}
+\end{htmlonly}
+\begin{code}
+
+   public int numColumns() \begin{hide} {
+      return c;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the number of columns of the \texttt{BitMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \return{the number of columns}
+\end{htmlonly}
+\begin{code}
+
+   public boolean getBool (int row, int column) \begin{hide} {
+      if(row >= r || column >= c)
+         throw new IndexOutOfBoundsException();
+
+      return rows[row].getBool(column);
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the value of the bit in the specified row and column.
+  If the value is 1, return \texttt{true}. If it is 0, return \texttt{false}.
+\end{tabb}
+\begin{htmlonly}
+  \param{row}{the row of the selected bit}
+  \param{column}{the column of the selected bit}
+  \return{the value of the bit as a boolean}
+  \exception{IndexOutOfBoundsException}{if the selected bit would
+    be outside the \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public void setBool (int row, int column, boolean value) \begin{hide} {
+      if(row >= r || column >= c)
+         throw new IndexOutOfBoundsException();
+
+      rows[row].setBool(column,value);
+   } \end{hide}
+\end{code}
+\begin{tabb} Changes the value of the bit in the specified row and column.
+  If \texttt{value} is \texttt{true}, changes it to 1. If \texttt{value} is
+  \texttt{false} changes it to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{row}{the row of the selected bit}
+  \param{column}{the column of the selected bit}
+  \param{value}{the new value of the bit as a boolean}
+  \exception{IndexOutOfBoundsException}{if the selected bit would
+    be outside the \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix transpose() \begin{hide} {
+      BitMatrix result = new BitMatrix(c,r);
+
+      for(int i = 0; i < r; i++)
+         for(int j = 0; j < c; j++)
+            result.rows[j].setBool(i, rows[i].getBool(j));
+
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the transposed matrix. The rows and columns are
+  interchanged.
+\end{tabb}
+\begin{htmlonly}
+  \return{the transposed matrix}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix not() \begin{hide} {
+      BitMatrix result = new BitMatrix(this);
+      for(int i = 0; i < r; i++)
+         result.rows[i].selfNot();
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the \texttt{BitMatrix} resulting from the application of
+  the \texttt{not} operator on the original \texttt{BitMatrix}. The effect is to
+  swap all the bits of the \texttt{BitMatrix}, turning all 0 into 1 and all 1
+  into 0.
+\end{tabb}
+\begin{htmlonly}
+  \return{the result of the \texttt{not} operator}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix and (BitMatrix that) \begin{hide} {
+      if(this.c != that.c || this.r != that.r)
+         throw new IncompatibleDimensionException
+         ("Both matrices must have the same dimension. " +
+          "this is a " + this.r + "x" + this.c + " matrix " +
+          "while that is a " + that.r + "x" + that.c + " matrix.");
+      BitMatrix result = new BitMatrix(this);
+      for(int i = 0; i < r; i++)
+         result.rows[i].selfAnd(that.rows[i]);
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the \texttt{BitMatrix} resulting from the application of
+  the \texttt{and} operator on the original \texttt{BitMatrix} and \texttt{that}.
+  Only bits which were at 1 in both \texttt{BitMatrix} are set at 1 in the
+  result. All others are set to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand of the \texttt{and} operator}
+  \return{the result of the \texttt{and} operator}
+  \exception{IncompatibleDimensionException}{if the two \texttt{BitMatrix} are
+    not of the same dimensions}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix or (BitMatrix that) \begin{hide} {
+      if(this.c != that.c || this.r != that.r)
+         throw new IncompatibleDimensionException
+         ("Both matrices must have the same dimension. " +
+          "this is a " + this.r + "x" + this.c + " matrix " +
+          "while that is a " + that.r + "x" + that.c + " matrix.");
+      BitMatrix result = new BitMatrix(this);
+      for(int i = 0; i < r; i++)
+         result.rows[i].selfOr(that.rows[i]);
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the \texttt{BitMatrix} resulting from the application of
+  the \texttt{or} operator on the original \texttt{BitMatrix} and \texttt{that}.
+  Only bits which were at 0 in both \texttt{BitMatrix} are set at 0 in the
+  result. All others are set to 1.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand of the \texttt{or} operator}
+  \return{the result of the \texttt{or} operator}
+  \exception{IncompatibleDimensionException}{if the two \texttt{BitMatrix} are
+    not of the same dimensions}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix xor (BitMatrix that) \begin{hide} {
+      if(this.c != that.c || this.r != that.r)
+         throw new IncompatibleDimensionException
+         ("Both matrices must have the same dimension. " +
+          "this is a " + this.r + "x" + this.c + " matrix " +
+          "while that is a " + that.r + "x" + that.c + " matrix.");
+      BitMatrix result = new BitMatrix(this);
+      for(int i = 0; i < r; i++)
+         result.rows[i].selfXor(that.rows[i]);
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the \texttt{BitMatrix} resulting from the application of
+  the \texttt{xor} operator on the original \texttt{BitMatrix} and \texttt{that}.
+  Only bits which were at 1 in only one of the two \texttt{BitMatrix} are set
+  at 1 in the result. All others are set to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand of the \texttt{xor} operator}
+  \return{the result of the \texttt{xor} operator}
+  \exception{IncompatibleDimensionException}{if the two \texttt{BitMatrix} are
+    not of the same dimensions}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector multiply (BitVector vect) \begin{hide} {
+      BitVector res = new BitVector(r);
+
+      for(int i = 0; i < r; i++)
+         res.setBool(i, rows[i].scalarProduct(vect));
+
+      return res;
+   } \end{hide}
+\end{code}
+\begin{tabb} Multiplies the column \class{BitVector} by a \texttt{BitMatrix}
+  and returns the result. The result is $A \times v$, where $A$ is the
+  \texttt{BitMatrix}, and $v$ is the \class{BitVector}.
+\end{tabb}
+\begin{htmlonly}
+  \param{vect}{the vector to multiply}
+  \return{the result of the multiplication}
+\end{htmlonly}
+\begin{code}
+
+   public int multiply (int vect) \begin{hide} {
+      BitVector temp = new BitVector(new int[]{vect});
+
+      return multiply(temp).getInt(0);
+   } \end{hide}
+\end{code}
+\begin{tabb} Multiplies \texttt{vect}, seen as a column \class{BitVector}, by
+  a \texttt{BitMatrix}. (See \class{BitVector} to see the conversion between
+  \texttt{int} and \class{BitVector}.) The result is $A \times v$,
+  where $A$ is the \texttt{BitMatrix}, and $v$ is the \class{BitVector}.
+\end{tabb}
+\begin{htmlonly}
+  \param{vect}{the vector to multiply}
+  \return{the result of the multiplication, as an \texttt{int}}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix multiply (BitMatrix that) \begin{hide} {
+      if(this.c != that.r)
+         throw new IncompatibleDimensionException
+         ("The number of columns of this (" + this.c +
+          ") must be equal to the number of rows of that (" +
+          that.r + ").");
+
+      /*
+      BitVector[] res = new BitVector[this.r];
+
+      for(int i = 0; i < this.r; i++) {
+         res[i] = new BitVector(that.c);
+
+         for(int j = 0; j < that.c; j++) {
+            temp = false;
+            for(int k = 0; k < this.c; k++)
+               if(this.rows[i].getBool(k) &&
+                     that.rows[k].getBool(j))
+                  temp = !temp;
+            res[i].setBool(j,temp);
+         }
+      }
+
+      return BitMatrix(res);
+      */
+
+      // methode plus efficace
+
+      BitMatrix res = new BitMatrix(this.r, that.c);
+
+      for(int i = 0; i < res.r; i++)
+          for(int j = 0; j < res.c; j++)
+              if(this.rows[i].getBool(j))
+                  res.rows[i].selfXor(that.rows[j]);
+
+      return res;
+   } \end{hide}
+\end{code}
+\begin{tabb} Multiplies two \texttt{BitMatrix}'s together. The result is
+  $A \times B$, where $A$ is the \texttt{this BitMatrix} and $B$ is the
+  \texttt{that BitMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the other \texttt{BitMatrix} to multiply}
+  \return{the result of the multiplication}
+  \exception{IncompatibleDimensionException}{if the number of columns
+    of the first \texttt{BitMatrix} is not equal to the number of rows of
+    the second \texttt{BitMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix power (long p) \begin{hide} {
+      if(c != r)
+         throw new IncompatibleDimensionException
+         ("Only square matrices can be raised to a power.");
+
+      if(p < 0)
+          throw new IllegalArgumentException
+              ("Only non-negative powers are accepted.");
+
+      if(p == 0)
+          {
+              //the identity matrix
+              BitMatrix bm = new BitMatrix(r,r);
+              for(int i = 0; i < r; i++)
+                  bm.setBool(i,i,true);
+              return bm;
+          }
+
+      if(p == 1)
+         return this;
+
+      if(p % 2 == 0) {
+         BitMatrix temp = this.power(p/2);
+         return temp.multiply(temp);
+      } else
+         return this.multiply(this.power(p-1));
+   } \end{hide}
+\end{code}
+\begin{tabb} Raises the \texttt{BitMatrix} to the power \texttt{p}.
+\end{tabb}
+\begin{htmlonly}
+  \param{p}{the power up to which to raise the \texttt{BitMatrix}}
+  \return{the power of the \texttt{BitMatrix}}
+  \exception{IncompatibleDimensionException}{if the \texttt{BitMatrix}
+    is not square}
+  \exception{IllegalArgumentException}{if \texttt{p} is negative}
+\end{htmlonly}
+\begin{code}
+
+   public BitMatrix power2e (int e) \begin{hide} {
+      if(c != r)
+          throw new IncompatibleDimensionException
+         ("Only square matrices can be raised to a power.");
+      BitMatrix result = this;
+
+      for(int i = 0; i < e; i++)
+         result = result.multiply(result);
+
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Raises the \texttt{BitMatrix} to power $2^{\mathtt{e}}$.
+\end{tabb}
+\begin{htmlonly}
+  \param{e}{the exponent of the power up to which to raise the \texttt{BitMatrix}}
+  \return{the power of the \texttt{BitMatrix}}
+  \exception{IncompatibleDimensionException}{if the \texttt{BitMatrix} is
+    not square}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Nested Class}
+
+\begin{code}
+   public class IncompatibleDimensionException extends RuntimeException
+\end{code}
+\begin{tabb} Runtime exception raised when the dimensions of the
+  \texttt{BitMatrix} are not appropriate for the operation.
+\end{tabb}
+\begin{code}
+  \begin{hide}
+   {
+      private IncompatibleDimensionException() {
+         super();
+      }
+
+      private IncompatibleDimensionException (String message) {
+         super(message);
+      }
+   }
+
+}
+\end{hide}
+\end{code}

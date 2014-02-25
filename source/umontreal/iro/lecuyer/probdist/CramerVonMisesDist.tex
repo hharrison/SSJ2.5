@@ -1,0 +1,367 @@
+\defclass {CramerVonMisesDist}
+
+Extends the class \class{ContinuousDistribution} for the
+Cram\'er-von Mises distribution (see \cite{tDUR73a,tSTE70a,tSTE86b}).
+Given a sample of $n$ independent uniforms $U_i$ over $[0,1]$,
+the Cram\'er-von Mises statistic $W_n^2$  is defined by
+\begin{htmlonly}
+  \begin {equation}
+     W_n^2 = {1/12n} +
+            \sum_{j=1}^n \left(U_{(j)} - {(j-0.5) / n}\right)^2,
+  \end {equation}
+  where the $U_{(j)}$ are the $U_i$ sorted in increasing order.
+  The  distribution function (the cumulative probabilities)
+  is defined as $F_n(x) = P[W_n^2 \le x]$.
+\end{htmlonly}%
+\begin{latexonly}%
+  \begin {equation}
+     W_n^2 = \frac{1}{12n} +
+            \sum_{j=1}^n \left(U_{(j)} - \frac{(j-0.5)}{n}\right)^2,
+                                                   \eqlabel {eq:CraMis}
+  \end {equation}
+  where the $U_{(j)}$ are the $U_i$ sorted in increasing order.
+  The  distribution function (the cumulative probabilities)
+  is defined as $F_n(x) = P[W_n^2 \le x]$.
+\end{latexonly}%
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        CramerVonMisesDist
+ * Description:  Cramér-von Mises distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide} 
+
+public class CramerVonMisesDist extends ContinuousDistribution\begin{hide} {
+   protected int n;
+
+   private static class Function implements MathFunction {
+      protected int n;
+      protected double u;
+
+      public Function (int n, double u) {
+         this.n = n;
+         this.u = u;
+      }
+
+      public double evaluate (double x) {
+         return u - cdf(n,x);
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public CramerVonMisesDist (int n)\begin{hide} {
+      setN (n);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ Constructs a {\em Cram\'er-von Mises\/} distribution for a sample of size $n$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (n, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (n, x);
+   }
+
+   public double barF (double x) {
+      return barF (n, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (n, u);
+   }
+
+   public double getMean() {
+      return CramerVonMisesDist.getMean (n);
+   }
+
+   public double getVariance() {
+      return CramerVonMisesDist.getVariance (n);
+   }
+
+   public double getStandardDeviation() {
+      return CramerVonMisesDist.getStandardDeviation (n);
+   }\end{hide}
+
+   public static double density (int n, double x)\begin{hide} {
+      if (n <= 0)
+        throw new IllegalArgumentException ("n <= 0");
+
+      if (x <= 1.0/(12.0*n) || x >= n/3.0)
+         return 0.0;
+
+      if (n == 1)
+         return 1.0 / Math.sqrt (x - 1.0/12.0);
+
+      if (x <= 0.002 || x > 3.95)
+         return 0.0;
+
+      throw new UnsupportedOperationException("density not implemented.");
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function
+  for a {\em Cram\'er-von Mises\/} distribution with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int n, double x)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      if (n == 1) {
+         if (x <= 1.0/12.0)
+            return 0.0;
+         if (x >= 1.0/3.0)
+            return 1.0;
+         return 2.0*Math.sqrt (x - 1.0/12.0);
+      }
+
+      if (x <= 1.0/(12.0*n))
+         return 0.0;
+
+      if (x <= (n + 3.0)/(12.0*n*n)) {
+         double t = Num.lnFactorial(n) - Num.lnGamma (1.0 + 0.5*n) +
+            0.5*n*Math.log (Math.PI*(x - 1.0/(12.0*n)));
+         return Math.exp(t);
+      }
+
+      if (x <= 0.002)
+         return 0.0;
+      if (x > 3.95 || x >= n/3.0)
+         return 1.0;
+
+      final double EPSILON = Num.DBL_EPSILON;
+      final int JMAX = 20;
+      int j = 0;
+      double Cor, Res, arg;
+      double termX, termS, termJ;
+
+      termX = 0.0625/x;            // 1 / (16x)
+      Res = 0.0;
+
+      final double A[] = {
+         1.0,
+         1.11803398875,
+         1.125,
+         1.12673477358,
+         1.1274116945,
+         1.12774323743,
+         1.1279296875,
+         1.12804477649,
+         1.12812074678,
+         1.12817350091
+      };
+
+      do {
+         termJ = 4*j + 1;
+         arg = termJ*termJ*termX;
+         termS = A[j]*Math.exp (-arg)*Num.besselK025 (arg);
+         Res += termS;
+         ++j;
+      } while (!(termS < EPSILON || j > JMAX));
+
+      if (j > JMAX)
+         System.err.println ("cramerVonMises: iterations have not converged");
+      Res /= Math.PI*Math.sqrt (x);
+
+      // Empirical correction in 1/n
+      if (x < 0.0092)
+         Cor = 0.0;
+      else if (x < 0.03)
+         Cor = -0.0121763 + x*(2.56672 - 132.571*x);
+      else if (x < 0.06)
+         Cor = 0.108688 + x*(-7.14677 + 58.0662*x);
+      else if (x < 0.19)
+         Cor = -0.0539444 + x*(-2.22024 + x*(25.0407 - 64.9233*x));
+      else if (x < 0.5)
+         Cor = -0.251455 + x*(2.46087 + x*(-8.92836 + x*(14.0988 -
+                  x*(5.5204 + 4.61784*x))));
+      else if (x <= 1.1)
+         Cor = 0.0782122 + x*(-0.519924 + x*(1.75148 +
+               x*(-2.72035 + x*(1.94487 - 0.524911*x))));
+      else
+         Cor = Math.exp (-0.244889 - 4.26506*x);
+
+      Res += Cor/n;
+      // This empirical correction is not very precise, so ...
+      if (Res <= 1.0)
+         return Res;
+      else
+         return 1.0;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the Cram\'er-von Mises distribution function with parameter $n$.
+  Returns an approximation of $P[W_n^2 \le x]$, where $W_n^2$ is the
+  Cram\'er von Mises  statistic (see \cite{tSTE70a,tSTE86b,tAND52a,tKNO74a}).
+  The approximation is based on the distribution function of $W^2 =
+  \lim_{n\to\infty} W_n^2$, which has the following series expansion derived
+  by Anderson and Darling \cite{tAND52a}:
+   $$ \qquad
+   P(W^2 \le x)  \ = \ \frac1{\pi\sqrt x} \sum_{j=0}^\infty (-1)^j 
+   \binom{-1/2}{j} \sqrt{4j+1}\;\;
+    {\rm exp}\left\{-\frac{(4j+1)^2}{16 x}\right\}
+    {\rm K}_{1/4}\left(\frac{(4j+1)^2}{16 x}\right),
+   $$
+  where ${\rm K}_{\nu}$ is the  modified Bessel function of the 
+  second kind.
+  To correct for the deviation between $P(W_n^2\le x)$ and $P(W^2\le x)$,
+  we add a correction in $1/n$, obtained empirically by simulation.
+  For $n = 10$, 20, 40, the error is less than
+  0.002, 0.001, and 0.0005, respectively, while for
+  $n \ge 100$ it is less than 0.0005.
+  For $n \to\infty$, we estimate that the method returns
+  at least 6 decimal digits of precision.
+  For $n = 1$, the method uses the exact distribution:
+  $P(W_1^2 \le x) = 2 \sqrt {x - 1/12}$ for $1/12 \le x \le 1/3$.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (int n, double x)\begin{hide} {
+      return 1.0 - cdf(n,x);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the complementary distribution function $\bar F_n(x)$
+  with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double inverseF (int n, double u)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u must be in [0,1]");
+
+      if (u >= 1.0)
+         return n/3.0;
+      if (u <= 0.0)
+         return 1.0/(12.0*n);
+
+      if (n == 1)
+         return 1.0/12.0 + 0.25*u*u;
+
+      Function f = new Function (n,u);
+      return RootFinder.brentDekker (0.0, 10.0, f, 1e-6);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes $x = F_n^{-1}(u)$, where $F_n$ is the 
+  {\em Cram\'er-von Mises\/} distribution with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double getMean (int n)\begin{hide} {
+      return 1.0 / 6.0;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean of the distribution with parameter $n$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int n)\begin{hide} {
+      return (4.0 * n - 3.0) / (180.0 * n ); 
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the variance of the distribution with parameter $n$.
+\end{tabb}
+\begin{htmlonly}
+   \return{variance}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int n)\begin{hide} {
+     return Math.sqrt(getVariance(n));
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the standard deviation of the distribution with
+   parameter $n$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation}
+\end{htmlonly}
+\begin{code}
+
+   public int getN()\begin{hide} {
+      return n;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $n$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setN (int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      this.n = n;
+      supportA = 1.0/(12.0*n);
+      supportB = n/3.0;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the parameter $n$ of this object.
+ \end{tabb}
+ \begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {n};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return an array containing the parameter $n$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : n = " + n;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

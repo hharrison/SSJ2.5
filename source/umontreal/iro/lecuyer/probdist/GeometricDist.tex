@@ -1,0 +1,334 @@
+\defclass {GeometricDist}
+
+Extends the class \class{DiscreteDistributionInt} for
+the {\em geometric\/} distribution
+\cite[page 322]{sLAW00a} with parameter
+$p$, where $0 < p < 1$.
+Its mass function is
+\eq
+ p (x) = p\, (1-p)^x, \qquad \mbox{for } x = 0, 1, 2, \ldots
+                                                \eqlabel{eq:fgeom}
+\endeq
+The distribution function is given by
+\eq
+   F (x) = 1 - (1-p)^{x+1}, \qquad \mbox{for } x = 0, 1, 2, \ldots
+                                                \eqlabel{eq:Fgeom}
+\endeq
+and its inverse is
+\eq
+   F^{-1}(u) = \left\lfloor \latex{\frac{\ln (1 - u)}{\ln (1 - p)}}
+                \html{\ln(1-u)/\ln(1-p)}\right\rfloor,
+               \qquad \mbox{for }  0 \le u < 1.
+                                                \eqlabel{eq:FInvgeom}
+\endeq
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GeometricDist
+ * Description:  geometric distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import  umontreal.iro.lecuyer.util.Num;\end{hide}
+
+public class GeometricDist extends DiscreteDistributionInt\begin{hide} {
+
+   private double p;
+   private double vp;
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}
+
+   public GeometricDist (double p)\begin{hide} {
+      setP(p);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a geometric distribution with parameter $p$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{hide}\begin{code}
+
+   public double prob (int x) {
+      return prob (p, x);
+   }
+
+   public double cdf (int x) {
+      return cdf (p, x);
+   }
+
+   public double barF (int x) {
+      return barF (p, x);
+   }
+
+   public int inverseFInt (double u) {
+        if (u > 1.0 || u < 0.0)
+            throw new IllegalArgumentException ("u not in [0,1]");
+
+        if (p >= 1.0)
+            return 0;
+        if (u <= p)
+            return 0;
+        if (u >= 1.0 || p <= 0.0)
+            return Integer.MAX_VALUE;
+
+        return (int)Math.floor (Math.log1p(-u)/vp);
+   }
+
+   public double getMean() {
+      return GeometricDist.getMean (p);
+   }
+
+   public double getVariance() {
+      return GeometricDist.getVariance (p);
+   }
+
+   public double getStandardDeviation() {
+      return GeometricDist.getStandardDeviation (p);
+   }
+
+\end{code}\end{hide}
+\begin{code}
+
+   public static double prob (double p, int x)\begin{hide} {
+      if (p < 0 || p > 1)
+         throw new IllegalArgumentException ("p not in range (0,1)");
+      if (p <= 0)
+         return 0;
+      if (p >= 1)
+         return 0;
+      if (x < 0)
+         return 0;
+      return p*Math.pow (1 - p, x);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Computes the geometric probability $p(x)$%
+\latex{ given in (\ref{eq:fgeom}) }.
+ \end{tabb}
+\begin{code}
+
+   public static double cdf (double p, int x)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+        throw new IllegalArgumentException ("p not in [0,1]");
+      if (x < 0)
+         return 0.0;
+      if (p >= 1.0)                  // In fact, p == 1
+         return 1.0;
+      if (p <= 0.0)                  // In fact, p == 0
+         return 0.0;
+      return 1.0 - Math.pow (1.0 - p, (double)x + 1.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Computes the distribution function $F(x)$.
+  \end{tabb}
+\begin{code}
+
+   public static double barF (double p, int x)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0,1]");
+      if (x < 0)
+         return 1.0;
+      if (p >= 1.0)                  // In fact, p == 1
+         return 0.0;
+      if (p <= 0.0)                  // In fact, p == 0
+         return 1.0;
+
+      return Math.pow (1.0 - p, x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the complementary distribution function.
+\emph{WARNING:} The complementary distribution function is defined as
+$\bar F(x) = P[X \ge x]$.
+\end{tabb}
+\begin{code}
+
+   public static int inverseF (double p, double u)\begin{hide} {
+        if (p > 1.0 || p < 0.0)
+            throw new IllegalArgumentException ( "p not in [0,1]");
+        if (u > 1.0 || u < 0.0)
+            throw new IllegalArgumentException ("u not in [0,1]");
+        if (p >= 1.0)
+            return 0;
+        if (u <= p)
+           return 0;
+        if (u >= 1.0 || p <= 0.0)
+            return Integer.MAX_VALUE;
+
+         double v = Math.log1p (-p);
+         return (int)Math.floor (Math.log1p (-u)/v);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the inverse of the geometric
+ distribution\latex{, given by (\ref{eq:FInvgeom})}.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (int[] x, int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double parameters[];
+      parameters = new double[1];
+      double sum = 0.0;
+      for (int i = 0; i < n; i++) {
+         sum += x[i];
+      }
+
+      parameters[0] = 1.0 / (((double) sum / (double) n) + 1.0);
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $p$ of the geometric distribution
+   using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1, \ldots, n-1$. The estimate is returned in element 0
+   of the returned array.
+   \begin{detailed}
+   The maximum likelihood estimator $\hat{p}$ satisfies the equation
+   (see \cite[page 323]{sLAW00a})
+   \begin{eqnarray*}
+      \hat{p} = \frac{1}{\bar{x}_n + 1\rule{0pt}{1em}}
+   \end{eqnarray*}
+   where  $\bar{x}_n$ is the average of $x[0], \ldots, x[n-1]$.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \return{returns the parameter [$\hat{p}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static GeometricDist getInstanceFromMLE (int[] x, int n)\begin{hide} {
+
+      double parameters[] = getMLE (x, n);
+
+      return new GeometricDist (parameters[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a geometric distribution with parameter $p$
+   estimated using the maximum likelihood method based on the $n$
+   observations $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in range (0,1)");
+
+      return (1 - p) / p;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean  $E[X] = (1 - p)/p$ of the
+   geometric distribution with parameter $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the geometric distribution $E[X] = (1 - p) / p$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in range (0,1)");
+
+      return ((1 - p) / (p * p));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance $\mbox{Var}[X] = (1 - p)/p^2$
+   of the geometric distribution with parameter $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Geometric distribution
+    $\mbox{Var}[X] = (1 - p) / p^2$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double p)\begin{hide} {
+      return Math.sqrt (GeometricDist.getVariance (p));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the geometric
+   distribution with parameter $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the geometric distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getP()\begin{hide} {
+      return p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $p$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public void setP (double p)\begin{hide} {
+      if (p < 0 || p > 1)
+         throw new IllegalArgumentException ("p not in range (0,1)");
+      vp = Math.log1p (-p);
+      this.p = p;
+      supportA = 0;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Resets the value of $p$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {p};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : p = " + p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

@@ -1,0 +1,490 @@
+\defclass {ContinuousDistribution}
+
+Classes implementing continuous distributions should inherit from this base
+ class.
+Such distributions are characterized by a \emph{density} function $f(x)$,
+thus the signature of a \texttt{density} method is supplied here.
+This class also provides default implementations for $\bar F(x)$
+and for $F^{-1}(u)$, the latter using the Brent-Dekker method to find the inverse
+of a generic distribution function $F$. % The integer \texttt{decPrec} defines
+% the target number of decimals of precision when approximating a distribution
+% function, but there is \emph{no guarantee} that this target is always attained.
+
+%% It specifies the signature of methods for computing the density
+%% $f(x)$
+%% , the distribution function $F(x)=P[X\le x]$, the
+%% complementary distribution function $\bar F(x)$,
+%% and the inverse distribution function $ F^{-1} (u)$
+%% for a random variable $X$ having a univariate continuous distribution.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ContinuousDistribution
+ * Description:  continuous distributions
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import umontreal.iro.lecuyer.util.Num;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public abstract class ContinuousDistribution implements Distribution \begin{hide} {
+   @Deprecated
+   public int decPrec = 15;
+
+   private int getDecPrec() {
+      return decPrec;
+   }\end{hide}
+\end{code}
+%% \begin{tabb}  A rough target on the number of decimals of precision when
+%%   approximating a distribution function.
+%%   (There is \emph{no guarantee} that this target is always attained.)
+%% \end{tabb}
+\begin{code}\begin{hide}
+    // x infinity for some distributions
+//    protected static final double XINF = Double.MAX_VALUE;
+    protected static final double XBIG = 100.0;
+    protected static final double XBIGM = 1000.0;
+
+    // [supportA, supportB] is the support of the pdf(x)
+//    protected double supportA = -XINF;
+//    protected double supportB = XINF;
+    protected double supportA = Double.NEGATIVE_INFINITY;
+    protected double supportB = Double.POSITIVE_INFINITY;
+
+    // EPSARRAY[j]: Epsilon required for j decimal degits of precision
+    protected static final double[] EPSARRAY = {
+    0.5, 0.5E-1, 0.5E-2, 0.5E-3, 0.5E-4, 0.5E-5, 0.5E-6, 0.5E-7, 0.5E-8,
+    0.5E-9, 0.5E-10, 0.5E-11, 0.5E-12, 0.5E-13, 0.5E-14, 0.5E-15, 0.5E-16,
+    0.5E-17, 0.5E-18, 0.5E-19, 0.5E-20, 0.5E-21, 0.5E-22, 0.5E-23, 0.5E-24,
+    0.5E-25, 0.5E-26, 0.5E-27, 0.5E-28, 0.5E-29, 0.5E-30, 0.5E-31, 0.5E-32,
+    0.5E-33, 0.5E-34, 0.5E-35
+    };\end{hide}
+
+   public abstract double density (double x);
+\end{code}
+\begin{tabb} Returns $f(x)$, the density evaluated at $x$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{value at which the density is evaluated}
+   \return{density function evaluated at \texttt{x}}
+\end{htmlonly}
+% \begin{code}
+%
+%    public MathFunction density()\begin{hide} {
+%       return new MathFunction() {
+%          public double evaluate(double x) {
+%             return density(x);
+%          }
+%       };
+%    }\end{hide}
+% \end{code}
+% \begin{tabb} Returns an object allowing the computation of the density
+%   at any point.
+% \end{tabb}
+% \begin{htmlonly}
+%    \return{density object
+% \end{htmlonly}
+\begin{code}
+
+   public double barF (double x)\begin{hide} {
+      return 1.0 - cdf (x);
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the complementary distribution function.
+    The default implementation computes $\bar F(x) = 1 - F(x)$.
+    %, which is not accurate when $F(x)\to 1$.
+ \end{tabb}
+\begin{htmlonly}
+   \param{x}{value at which the complementary distribution function is evaluated}
+   \return{complementary distribution function evaluated at \texttt{x}}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   private void findInterval (double u, double [] iv) {
+      // Finds an interval [a, b] that certainly contains x defined as
+      // u = cdf(x). The result is written in iv[0] = a and iv[1] = b.
+
+      if (u > 1.0 || u < 0.0)
+         throw new IllegalArgumentException ("u not in [0, 1]");
+      final double XLIM =  Double.MAX_VALUE/2.0;
+      final double B0 = 8.0;
+      double b = B0;
+      while (b < XLIM && u > cdf(b))
+         b *= 2.0;
+      if (b > B0) {
+         iv[0] = b/2.0;
+         iv[1] = Math.min (b, supportB);
+         return;
+      }
+
+      double a = -B0;
+      while (a > -XLIM && u < cdf(a))
+         a *= 2.0;
+      if (a < -B0) {
+         iv[1] = a/2.0;
+         iv[0] = Math.max (a, supportA);
+         return;
+      }
+      iv[0] = Math.max (a, supportA);
+      iv[1] = Math.min (b, supportB);
+   }\end{hide}
+
+   public double inverseBrent (double a, double b, double u, double tol) \begin{hide} {
+      if (u > 1.0 || u < 0.0)
+          throw new IllegalArgumentException ("u not in [0, 1]");
+      if (b < a) {
+         double ctemp = a;   a = b;   b = ctemp;
+      }
+      if (u <= 0.0) {
+          System.out.println ("********** WARNING,  inverseBrent:   u = 0");
+          return supportA;
+      }
+      if (u >= 1.0) {
+          System.out.println ("********** WARNING,  inverseBrent:   u = 1");
+          return supportB;
+      }
+      final int MAXITER = 50;      // Maximum number of iterations
+      tol += EPSARRAY[decPrec] + Num.DBL_EPSILON;    // in case tol is too small
+      double ua = cdf(a) - u;
+      if (ua > 0.0)
+          throw new IllegalArgumentException ("u < cdf(a)");
+      double ub = cdf(b) - u;
+      if (ub < 0.0)
+          throw new IllegalArgumentException ("u > cdf(b)");
+
+      final boolean DEBUG = false;
+      if (DEBUG) {
+          String ls = System.getProperty("line.separator");
+          System.out.println (
+             "-------------------------------------------------------------"
+              + ls + "u = " + PrintfFormat.g (20, 15, u));
+          System.out.println
+           (ls + "iter           b                  c               F(x) - u" + ls);
+      }
+      // Initialize
+      double c = a;
+      double uc = ua;
+      double len = b - a;
+      double t = len;
+      if (Math.abs(uc) < Math.abs(ub)) {
+            a = b; b = c; c = a;
+            ua = ub; ub = uc; uc = ua;
+      }
+      int i;
+      for (i = 0; i < MAXITER; ++i) {
+         double tol1 = tol + 4.0*Num.DBL_EPSILON*Math.abs(b);
+         double xm = 0.5*(c - b);
+         if (DEBUG) {
+            System.out.println (PrintfFormat.d (3, i) + "  " +
+                PrintfFormat.g (18, decPrec, b) + "  " +
+                PrintfFormat.g (18, decPrec, c) + "  " +
+                PrintfFormat.g (14, 4, ub));
+         }
+         if (Math.abs(ub) == 0.0 || (Math.abs(xm) <= tol1)) {
+            if (b <= supportA) return supportA;
+            if (b >= supportB) return supportB;
+            return b;
+         }
+
+         double s, p, q, r;
+         if ((Math.abs(t) >= tol1) && (Math.abs(ua) > Math.abs(ub))) {
+            if (a == c) {
+               // linear interpolation
+               s = ub/ua;
+               q = 1.0 - s;
+               p = 2.0 * xm * s;
+            } else {
+               // quadratic interpolation
+               q = ua / uc;
+               r = ub / uc;
+               s = ub / ua;
+               p = s*(2.0*xm*q*(q - r) - (b - a)*(r - 1.0));
+               q = (q - 1.0)*(r - 1.0)* (s - 1.0);
+            }
+            if (p > 0.0)
+               q = -q;
+            p = Math.abs(p);
+
+            // Accept interpolation?
+            if ((2.0*p >= (3.0*xm*q - Math.abs(q*tol1))) ||
+                (p >= Math.abs(0.5*t*q))) {
+               len = xm;
+               t = len;
+            } else {
+               t = len;
+               len = p/q;
+            }
+
+         } else {
+            len = xm;
+            t = len;
+         }
+
+         a = b;
+         ua = ub;
+         if (Math.abs(len) > tol1)
+            b += len;
+         else if (xm < 0.0)
+            b -= tol1;
+         else
+            b += tol1;
+         ub = cdf(b) - u;
+
+         if (ub*(uc/Math.abs(uc)) > 0.0) {
+            c = a;
+            uc = ua;
+            len = b - a;
+            t = len;
+         } else if (Math.abs(uc) < Math.abs(ub)) {
+            a = b; b = c; c = a;
+            ua = ub; ub = uc; uc = ua;
+         }
+      }
+      if (i >= MAXITER) {
+         String lineSep = System.getProperty("line.separator");
+         System.out.println (lineSep +
+           "*********** inverseBrent:   no convergence after " + MAXITER +
+           " iterations");
+      }
+      return b;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the inverse distribution function $x = F^{-1}(u)$,
+    using the Brent-Dekker method. The interval $[a, b]$ \emph{must} contain
+    the root $x$ such that $F(a) \le u \le F(b)$, where $u=F(x)$.
+    The calculations are done with an approximate precision of \texttt{tol}.
+    Returns $x = F^{-1}(u)$. Restrictions: $u \in [0,1]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{left endpoint of initial interval}
+   \param{b}{right endpoint of initial interval}
+   \param{u}{value at which the inverse distribution function is evaluated}
+   \param{tol}{accuracy goal}
+   \return{inverse distribution function evaluated at \texttt{u}}
+\end{htmlonly}
+\begin{code}
+
+   public double inverseBisection (double u)\begin{hide} {
+      final int MAXITER = 100;              // Maximum number of iterations
+      final double EPSILON = EPSARRAY[decPrec];  // Absolute precision
+      final double XLIM =  Double.MAX_VALUE/2.0;
+      final boolean DEBUG = false;
+      final String lineSep = System.getProperty("line.separator");
+
+      if (u > 1.0 || u < 0.0)
+          throw new IllegalArgumentException ("u not in [0, 1]");
+      if (decPrec > Num.DBL_DIG)
+          throw new IllegalArgumentException ("decPrec too large");
+      if (decPrec <= 0)
+          throw new IllegalArgumentException ("decPrec <= 0");
+      if (DEBUG) {
+          System.out.println ("---------------------------" +
+              " -----------------------------" + lineSep +
+               PrintfFormat.f (10, 8, u));
+      }
+
+      double x = 0.0;
+      if (u <= 0.0) {
+          x = supportA;
+          if (DEBUG) {
+             System.out.println (lineSep + "            x                   y" +
+                 lineSep + PrintfFormat.g (17, 2, x) + " " +
+                 PrintfFormat.f (17, decPrec, u));
+          }
+          return x;
+      }
+      if (u >= 1.0) {
+          x = supportB;
+          if (DEBUG) {
+             System.out.println (lineSep + "            x                   y" +
+                            lineSep + PrintfFormat.g (17, 2, x) + " " +
+                            PrintfFormat.f (17, decPrec, u));
+          }
+          return x;
+      }
+
+      double [] iv = new double [2];
+      findInterval (u, iv);
+      double xa = iv[0];
+      double xb = iv[1];
+      double yb = cdf(xb) - u;
+      double ya = cdf(xa) - u;
+      double y;
+
+      if (DEBUG)
+          System.out.println (lineSep +
+             "iter              xa                   xb           F - u");
+
+      boolean fini = false;
+      int i = 0;
+      while (!fini) {
+          if (DEBUG)
+             System.out.println (PrintfFormat.d (3, i) + "  " +
+                                 PrintfFormat.g (18, decPrec, xa) + "  " +
+                                 PrintfFormat.g (18, decPrec, xb) + "  " +
+                                 PrintfFormat.g (14, 4, y));
+          x = (xa + xb)/2.0;
+          y = cdf(x) - u;
+          if ((y == 0.0) ||
+              (Math.abs ((xb - xa)/(x + Num.DBL_EPSILON)) <= EPSILON))  {
+              fini = true;
+              if (DEBUG)
+                System.out.println (lineSep + "                x" +
+                     "                     u" + lineSep +
+                     PrintfFormat.g (20, decPrec, x) + "  " +
+                     PrintfFormat.g (18, decPrec, y+u));
+          }
+          else if (y*ya < 0.0)
+             xb = x;
+          else
+             xa = x;
+          ++i;
+
+          if (i > MAXITER) {
+                //System.out.println (lineSep +
+                //  "** inverseF:SEARCH DOES NOT SEEM TO CONVERGE");
+              fini = true;
+          }
+      }
+      return x;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Computes and returns the inverse distribution function $x = F^{-1}(u)$,
+%    $F^{-1}(u) = \inf\{x\in\RR : F(x)\ge u\}$,
+    using bisection. Restrictions: $u \in [0,1]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{u}{value at which the inverse distribution function is evaluated}
+   \return{the inverse distribution function evaluated at \texttt{u}}
+   \exception{IllegalArgumentException}{if $u$ is  not in the interval $[0,1]$}
+\end{htmlonly}
+\begin{code}
+
+   public double inverseF (double u)\begin{hide} {
+      double [] iv = new double [2];
+      findInterval (u, iv);
+      return inverseBrent (iv[0], iv[1], u, EPSARRAY[decPrec]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Returns the inverse distribution function $x = F^{-1}(u)$.
+ %   by calling the method \method{inverseBrent}{}.
+ %   $F^{-1}(u) = \inf\{x\in\RR : F(x)\ge u\}$,
+    Restrictions: $u \in [0,1]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{u}{value at which the inverse distribution function is evaluated}
+   \return{the inverse distribution function evaluated at \texttt{u}}
+   \exception{IllegalArgumentException}{if $u$ is  not in the interval $[0,1]$}
+\end{htmlonly}
+\begin{code}
+
+   public double getMean()\begin{hide} {
+      throw new UnsupportedOperationException("getMean is not implemented ");
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean}
+\end{htmlonly}
+\begin{code}
+
+   public double getVariance()\begin{hide} {
+      throw new UnsupportedOperationException("getVariance is not implemented ");
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the variance.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance}
+\end{htmlonly}
+\begin{code}
+
+   public double getStandardDeviation()\begin{hide} {
+      throw new UnsupportedOperationException (
+         "getStandardDeviation is not implemented ");
+   }
+\end{hide}
+\end{code}
+\begin{tabb} Returns the standard deviation.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation}
+\end{htmlonly}
+\begin{code}
+
+   public double getXinf()\begin{hide} {
+      return supportA;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns $x_a$ such that the probability density is 0 everywhere
+ outside the interval $[x_a, x_b]$.
+\end{tabb}
+\begin{htmlonly}
+   \return{lower limit of support}
+\end{htmlonly}
+\begin{code}
+
+   public double getXsup()\begin{hide} {
+      return supportB;
+   }
+\end{hide}
+\end{code}
+\begin{tabb} Returns $x_b$ such that the probability density is 0 everywhere
+ outside the interval $[x_a, x_b]$.
+\end{tabb}
+\begin{htmlonly}
+   \return{upper limit of support}
+\end{htmlonly}
+\begin{code}
+
+   public void setXinf (double xa)\begin{hide} {
+      supportA = xa;
+   }\end{hide}
+\end{code}
+\begin{tabb} Sets the value $x_a=$ \texttt{xa}, such that the probability
+ density is 0 everywhere outside the interval $[x_a, x_b]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{xa}{lower limit of support}
+\end{htmlonly}
+\begin{code}
+
+   public void setXsup (double xb)\begin{hide} {
+      supportB = xb;
+   }
+}\end{hide}
+\end{code}
+\begin{tabb} Sets the value $x_b=$ \texttt{xb}, such that the probability
+ density is 0 everywhere outside the interval $[x_a, x_b]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{xb}{upper limit of support}
+\end{htmlonly}

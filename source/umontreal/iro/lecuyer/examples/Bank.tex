@@ -1,0 +1,167 @@
+\section {A simplified bank}
+\label {sec:bank}
+
+This is Example~1.4.1 of \cite{sBRA87a}, page~14.
+% Bratley, Fox, and Schrage (1987).
+A bank has a random number of tellers every morning.
+On any given day, the bank has $t$ tellers with probability $q_t$,
+where $q_3 = 0.80$, $q_2 = 0.15$, and $q_1 = 0.05$.
+All the tellers are assumed to be identical from the modeling viewpoint.
+
+
+%%%%%%%%%%%%%
+\setbox0=\vbox{\hsize=6.0in
+%%  {Arrival rate of customers to the bank.}
+\beginpicture
+\setcoordinatesystem units <1.8cm,2cm>
+%%  72.27pt = 1in
+\setplotarea x from 0 to 6.5, y from 0 to 1
+\axis left
+  label {\lines {arrival \ \cr rate }}
+  ticks length <2pt> withvalues 0.5 1 / at 0.5 1 / /
+\axis bottom
+  label {\hbox to 5.4in {\hfill time}}
+  ticks length <2pt> withvalues 9:00 9:45 11:00 14:00 15:00 /
+  at 0.0 0.75 2.0 5.0 6.0 / /
+\shaderectangleson
+\putrectangle corners at 0.75 0.0 and 2.0 0.5
+\putrectangle corners at 2.0 0.0 and 5.0 1.0
+\putrectangle corners at 5.0 0.0 and 6.0 0.5
+\endpicture
+}
+
+\begin{figure}[htb]
+\box0
+\caption {Arrival rate of customers to the bank.}
+\label {fig:blambda}
+\end{figure}
+
+\bigskip
+\lstinputlisting[label=lst:BankEv,caption={Event-oriented simulation of the bank model}]{BankEv.java}
+%\lstlabel{lst:BankEv}
+
+\clearpage
+\lstinputlisting[label=st:BankProc,caption={Process-oriented simulation of the bank model}]{BankProc.java}
+%\lstlabel{lst:BankProc}
+
+The bank opens at 10:00 and closes at 15:00 (i.e., {\sc 3 p.m.}).
+The customers arrive randomly according to a Poisson process
+with piecewise constant rate $\lambda(t)$, $t\ge 0$.
+The arrival rate $\lambda(t)$ (see Fig.{}~\ref{fig:blambda})
+is 0.5 customer per minute from
+9:45 until 11:00 and from 14:00 until 15:00, and
+one customer per minute from 11:00 until 14:00.
+The customers who arrive before 9:45 join a FIFO queue 
+and wait for the bank to open.
+At 15:00, the door is closed, but all the customers already in will be served.
+Service starts at 10:00.
+
+Customers form a FIFO queue for the tellers, with balking.
+An arriving customer will balk (walk out) with probability $p_k$ if there
+are $k$ customers ahead of him in the queue (not counting the people
+receiving service), where
+ $$ p_k = \cases { 0       & if $k\le 5$;\cr
+                   (n-5)/5 & if $5 < k < 10$;\cr
+                   1       & if $k\ge 10$.\cr }$$
+The customer service times are independent Erlang random
+variables: Each service time is the sum of
+two independent exponential random variables with mean one.
+
+We want to estimate the expected number of customers served in a
+day, and the expected average wait for the customers
+served on a day.
+% We could also be interested in the effect of changing the number of tellers,
+% changing their speed, and so on.
+
+Listings~\ref{lst:BankEv} and~\ref{lst:BankProc} give simulation
+programs for this bank model.
+The first program uses only events and the second one 
+views the customers as processes.
+Both programs have events at the fixed times 9:45, 10:00, etc.;
+these events are implicit in the process-oriented implementation.
+At 9:45, the counters are initialized and the arrival process
+is started.  The time until the first arrival,
+or the time between one arrival and the next one, is (tentatively)
+an exponential with a mean of 2 minutes.
+However, as soon as an arrival turns out to be past 11:00,
+its time must be readjusted to take into account the increase of the 
+arrival rate at 11:00.
+The event 11:00 takes care of this readjustment,
+and the event at 14:00 makes a similar readjustment
+when the arrival rate decreases.
+We give the specific name \texttt{nextArriv} to the next planned
+arrival event in the event-oriented case, and \texttt{nextCust} to the 
+next customer scheduled to arrive in the process-oriented case,
+in order to be able to reschedule
+that particular event (or process) to a different time.
+Note that in the event-oriented case, a {\em single\/} arrival event is
+created at the beginning and this same event is scheduled over and
+over again.  This can be done because there is never more than one
+arrival event in the event list.
+We cannot do this for the customer processes in the
+process-oriented case, however, because several processes can be alive
+simultaneously.
+
+At the bank opening at 10:00, an event generates the number 
+of tellers and starts the service for the corresponding customers.
+The event at 15:00 cancels the next arrival.
+
+Upon arrival, a customer checks if a teller is free.
+If so, one teller becomes busy and the customer generates its
+service time and schedules his departure, otherwise the
+customer either balks or joins the queue.
+The balking decision is computed by the method \texttt{balk},
+using the random number stream \texttt{streamBalk}.
+The arrival event also generates the next scheduled arrival.
+Upon departure, the customer frees the teller, and the first
+customer in the queue, if any, can start its service.
+
+The constructor (\texttt{BankEv} or \texttt{BankProc}) simulates the bank 
+for 100 days and prints a statistical report.
+It chooses as \texttt{genServ} the \texttt{ErlangConvolutionGen} generator so that
+the Erlang variates are generated by adding two exponentials instead
+of using inversion.
+If $X_i$ is the number of customers served on day $i$ and 
+$Q_i$ the total waiting time on day $i$, the program estimates
+$E[X_i]$ and $E[Q_i]$ by their sample averages $\bar X_n$ and
+$\bar Q_n$ with $n=100$.
+For each simulation run (each day), \texttt{simulOneDay} initializes 
+the clock, event list, and statistical probe for the waiting times,
+schedules the deterministic events, and runs the simulation.
+After 15:00, no more arrival occurs and the event list becomes
+empty when the last customer departs.
+At that point, the program returns to right after the \texttt{Sim.start()}
+statement and updates the statistical counters for the number of
+customers served during the day and their total waiting time.
+
+The process-oriented version of the program is shorter,
+because certain aspects (such as the details of an arrival
+or departure event) are taken care of automatically by the
+process/resource construct, and the events 9:45, 10:00, etc.,
+are replaced by a single process.
+At 10 o'clock, the \texttt{setCapacity} statement that fixes the
+number of tellers also takes
+care of starting service for the appropriate number of customers.
+
+These two programs give the same results, shown in 
+Figure~\ref{fig:bank-res}.
+However, the process-oriented program take approximately 4 to 5 times
+longer to run than its event-oriented counterpart.
+
+\setbox5=\vbox {\hsize = 6.0in
+\begin{verbatim}
+REPORT on Tally stat. collector ==> Nb. served per day
+   min        max        average      standard dev.   nb. obs.
+   152        285        240.59         19.21           100
+ 
+REPORT on Tally stat. collector ==> Average wait per day (hours)
+   min        max        average      standard dev.   nb. obs.
+  0.816      35.613       4.793         5.186           100
+\end{verbatim}
+}
+
+\begin{figure}[h]
+\centerline{\boxit{\box5}}
+\caption {Results of the \texttt{BankEv} and \texttt{BankProc} programs.}
+\label {fig:bank-res}
+\end{figure}

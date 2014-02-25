@@ -1,0 +1,155 @@
+\defclass {HypergeometricGen}
+
+This class implements random variate generators for the 
+{\em hypergeometric\/} distribution. Its mass function is
+\begin{htmlonly}
+\eq
+    p(x) = 
+            \mbox{nCr}(m, x) \mbox{nCr}(l - m, k-x)/\mbox{nCr}(l, k)
+            \qquad \mbox {for }
+            x=\max(0,k-l+m), \dots, \min(k, m)
+\endeq
+where nCr$(n,x)$ is the number of possible combinations when choosing
+$x$ elements among a set of $n$ elements,
+\end{htmlonly}
+\begin{latexonly}
+(see, e.g., \cite[page 101]{rGEN98a}) 
+\eq
+    p(x) = 
+            \frac{ {m \choose x} {l - m\choose k-x}}{{l \choose k}} 
+            \qquad \mbox {for }
+            x=\max(0,k-l+m), \dots, \min(k, m),    \eqlabel{eq:fheperg}
+\endeq
+where
+\end{latexonly}
+$m$, $l$ and $k$ are integers that satisfy $0< m\le l$ and $0 < k\le l$.
+
+The generation method is inversion using the chop-down algorithm \cite{sKAC85a}
+
+\bigskip\hrule
+
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HypergeometricGen
+ * Description:  random variate generators for the hypergeometric distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class HypergeometricGen extends RandomVariateGenInt \begin{hide} {
+   private int m;
+   private int l;
+   private int k;    
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public HypergeometricGen (RandomStream s, int m, int l, int k) \begin{hide} {
+      super (s, new HypergeometricDist (m, l, k));
+      setParams (m, l, k);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a hypergeometric generator with
+   parameters $m = $~\texttt{m}, $l = $~\texttt{l} and $k = $~\texttt{k},
+   using stream \texttt{s}. 
+ \end{tabb}
+\begin{code}
+
+   public HypergeometricGen (RandomStream s, HypergeometricDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getM(), dist.getL(), dist.getK());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for distribution \texttt{dist},
+    using stream \texttt{s}. 
+ \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static int nextInt (RandomStream s, int m, int l, int k)\begin{hide} {
+      return HypergeometricDist.inverseF (m, l, k, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Generates a new variate from the {\em hypergeometric\/} distribution with
+   parameters $m = $~\texttt{m}, $l = $~\texttt{l} and $k = $~\texttt{k},
+   using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public int getM()\begin{hide} {
+      return m;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $m$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public int getL()\begin{hide} {
+      return l;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $l$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public int getK()\begin{hide} {
+      return k;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $k$ associated with this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (int m, int l, int k) {
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1<=m<l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1<=k<l");
+      this.m = m;
+      this.l = l;
+      this.k = k;
+   }
+\end{code}
+\begin{tabb} Sets the parameter $n$ and $p$ of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

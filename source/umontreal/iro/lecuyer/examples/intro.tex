@@ -1,0 +1,71 @@
+\section{Introduction}
+% \addcontentsline{toc}{section}{Introduction}}
+
+The aim of this document is to provide an introduction to SSJ
+via a brief overview and a series of examples.
+The examples are collected in three groups:
+\begin{itemize}
+\itemsep=0pt
+\item[(1)] 
+ those that need no event or process scheduling;
+\item[(2)] 
+ those based on the discrete-event simulation paradigm 
+ and implemented with an \emph{event view} using the package 
+ \texttt{simevents};
+\item[(3)] 
+ those implemented with the \emph{process view}, 
+ supported by the package \texttt{simprocs}.
+\end{itemize}
+Sections~\ref{sec:simple} to \ref{sec:process} 
+of this guide correspond to these three groups.
+Some examples (e.g., the single-server queue) are carried across
+two or three sections to illustrate different ways of implementing
+the same model.
+The Java code of all these examples is available on-line from the 
+SSJ web page (just type ``SSJ iro'' in Google).
+
+While studying the examples, the reader can refer to the functional 
+definitions (the APIs) of the SSJ classes and methods in the guides of the 
+corresponding packages.
+Each package in SSJ has its own user's guide in the form of a \texttt{.pdf}
+document that contains the detailed API and complete documentation,
+and starts with an overview of one or two pages.
+We strongly recommend reading each of these overviews.
+We also recommend to refer to the \texttt{.pdf} versions of the guides,
+because they contain a more detailed and complete documentation
+than the \texttt{.html} versions, which are better suited for quick
+on-line referencing for those who are already familiar with SSJ.
+
+
+%%%%%%%%%%%%%%%%%%%%
+\begin{comment}
+
+In Section~\ref{sec:queue}, we start with a very simple classical 
+example: a single queue.
+We give different variants of this example, illustrating the mixture
+of processes and events.
+%
+In Section~\ref{sec:preypred}, we give a small example of a deterministic
+continuous simulation.
+%
+In Sections~\ref{sec:jobshop} and \ref{sec:timeshared},
+we give examples of a job shop model and a time-shared computer model,
+adapted from \cite{sLAW00a}.
+%
+A queuing model of a bank, taken from \cite{sBRA87a}, is programmed in
+Section~\ref{sec:bank}, with both the process and event views.
+%
+In Section~\ref{sec:visits}, we simulate a model of guided tours
+for groups of people, where the process synchronization is slightly
+more complicated than for the earlier models.
+%
+In Section~\ref{sec:ingots}, we give an example
+of a mixed discrete-continuous simulation.
+%
+In Section~\ref{sec:robot}, we give a more elaborate example,
+for a model discussed in \cite{sLEC91a}, where a robot maintains
+a series of machines subject to random failures.
+It illustrates the idea of modular design. 
+% for large simulation models.
+
+\end{comment}

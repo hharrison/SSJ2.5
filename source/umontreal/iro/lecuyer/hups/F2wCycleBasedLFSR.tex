@@ -1,0 +1,175 @@
+\defclass{F2wCycleBasedLFSR}
+
+This class creates a point set based upon a linear feedback shift register
+ sequence. The recurrence used to produce the point set is
+$$
+  m_n = \sum_{i=1}^r b_i m_{n-i}
+$$
+where $m_n\in \latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$, $n\geq 0$
+  and $b_i\in \latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$.
+There is a polynomial in $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}[z]$
+ associated with this recurrence called
+the \emph{characteristic polynomial}.  It is
+$$
+  P(z) =  z^r + \sum_{i=1}^r b_i z^{r-i}.
+$$
+In the implementation, this polynomial is stored in an object
+% \externalclass{umontreal.iro.lecuyer.hups}{F2wStructure}.
+ \texttt{F2wStructure}.
+% See the description of this class for more details.
+
+Let ${\mathbf{x}} = (x^{(0)}, \ldots, x^{(p-1)}) \in
+\latex{\mathbb{F}}\html{\mathbf{F}}_{2}^p$
+be a $p$-bit vector.
+Let us define the function $\phi(\mathbf{x}) = \sum_{i=1}^{p} 2^{-i} x^{(i-1)}$.
+The point set in $t$ dimensions produced by this class is
+$$
+ \left\{ (\phi(\mathbf{y}_0),\phi(\mathbf{y}_s),\ldots,\phi(\mathbf{y}_{s(t-1)}):
+  (\mathbf{v}_0,\ldots,\mathbf{v}_{r-1})\in
+ \latex{\mathbb{F}}\html{\mathbf{F}}_{2}^{rw}\right\}
+$$
+where $\mathbf{y}_n = \mbox{trunc}_h(\mathbf{v}_n, \mathbf{v}_{n+1},\ldots)$,
+$\mathbf{v}_n$ is the representation of $m_n$ under the polynomial basis of
+$\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$ over
+ $\latex{\mathbb{F}}\html{\mathbf{F}}_2$, and
+ $h=w\latex{\lfloor 31/w\rfloor}\html{\mbox{ floor}(31/w)}$.
+The parameter $s$ is called the stepping parameter of the recurrence.
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        F2wCycleBasedLFSR
+ * Description:  point set based upon a linear feedback shift register
+                 sequence
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups; \begin{hide}
+import cern.colt.list.*;
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+
+public class F2wCycleBasedLFSR extends CycleBasedPointSetBase2 \begin{hide} {
+
+   private F2wStructure param;
+\end{hide}\end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+\begin{code}
+
+   public F2wCycleBasedLFSR (int w, int r, int modQ, int step, int nbcoeff,
+                             int coeff[], int nocoeff[])\begin{hide}
+    /**
+     * Constructs and stores the set of cycles for an LCG with
+     *    modulus <SPAN CLASS="MATH"><I>n</I></SPAN> and multiplier <SPAN CLASS="MATH"><I>a</I></SPAN>.
+     *   If pgcd<SPAN CLASS="MATH">(<I>a</I>, <I>n</I>) = 1</SPAN>, this constructs a full-period LCG which has two
+     *   cycles, one containing 0 and one, the LCG period.
+     *
+     * @param n required number of points and modulo of the LCG
+     *
+     *    @param a generator <SPAN CLASS="MATH"><I>a</I></SPAN> of the LCG
+     *
+     *
+     */
+   {
+      param = new F2wStructure (w, r, modQ, step, nbcoeff, coeff, nocoeff);
+      init ();
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+Constructs a point set with $2^{rw}$ points.  See the description of the class
+\externalclass{umontreal.iro.lecuyer.hups}{F2wStructure} for the meaning
+ of the parameters.
+ \end{tabb}
+\begin{code}
+
+   public F2wCycleBasedLFSR (String filename, int no) \begin{hide}
+   {
+      param = new F2wStructure (filename, no);
+      init ();
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Constructs a point set after reading its parameters from
+   file \texttt{filename}; the parameters are located at line numbered \texttt{no}
+   of  \texttt{filename}.  The available files are listed in the description of class
+\externalclass{umontreal.iro.lecuyer.hups}{F2wStructure}.
+ \end{tabb}
+\begin{code}
+\begin{hide}
+
+   private void init ()
+   {
+      param.initParamLFSR ();
+      normFactor = param.normFactor;
+      EpsilonHalf = param.EpsilonHalf;
+      numBits = param.numBits;
+      fillCyclesLFSR ();
+   }
+
+   public String toString ()
+   {
+       String s = "F2wCycleBasedLFSR:" + PrintfFormat.NEWLINE;
+       return s + param.toString ();
+   }
+
+   private void fillCyclesLFSR ()
+   {
+      int n = 1 << param.getLog2N ();
+      IntArrayList c;             // Array used to store the current cycle.
+      int currentState;           // The state currently visited.
+      int i;
+      boolean stateVisited[] = new boolean[n];
+
+      // Indicates which states have been visited so far.
+      for (i = 0; i < n; i++)
+         stateVisited[i] = false;
+      int startState = 0;    // First state of the cycle currently considered.
+      numPoints = 0;
+      while (startState < n) {
+         stateVisited[startState] = true;
+         c = new IntArrayList ();
+         param.state = startState;
+         param.initF2wLFSR ();
+         c.add (param.output);
+         param.F2wLFSR ();
+         // Warning: watch for overflow !!!
+         while (param.state != startState) {
+            stateVisited[param.state] = true;
+            c.add (param.output);
+            param.F2wLFSR ();
+         }
+         addCycle (c);
+         for (i = startState + 1; i < n; i++)
+            if (stateVisited[i] == false)
+               break;
+         startState = i;
+      }
+   }
+}
+\end{hide}
+\end{code}

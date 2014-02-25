@@ -1,0 +1,146 @@
+\defclass {PowerGen}
+
+This class implements random variate generators for the 
+{\em power\/} distribution with shape parameter
+$c > 0$, over the interval $[a,b]$.
+Its density is
+\begin{htmlonly}
+\eq
+  f(x) = c(x - a)^{c - 1}/(b - a)^{c}
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+\eq 
+  f(x) = \frac{c(x-a)^{c - 1}} {(b - a)^{c}},  \eqlabel{eq:fpower}
+\endeq
+\end{latexonly}
+for $a \le x \le b$, and 0 elsewhere.
+
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        PowerGen
+ * Description:  random variate generators for the power distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class PowerGen extends RandomVariateGen \begin{hide} {
+   private double a;
+   private double b;
+   private double c;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public PowerGen (RandomStream s, double a, double b, double c) \begin{hide} {
+      super (s, new PowerDist(a, b, c));
+      setParams (a,  b, c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a Power random variate generator with parameters
+ $a =$ \texttt{a}, $b =$ \texttt{b} and $c =$ \texttt{c},
+ using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public PowerGen (RandomStream s, double c) \begin{hide} {
+      super (s, new PowerDist(0.0, 1.0, c));
+      setParams (0.0, 1.0, c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a Power random variate generator with parameters
+ $a =0$, $b =1$ and $c =$ \texttt{c}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public PowerGen (RandomStream s, PowerDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getA(), dist.getB(), dist.getC());
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the power distribution \texttt{dist}
+   and stream \texttt{s}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double a, double b,
+                                    double c) \begin{hide} {
+       return PowerDist.inverseF (a, b, c, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} 
+   Uses inversion to generate a new variate from the power
+   distribution with parameters $a = $~\texttt{a}, $b = $~\texttt{b}, and
+   $c = $~\texttt{c}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Returns the parameter $a$.
+\end{tabb}
+\begin{code}
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Returns the parameter $b$.
+\end{tabb}
+\begin{code}
+
+   public double getC()\begin{hide} {
+      return c;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Returns the parameter $c$.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double a, double b, double c) \begin{hide} {
+      this.a  = a;
+      this.b  = b;
+      this.c  = c;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Sets the parameters $a$, $b$ and $c$ for this object.
+\end{tabb}
+\begin{hide}\begin{code}
+}
+\end{code}
+\end{hide}

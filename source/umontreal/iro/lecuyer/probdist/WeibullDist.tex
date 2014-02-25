@@ -1,0 +1,495 @@
+\defclass {WeibullDist}
+
+This class extends the class \class{ContinuousDistribution} for
+the {\em Weibull\/} distribution \cite[page 628]{tJOH95a} with shape parameter
+$\alpha > 0$, location parameter $\delta$, and scale parameter
+$\lambda > 0$.
+The density function is
+\eq
+  f(x) = \alpha\lambda^{\alpha}(x-\delta)^{\alpha-1}
+       e^{-(\lambda(x-\delta))^{\alpha}}
+ \qquad\mbox{for }x>\delta\latex{,}\html{.} \eqlabel {eq:fweibull}
+\endeq
+the distribution function is
+\eq
+   F(x) = 1 - e^{-(\lambda (x - \delta))^\alpha}
+ \qquad\mbox{for }x>\delta,               \eqlabel{eq:Fweibull}
+\endeq
+and the inverse distribution function is
+$$
+     F^{-1}(u) = (-\ln (1-u))^{1/\alpha}/\lambda
+                 + \delta \qquad \mbox{for } 0 \le u < 1.
+$$
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}\begin{hide}
+/*
+ * Class:        WeibullDist
+ * Description:  Weibull distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+import umontreal.iro.lecuyer.util.RootFinder;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+public class WeibullDist extends ContinuousDistribution\begin{hide} {
+   private double alpha;
+   private double lambda;
+   private double delta;
+
+   private static class Function implements MathFunction {
+      private int n;
+      private double xi[];
+      private double lnXi[];
+      private double sumLnXi = 0.0;
+      private final double LN_EPS = Num.LN_DBL_MIN - Num.LN2;
+
+      public Function (double x[], int n)
+      {
+         this.n = n;
+         this.xi = new double[n];
+         this.lnXi = new double[n];
+
+         for (int i = 0; i < n; i++)
+         {
+            this.xi[i] = x[i];
+            if (x[i] > 0.0)
+               this.lnXi[i] = Math.log (x[i]);
+            else
+               this.lnXi[i] = LN_EPS;
+            sumLnXi += this.lnXi[i];
+         }
+      }
+
+      public double evaluate (double x)
+      {
+         if (x <= 0.0) return 1.0e200;
+         double sumXiLnXi = 0.0;
+         double sumXi = 0.0;
+         double xalpha;
+
+         for (int i = 0; i < n; i++)
+         {
+            xalpha = Math.pow (this.xi[i], x);
+            sumXiLnXi += xalpha * lnXi[i];
+            sumXi += xalpha;
+         }
+
+         return (x * (n * sumXiLnXi - sumLnXi * sumXi) - n * sumXi);
+      }
+   }
+
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public WeibullDist (double alpha)\begin{hide} {
+      setParams (alpha, 1.0, 0.0);
+   }\end{hide}
+\end{code}
+ \begin{tabb} Constructs a \texttt{WeibullDist} object with parameters
+    $\alpha$ = \texttt{alpha}, $\lambda$ = 1, and $\delta$ = 0.
+ \end{tabb}
+\begin{code}
+
+   public WeibullDist (double alpha, double lambda, double delta)\begin{hide} {
+      setParams (alpha, lambda, delta);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{WeibullDist} object with parameters
+     $\alpha =$ \texttt{alpha},
+     $\lambda $ = \texttt{lambda}, and $\delta$ = \texttt{delta}.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (alpha, lambda, delta, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (alpha, lambda, delta, x);
+   }
+
+   public double barF (double x) {
+      return barF (alpha, lambda, delta, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (alpha, lambda, delta, u);
+   }
+
+   public double getMean() {
+      return WeibullDist.getMean (alpha, lambda, delta);
+   }
+
+   public double getVariance() {
+      return WeibullDist.getVariance (alpha, lambda, delta);
+   }
+
+   public double getStandardDeviation() {
+      return WeibullDist.getStandardDeviation (alpha, lambda, delta);
+   }\end{hide}
+
+   public static double density (double alpha, double lambda,
+                                 double delta, double x)\begin{hide} {
+      if (alpha <= 0.0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0.0)
+        throw new IllegalArgumentException ("lambda <= 0");
+      if (x <= delta)
+         return 0.0;
+      double y = Math.log(lambda*(x - delta)) * alpha;
+      if (y >= 7.0)
+         return 0.0;
+      y = Math.exp(y);
+
+      return alpha * (y / (x - delta)) * Math.exp(-y);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function.
+\end{tabb}
+\begin{code}
+
+   public static double density (double alpha, double x)\begin{hide} {
+      return density (alpha, 1.0, 0.0, x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Same as \texttt{density (alpha, 1, 0, x)}.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double alpha, double lambda,
+                             double delta, double x)\begin{hide} {
+      if (alpha <= 0.0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0.0)
+        throw new IllegalArgumentException ("lambda <= 0");
+      if (x <= delta)
+         return 0.0;
+      if ((lambda*(x - delta) >= XBIG) && (alpha >= 1.0))
+         return 1.0;
+      double y = Math.log(lambda*(x - delta)) * alpha;
+      if (y >= 3.65)
+         return 1.0;
+      y = Math.exp(y);
+      return -Math.expm1 (-y);   // in JDK-1.5
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double cdf (double alpha, double x)\begin{hide} {
+      return cdf (alpha, 1.0, 0.0, x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Same as \texttt{cdf (alpha, 1, 0, x)}.
+\end{tabb}
+\begin{code}
+
+   public static double barF (double alpha, double lambda,
+                              double delta, double x)\begin{hide} {
+      if (alpha <= 0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0)
+        throw new IllegalArgumentException ("lambda <= 0");
+      if (x <= delta)
+         return 1.0;
+      if (alpha >= 1.0 && x >= Num.DBL_MAX_EXP*2)
+         return 0.0;
+
+      double temp = Math.log (lambda*(x - delta)) * alpha;
+      if (temp >= Num.DBL_MAX_EXP * Num.LN2)
+         return 0.0;
+      temp = Math.exp(temp);
+      return Math.exp (-temp);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+ Computes  the complementary distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double alpha, double x)\begin{hide} {
+      return barF (alpha, 1.0, 0.0, x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Same as \texttt{barF (alpha, 1, 0, x)}.
+\end{tabb}
+\begin{code}
+
+   public static double inverseF (double alpha, double lambda,
+                                  double delta, double u)\begin{hide} {
+        double t;
+        if (alpha <= 0.0)
+            throw new IllegalArgumentException ("alpha <= 0");
+        if (lambda <= 0.0)
+            throw new IllegalArgumentException ("lambda <= 0");
+
+        if (u < 0.0 || u > 1.0)
+            throw new IllegalArgumentException ("u not in [0, 1]");
+        if (u <= 0.0)
+           return 0.0;
+        if (u >= 1.0)
+           return Double.POSITIVE_INFINITY;
+
+        t = -Math.log1p (-u);
+        if (Math.log (t)/Math.log (10) >= alpha*Num.DBL_MAX_10_EXP)
+           throw new ArithmeticException
+              ("inverse function cannot be positive infinity");
+
+        return Math.pow (t, 1.0/alpha)/lambda + delta;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes  the inverse of the distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double alpha, double x)\begin{hide} {
+      return inverseF (alpha, 1.0, 0.0, x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Same as \texttt{inverseF (alpha, 1, 0, x)}.
+\end{tabb}
+\begin{code}\begin{hide}
+   private static double[] getMaximumLikelihoodEstimate (double[] x, int n,
+                                                         double delta) {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (delta != 0.0)
+         throw new IllegalArgumentException ("delta must be equal to 0");
+// Verifier cette fonction si delta != 0.
+
+      final double LN_EPS = Num.LN_DBL_MIN - Num.LN2;
+      double sumLn = 0.0;
+      double sumLn2 = 0.0;
+      double lnxi;
+      for (int i = 0; i < n; i++) {
+         if (x[i] <= delta)
+            lnxi = LN_EPS;
+         else
+            lnxi = Math.log (x[i]);
+         sumLn += lnxi;
+         sumLn2 += lnxi * lnxi;
+      }
+
+      double alpha0 = Math.sqrt ((double) n / ((6.0 / (Math.PI * Math.PI)) *
+                  (sumLn2 - sumLn * sumLn / (double) n)));
+      double a = alpha0 - 20.0;
+      if (a <= delta)
+         a = delta + 1.0e-5;
+
+      double param[] = new double[3];
+      param[2] = 0.0;
+      Function f = new Function (x, n);
+      param[0] = RootFinder.brentDekker (a, alpha0 + 20.0, f, 1e-5);
+
+      double sumXalpha = 0.0;
+      for (int i = 0; i < n; i++)
+         sumXalpha += Math.pow (x[i], param[0]);
+      param[1] = Math.pow ((double) n / sumXalpha, 1.0 / param[0]);
+
+      return param;
+   }\end{hide}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide}
+   {
+      return getMaximumLikelihoodEstimate (x, n, 0.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $(\alpha, \lambda)$ of the Weibull  distribution,
+   assuming that $\delta = 0$,
+    using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1, \ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\alpha$, $\lambda$].
+   \begin{detailed}
+   The maximum likelihood estimators are the values
+   $(\hat{\alpha}$, $\hat{\lambda})$ that satisfy the equations
+   \begin{eqnarray*}
+      \frac{\sum_{i=1}^{n} x_i^{\hat{\alpha}} \ln(x_i)}{\sum_{i=1}^{n}
+  x_i^{\hat{\alpha}}} - \frac{1}{\hat{\alpha}} & = & \frac{\sum_{i=1}^{n} \ln(x_i)}{n}\\
+      \hat{\lambda} & = & \left( \frac{n}{\sum_{i=1}^{n} x_i^{\hat{\alpha}}}
+    \right)^{1/\hat{\alpha}}
+   \end{eqnarray*}
+  See \cite[page 303]{sLAW00a}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \return{returns the parameter [$\hat{\alpha}$, $\hat{\lambda}$, $\hat{\delta}$ = 0]}
+\end{htmlonly}
+\begin{code}
+
+   public static WeibullDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double param[] = getMLE (x, n);
+      return new WeibullDist (param[0], param[1], param[2]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a Weibull distribution with parameters $\alpha$,
+   $\lambda$ and $\delta = 0$
+   estimated using the maximum likelihood method based on the $n$ observations
+   $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double alpha, double lambda, double delta)\begin{hide} {
+      if (alpha <= 0.0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0.0)
+        throw new IllegalArgumentException ("lambda <= 0");
+
+      return (delta + Math.exp (Num.lnGamma(1.0 + 1.0 / alpha)) / lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean
+\begin{latexonly}
+   $E[X] = \delta + \Gamma(1 + 1/\alpha)/\lambda$
+\end{latexonly}
+   of the Weibull distribution with parameters $\alpha$, $\lambda$ and $\delta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the Weibull distribution
+    $E[X] = \delta + \Gamma(1 + 1/\alpha) / \lambda$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double alpha, double lambda,
+                                     double delta)\begin{hide} {
+      double gAlpha;
+
+      if (alpha <= 0.0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0.0)
+        throw new IllegalArgumentException ("lambda <= 0");
+
+      gAlpha = Math.exp (Num.lnGamma (1.0 / alpha + 1.0));
+
+      return (Math.abs (Math.exp (Num.lnGamma(2 / alpha + 1)) - gAlpha * gAlpha) / (lambda * lambda));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+\begin{latexonly}
+   $\mbox{Var}[X] = | \Gamma(2/\alpha + 1) - \Gamma^2(1/\alpha + 1) | /\lambda^2$
+\end{latexonly}
+   of the Weibull distribution with parameters $\alpha$, $\lambda$ and $\delta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Weibull distribution
+    $\mbox{Var}[X] = 1 / \lambda^2 | \Gamma(2/\alpha + 1) - \Gamma^2(1/\alpha + 1) |$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double alpha, double lambda,
+                                              double delta)\begin{hide} {
+      return Math.sqrt (WeibullDist.getVariance (alpha, lambda, delta));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the Weibull distribution with parameters $\alpha$, $\lambda$ and $\delta$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the Weibull distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\alpha$.
+  \end{tabb}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\lambda$.
+  \end{tabb}
+\begin{code}
+
+   public double getDelta()\begin{hide} {
+      return delta;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\delta$.
+  \end{tabb}
+\begin{code}
+
+   public void setParams (double alpha, double lambda, double delta)\begin{hide} {
+      if (alpha <= 0.0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0.0)
+        throw new IllegalArgumentException ("lambda <= 0");
+
+      this.alpha  = alpha;
+      this.lambda = lambda;
+      this.delta  = delta;
+      supportA = delta;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Sets the parameters $\alpha$, $\lambda$ and $\delta$ for this
+   object.
+  \end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {alpha, lambda, delta};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\alpha$, $\lambda$, $\delta$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : alpha = " + alpha + ", lambda = " + lambda + ", delta = " + delta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

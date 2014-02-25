@@ -1,0 +1,148 @@
+\defclass {RandomMultivariateGen}
+
+This class is the multivariate counterpart of
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen}.
+It is the base class for general random variate generators over
+the $d$-dimensional real space $\RR^d$.
+It specifies the signature of the \method{nextPoint}{} method, which is
+normally called to generate a random vector from a given distribution.
+Contrary to univariate distributions and generators, here the inversion method
+is not well defined, so we cannot construct a multivariate generator simply
+by passing a multivariate distribution and a stream; we must specify a
+generating method as well.  For this reason, this class is abstract.
+Generators can be constructed only by invoking the constructor of a subclass.
+This is an important difference with
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen}.
+
+\hpierre{Je pense qu'il faut enlever les constructeurs de cette classe-ci.}
+\hrichard{Je pense que le \texttt{RandomMultivariateGen(RandomStream)}
+  doit rester.}
+
+%\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} objects.
+%The multi-dimensional generator normally uses one or more one-dimensional
+%generators or a primitive stream to generate the components of the points one
+%at a time.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandomMultivariateGen
+ * Description:  base class for multidimensional random variate generators
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvarmulti;\begin{hide}
+
+import umontreal.iro.lecuyer.probdistmulti.ContinuousDistributionMulti;
+import umontreal.iro.lecuyer.rng.RandomStream;
+import umontreal.iro.lecuyer.randvar.RandomVariateGen;
+\end{hide}
+
+
+public abstract class RandomMultivariateGen \begin{hide} {
+   protected int dimension;
+   // Careful here: there is also a RandomStream inside gen1. But only one
+   // of these two is used in a given class.
+   protected RandomStream stream;  // stream used to generate random numbers
+   protected RandomVariateGen gen1; // 1-dim generator used to generate random variates
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsubsection* {Constructor}
+\begin{hide}\begin{code}
+// This constructor is needed for subclasses with no associated distribution.
+//   protected RandomMultivariateGen() {}
+\end{code}\end{hide}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   abstract public void nextPoint (double[] p);
+\end{code}
+  \begin{tabb} Generates a random point $p$ using the
+  the stream contained in this object.
+ \end{tabb}
+\begin{code}
+
+   public void nextArrayOfPoints (double[][] v, int start, int n) \begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n must be positive.");
+      for (int i = 0; i < n; i++)
+         nextPoint(v[start + i]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Generates $n$ random points. These points are stored in
+   the array \texttt{v}, starting at index \texttt{start}. Thus
+   \texttt{v[start][i]} contains
+   coordinate $i$ of the first generated point.
+   By default, this method calls \method{nextPoint}{} $n$
+   times, but one can override it in subclasses for better efficiency.
+   The array argument \texttt{v[][d]} must have $d$ elements reserved
+   for each generated point before calling this method.
+ \end{tabb}
+\begin{htmlonly}
+   \param{v}{array in which the variates will be stored}
+   \param{start}{starting index, in \texttt{v}, of the new variates}
+   \param{n}{number of variates to generate}
+\end{htmlonly}
+\begin{code}
+
+   public int getDimension()\begin{hide} {
+      return dimension;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the dimension of this multivariate generator
+  (the dimension of the random points).
+\end{tabb}
+\begin{code}
+
+   public RandomStream getStream() \begin{hide} {
+      if (null != gen1)
+         return gen1.getStream();
+      return stream;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the \class{RandomStream} used by this object.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the stream associated to this object}
+\end{htmlonly}
+\begin{code}
+
+   public void setStream (RandomStream stream)\begin{hide} {
+      if (null != gen1)
+         gen1.setStream(stream);
+      else
+         this.stream = stream;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the \class{RandomStream} used by this object to \texttt{stream}.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

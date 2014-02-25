@@ -1,0 +1,42 @@
+\documentclass[12pt]{article}
+
+\usepackage{amssymb,amsmath}
+% \usepackage{alltt}
+\usepackage{ssj}
+
+\mytwoheads\dateheadtrue
+
+\newcommand{\cH}{\latex{\mathcal{H}}\html{H}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+\title{gof}{Goodness-of-fit test Statistics}
+
+This package provides facilities for performing and
+reporting different types of univariate goodness-of-fit statistical tests.
+
+\vfill
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+
+\include{overview}
+
+\include{FDist}
+\include{FBar}
+\include{KernelDensity}
+
+\include{GofStat}
+\include{GofFormat}
+
+\bibliographystyle{plain}
+\bibliography{stat,random,simul,math,ift}
+
+\end{document}
+

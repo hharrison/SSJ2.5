@@ -1,0 +1,212 @@
+\begin{thebibliography}{10}
+
+\bibitem{rAHR72b}
+J.~H. Ahrens and U.~Dieter.
+\newblock Computer methods for sampling from gamma, beta, poisson and bionomial
+  distributions.
+\newblock {\em Computing}, 12:223--246, 1972.
+
+\bibitem{rAHR82b}
+J.~H. Ahrens and U.~Dieter.
+\newblock Computer generation of poisson deviates from modified normal
+  distributions.
+\newblock {\em ACM Trans. Math. Software}, 8:163--179, 1982.
+
+\bibitem{rAHR82a}
+J.~H. Ahrens and U.~Dieter.
+\newblock Generating gamma variates by a modified rejection technique.
+\newblock {\em Communications of the ACM}, 25:47--54, 1982.
+
+\bibitem{rBAI94a}
+R.~W. Bailey.
+\newblock Polar generation of random variates with the $t$-distribution.
+\newblock {\em Mathematics of Computation}, 62(206):779--781, 1994.
+
+\bibitem{tBER94a}
+A.~Berlinet and L.~Devroye.
+\newblock A comparison of kernel density estimates.
+\newblock {\em Publications de l'Institut de Statistique de l'Universit\'e de
+  {P}aris}, 38(3):3--59, 1994.
+\newblock available at \url{http://cgm.cs.mcgill.ca/~luc/np.html}.
+
+\bibitem{rBES78a}
+D.~J. Best.
+\newblock A simple algorithm for the computer generation of random samples from
+  a {S}tudent's $t$ or symmetric beta distribution.
+\newblock In L.~C.~A. Corsten and J.~Hermans, editors, {\em {COMPSTAT} 1978:
+  Proceedings in Computational statistics}, pages 341--347, Vienna, 1978.
+  Physica-Verlag.
+
+\bibitem{tBIR69a}
+Z.~W. Birnbaum and S.~C. Saunders.
+\newblock A new family of life distributions.
+\newblock {\em Journal of Applied Probability}, 6:319--327, 1969.
+
+\bibitem{rBOX58a}
+G.~E.~P. Box and M.~E. Muller.
+\newblock A note on the generation of random normal deviates.
+\newblock {\em Annals of Mathematical Statistics}, 29:610--611, 1958.
+
+\bibitem{tCAO94a}
+R.~Cao, A.~Cuevas, and W.~Gonz\'alez-Manteiga.
+\newblock A comparative study of several smoothing methods for density
+  estimation.
+\newblock {\em Computational Statistics and Data Analysis}, 17:153--176, 1994.
+
+\bibitem{rCHE77a}
+R.~C.~H. Cheng.
+\newblock The generation of gamma variables with non-integral shape parameter.
+\newblock {\em Applied Statistics}, 26:71--75, 1977.
+
+\bibitem{rCHE78a}
+R.~C.~H. Cheng.
+\newblock Generating beta variates with nonintegral shape parameters.
+\newblock {\em Communications of the ACM}, 21:317--322, 1978.
+
+\bibitem{rDER10a}
+G.~Derflinger, W.~H\"{o}rmann, and J.~Leydold.
+\newblock Random variate generation by numerical inversion when only the
+  density is known.
+\newblock {\em ACM Transactions on Modeling and Computer Simulation},
+  20(4):Article 18, 2010.
+
+\bibitem{rDEV86a}
+L.~Devroye.
+\newblock {\em Non-Uniform Random Variate Generation}.
+\newblock Springer-Verlag, New York, NY, 1986.
+
+\bibitem{rDEV96a}
+L.~Devroye.
+\newblock Random variate generation in one line of code.
+\newblock In {\em Proceedings of the 1996 Winter Simulation Conference}, pages
+  265--271. IEEE Press, 1996.
+
+\bibitem{rDEV06a}
+L.~Devroye.
+\newblock Nonuniform random variate generation.
+\newblock In S.~G. Henderson and B.~L. Nelson, editors, {\em Simulation},
+  Handbooks in Operations Research and Management Science, pages 83--121.
+  Elsevier, Amsterdam, The Netherlands, 2006.
+\newblock Chapter 4.
+
+\bibitem{tDEV85a}
+L.~Devroye and L.~Gy\"orfi.
+\newblock {\em Nonparametric Density Estimation: The $L_1$ View}.
+\newblock John Wiley, New York, NY, 1985.
+
+\bibitem{rGEN98a}
+J.~E. Gentle.
+\newblock {\em Random Number Generation and {M}onte {C}arlo Methods}.
+\newblock Springer, New York, NY, 1998.
+
+\bibitem{rHOR90a}
+W.~H{\"o}ermann and G.~Derflinger.
+\newblock The {ACR} method for generating normal random variables.
+\newblock {\em OR Spektrum}, 12:181--185, 1990.
+
+\bibitem{rHOR00a}
+W.~H{\"o}rmann and J.~Leydold.
+\newblock Automatic random variate generation for simulation input.
+\newblock In J.~A. Joines, R.~R. Barton, K.~Kang, and P.~A. Fishwick, editors,
+  {\em Proceedings of the 2000 Winter Simulation Conference}, pages 675--682,
+  Pistacaway, NJ, Dec 2000. {IEEE} Press.
+
+\bibitem{rHOR04a}
+W.~H\"ormann, J.~Leydold, and G.~Derflinger.
+\newblock {\em Automatic Nonuniform Random Variate Generation}.
+\newblock Springer-Verlag, Berlin, 2004.
+
+\bibitem{tJOH95a}
+N.~L. Johnson, S.~Kotz, and N.~Balakrishnan.
+\newblock {\em Continuous Univariate Distributions}, volume~1.
+\newblock Wiley, 2nd edition, 1994.
+
+\bibitem{tJOH95b}
+N.~L. Johnson, S.~Kotz, and N.~Balakrishnan.
+\newblock {\em Continuous Univariate Distributions}, volume~2.
+\newblock Wiley, 2nd edition, 1995.
+
+\bibitem{sKAC85a}
+V.~Kachitvichyanukul and B.~Schmeiser.
+\newblock Computer generation of hypergeometric random variates.
+\newblock {\em J. Statist. Comput. Simul.}, 22:127--145, 1985.
+
+\bibitem{fKAL07a}
+A.~Kalemanova, B.~Schmid, and R.~Werner.
+\newblock The normal inverse gaussian distribution for synthetic {CDO} pricing.
+\newblock {\em Journal of derivatives}, 14(3):80--93, 2007.
+
+\bibitem{rKEM81a}
+A.~W. Kemp.
+\newblock Efficient generation of logarithmically distributed pseudo-random
+  variables.
+\newblock {\em Applied Statistics}, 30:249--253, 1981.
+
+\bibitem{rKIN76a}
+A.~J. Kinderman and J.~G. Ramage.
+\newblock Computer generation of normal random variables.
+\newblock {\em Journal of the American Statistical Association}, 71:893--898,
+  1976.
+
+\bibitem{tKRI06a}
+K.~Krishnamoorthy.
+\newblock {\em Handbook of statistical distributions with applications}.
+\newblock Chapman \& Hall/CRC Press, Boca Raton, FL, 2006.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{iLEY02a}
+J.~Leydold and W.~H\"ormann.
+\newblock {\em {UNU.RAN}---A Library for Universal Non-Uniform Random Number
+  Generators}, 2002.
+\newblock Available at \url{http://statistik.wu-wien.ac.at/unuran}.
+
+\bibitem{rMAR62a}
+G.~Marsaglia.
+\newblock Improving the polar method for generating a pair of random variables.
+\newblock Technical report, Boeing Scientific Research Laboratory, Seattle,
+  Washington, 1962.
+
+\bibitem{rMIC76a}
+J.~R. Michael, W.~R. Schuchany, and R.~W. Haas.
+\newblock Generating random variates using transformations with multiple roots.
+\newblock {\em The American Statistician}, 30:88--90, 1976.
+
+\bibitem{rSAK83a}
+H.~Sakasegawa.
+\newblock Stratified rejection and squeeze method for generating beta random
+  numbers.
+\newblock {\em Annals of the Institute of Mathematical Statistics},
+  35B:291--302, 1983.
+
+\bibitem{tSIL86a}
+B.~Silverman.
+\newblock {\em Density Estimation for Statistics and Data Analysis}.
+\newblock Chapman and Hall, London, 1986.
+
+\bibitem{rSTA93a}
+E.~Stadlober and H.~Zechner.
+\newblock Generating beta variates via patchwork rejection.
+\newblock {\em Computing}, 50:1--18, 1993.
+
+\bibitem{rTIR04a}
+G.~Tirler, P.~Dalgaard, W.~H{\"o}rmann, and J.~Leydold.
+\newblock An error in the {K}inderman-{R}amage method and how to fix it.
+\newblock {\em Computational Statistics and Data Analysis}, 47(3):433--440,
+  2004.
+
+\bibitem{rULR84a}
+G.~Ulrich.
+\newblock Computer generation of distributions on the m-sphere.
+\newblock {\em Applied Statistics}, 33:158--163, 1984.
+
+\bibitem{fWEB03a}
+N.~Webber and C.~Ribeiro.
+\newblock A {M}onte {C}arlo method for the normal inverse gaussian option
+  valuation model using an inverse gaussian bridge.
+\newblock Technical Report~5, Society for Computational Economics, 2003.
+
+\end{thebibliography}

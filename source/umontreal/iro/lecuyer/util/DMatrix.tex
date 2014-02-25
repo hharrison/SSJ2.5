@@ -1,0 +1,712 @@
+\defmodule {DMatrix}
+
+This class implements a few methods for matrix calculations
+with \texttt{double} numbers.
+\hrichard{Cette classe n'a pas \'et\'e beaucoup test\'ee.
+Doit-on enlever toutes les m\'ethodes except\'e les static?}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+
+\begin{code}\begin{hide}
+/*
+ * Class:        DMatrix
+ * Description:  Methods for matrix calculations with double numbers
+ * Environment:  Java
+ * Software:     SSJ
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util;
+   import cern.colt.matrix.DoubleMatrix2D;\begin{hide}
+   import cern.colt.matrix.DoubleFactory2D;
+   import cern.colt.matrix.impl.DenseDoubleMatrix2D;
+   import cern.colt.matrix.linalg.*;
+   import cern.jet.math.Functions;\end{hide}
+
+
+public class DMatrix \begin{hide} {
+   private double [][] mat;        // matrix of double's
+   private int r, c;               // number of rows, columns
+
+   // [9/9] Padé numerator coefficients for exp;
+   private static double[] cPade = {17643225600d, 8821612800d, 2075673600d,
+       302702400, 30270240,  2162160, 110880, 3960, 90, 1};
+
+   /**
+    Matrix multiplication $C = AB$. All three matrices are square, banded,
+    and upper triangular. $A$ has a non-zero diagonal, \texttt{sa} non-zero
+    superdiagonals, and thus a bandwidth of \texttt{sa + 1}. The non-zero
+    elements of $A_{ij}$ are those for which $j - s_a \le i \le j$.
+    Similarly for $B$ which has a bandwidth of \texttt{sb + 1}.
+    The resulting matrix $C$ has \texttt{sa + sb} non-zero superdiagonals,
+    and a bandwidth of \texttt{sa + sb + 1}.
+   */
+   private static void innerMultBand (DoubleMatrix2D A, int sa,
+                                      DoubleMatrix2D B, int sb,
+                                      DoubleMatrix2D C) {
+      final int n = A.rows();
+      int kmin, kmax;
+      double x, y, z;
+      for (int i = 0; i < n; ++i) {
+         int jmax = Math.min(i + sa + sb, n - 1);
+         for (int j = i; j <= jmax; ++j) {
+            kmin = Math.max(i, j - sb);
+            kmax = Math.min(i + sa, j);
+            z = 0;
+            for (int k = kmin; k <= kmax; ++k) {
+               x = A.getQuick (i, k);
+               y = B.getQuick (k, j);
+               z += x * y;
+            }
+            C.setQuick (i, j, z);
+         }
+      }
+   }
+
+
+	/**
+	 * Compute the 1-norm for matrix B, which is bidiagonal. The only non-zero
+	 * elements are on the diagonal and the first superdiagonal.
+	 *
+	 * @param B
+	 * @return the norm
+	 */
+	private static double norm1 (DoubleMatrix2D B) {
+		final int n = B.rows();
+		double x;
+		double norm = Math.abs(B.getQuick(0, 0));
+		for (int i = 1; i < n; ++i) {
+			x = Math.abs(B.getQuick(i, i - 1)) + Math.abs(B.getQuick(i, i));
+			if (x > norm)
+				norm = x;
+		}
+		return norm;
+	}
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+   public DMatrix (int r, int c) \begin{hide} {
+      mat = new double[r][c];
+      this.r = r;
+      this.c = c;
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{DMatrix} with \texttt{r} rows and
+  \texttt{c} columns.
+\end{tabb}
+\begin{htmlonly}
+  \param{r}{the number of rows}
+  \param{c}{the number of columns}
+\end{htmlonly}
+\begin{code}
+
+   public DMatrix (double[][] data, int r, int c) \begin{hide} {
+      this (r, c);
+      for(int i = 0; i < r; i++)
+         for(int j = 0; j < c; j++)
+         mat[i][j] = data[i][j];
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{DMatrix} with \texttt{r} rows and
+ \texttt{c} columns using the data in \texttt{data}.
+\end{tabb}
+\begin{htmlonly}
+  \param{data}{the data of the new \texttt{DMatrix}}
+  \param{r}{the number of rows}
+  \param{c}{the number of columns}
+\end{htmlonly}
+\begin{code}
+
+   public DMatrix (DMatrix that) \begin{hide} {
+      this (that.mat, that.r, that.c);
+   } \end{hide}
+\end{code}
+\begin{tabb} Copy constructor.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the \texttt{DMatrix} to copy}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static void CholeskyDecompose (double[][] M, double[][] L) \begin{hide} {
+      int d = M.length;
+      DoubleMatrix2D MM = new DenseDoubleMatrix2D (M);
+      DoubleMatrix2D LL = new DenseDoubleMatrix2D (d, d);
+      CholeskyDecomposition decomp = new CholeskyDecomposition (MM);
+      LL = decomp.getL();
+      for(int i = 0; i < L.length; i++)
+         for(int j = 0; j <= i; j++)
+            L[i][j] = LL.get(i,j);
+      for(int i = 0; i < L.length; i++)
+         for(int j = i + 1; j < L.length; j++)
+            L[i][j] = 0.0;
+    } \end{hide}
+\end{code}
+\begin{tabb} Given a symmetric positive-definite matrix $M$, performs the
+Cholesky decomposition of $M$ and returns the result as a lower triangular
+matrix $L$, such that $M = L L^T$.
+\end{tabb}
+\begin{htmlonly}
+  \param{M}{the input matrix}
+  \param{L}{the Cholesky lower triangular matrix}
+\end{htmlonly}
+\begin{code}
+
+   public static DoubleMatrix2D CholeskyDecompose (DoubleMatrix2D M) \begin{hide} {
+      CholeskyDecomposition decomp = new CholeskyDecomposition (M);
+      return decomp.getL();
+    } \end{hide}
+\end{code}
+\begin{tabb} Given a symmetric positive-definite matrix $M$, performs the
+Cholesky decomposition of $M$ and returns the result as a lower triangular
+matrix $L$, such that $M = L L^T$.
+\end{tabb}
+\begin{htmlonly}
+  \param{M}{the input matrix}
+  \return{the Cholesky lower triangular matrix}
+\end{htmlonly}
+\begin{code}
+
+   public static void PCADecompose (double[][] M, double[][] A,
+                                    double[] lambda)\begin{hide} {
+      int d = M.length;
+      DoubleMatrix2D MM = new DenseDoubleMatrix2D (M);
+      DoubleMatrix2D AA = new DenseDoubleMatrix2D (d, d);
+      AA = PCADecompose(MM, lambda);
+
+      for(int i = 0; i < d; i++)
+         for(int j = 0; j < d; j++)
+            A[i][j] = AA.get(i,j);
+    } \end{hide}
+\end{code}
+\begin{tabb} Computes the principal components decomposition $M$ =
+ $U\Lambda U^{\tr}$ by using the singular value decomposition of matrix
+$M$. Puts the eigenvalues, which are the diagonal elements of matrix $\Lambda$,
+sorted by decreasing size, in vector \texttt{lambda}, and puts matrix
+ $A = U\sqrt{\Lambda}$ in \texttt{A}.
+\end{tabb}
+\begin{htmlonly}
+  \param{M}{input matrix}
+  \param{A}{matrix square root of M}
+  \param{lambda}{the eigenvalues}
+\end{htmlonly}
+\begin{code}
+
+   public static DoubleMatrix2D PCADecompose (DoubleMatrix2D M,
+                                              double[] lambda)\begin{hide} {
+      // L'objet SingularValueDecomposition permet de recuperer la matrice
+      // des valeurs propres en ordre decroissant et celle des vecteurs propres de
+      // sigma (pour une matrice symétrique et définie-positive seulement).
+
+      SingularValueDecomposition sv = new SingularValueDecomposition(M);
+      // D contient les valeurs propres sur la diagonale
+      DoubleMatrix2D D = sv.getS ();
+
+      for (int i = 0; i < D.rows(); ++i)
+         lambda[i] = D.getQuick (i, i);
+
+      // Calculer la racine carree des valeurs propres
+      for (int i = 0; i < D.rows(); ++i)
+         D.setQuick (i, i, Math.sqrt (lambda[i]));
+      DoubleMatrix2D P = sv.getV();
+      // Multiplier par la matrice orthogonale (ici P)
+      return P.zMult (D, null);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the principal components decomposition $M$ =
+ $U\Lambda U^{\tr}$ by using the singular value decomposition of matrix
+$M$. Puts the eigenvalues, which are the diagonal elements of matrix $\Lambda$,
+sorted by decreasing size, in vector \texttt{lambda}. Returns matrix
+ $A = U\sqrt{\Lambda}$.
+\end{tabb}
+\begin{htmlonly}
+  \param{M}{input matrix}
+  \param{lambda}{the eigenvalues}
+  \return{matrix square root of M}
+\end{htmlonly}
+\begin{code}
+
+   public static void solveTriangular (DoubleMatrix2D U, DoubleMatrix2D B,
+                                       DoubleMatrix2D X) \begin{hide} {
+      final int n = U.rows();
+      final int m = B.columns();
+      double y, z;
+      for (int j = 0; j < m; ++j) {
+         for (int i = n - 1; i >= 0; --i) {
+            z = B.getQuick(i, j);
+            for (int k = i + 1; k < n; ++k)
+               z -= U.getQuick(i, k) * X.getQuick(k, j);
+            z /= U.getQuick(i, i);
+            X.setQuick(i, j, z);
+         }
+      }
+   } \end{hide}
+\end{code}
+\begin{tabb} Solve the triangular matrix equation $UX = B$ for $X$.
+ $U$ is a square upper triangular matrix. $B$ and $X$ must have the same
+number of columns.
+\end{tabb}
+\begin{htmlonly}
+  \param{U}{input matrix}
+  \param{B}{right-hand side matrix}
+  \param{X}{output matrix}
+\end{htmlonly}
+\begin{code}
+
+   public static double[][] exp (double[][] A) \begin{hide} {
+      DoubleMatrix2D V = new DenseDoubleMatrix2D(A);
+      DoubleMatrix2D R = exp(V);
+      return R.toArray();
+   } \end{hide}
+\end{code}
+\begin{tabb} Similar to \method{exp}{(DoubleMatrix2D)}\texttt{(A)}.
+\end{tabb}
+\begin{htmlonly}
+  \param{A}{input matrix}
+  \return{the exponential of $A$}
+\end{htmlonly}
+\begin{code}
+
+   public static DoubleMatrix2D exp (final DoubleMatrix2D A) \begin{hide} {
+      /*
+       * Use the diagonal Padé approximant of order [9/9] for exp:
+       * See Higham J.H., Functions of matrices, SIAM, 2008.
+       */
+      DoubleMatrix2D B = A.copy();
+      int n = B.rows();
+      Algebra alge = new Algebra();
+      final double mu = alge.trace(B) / n;
+      double x;
+
+      // B <-- B - mu*I
+      for (int i = 0; i < n; ++i) {
+         x = B.getQuick (i, i);
+         B.setQuick (i, i, x - mu);
+      }
+      /*
+      int bal = 0;
+      if (bal > 0) {
+         throw new UnsupportedOperationException ("   balancing");
+      } */
+
+      final double THETA9 = 2.097847961257068;   // in Higham
+      final double norm = alge.norm1(B) / THETA9;
+      int s;
+      if (norm > 1)
+         s = (int) Math.ceil(Num.log2(norm));
+      else
+         s = 0;
+
+      Functions F = Functions.functions;    // alias F
+      // B <-- B/2^s
+      double v = 1.0 / Math.pow(2.0, s);
+      if (v <= 0)
+          throw new IllegalArgumentException ("   v <= 0");
+      B.assign (F.mult(v));
+
+      DoubleFactory2D fac = DoubleFactory2D.dense;
+      final DoubleMatrix2D B0 = fac.identity(n);    // B^0 = I
+      final DoubleMatrix2D B2 = alge.mult(B, B);    // B^2
+      final DoubleMatrix2D B4 = alge.mult(B2, B2);  // B^4
+
+      DoubleMatrix2D T = B2.copy();          // T = work matrix
+      DoubleMatrix2D W = B4.copy();          // W = work matrix
+      W.assign (F.mult(cPade[9]));           // W <-- W*cPade[9]
+      W.assign (T, F.plusMult(cPade[7]));    // W <-- W + T*cPade[7]
+      DoubleMatrix2D U = alge.mult(B4, W);   // U <-- B4*W
+
+      // T = B2.copy();
+      W = B4.copy();
+      W.assign (F.mult(cPade[5]));           // W <-- W*cPade[5]
+      W.assign (T, F.plusMult(cPade[3]));    // W <-- W + T*cPade[3]
+      W.assign (B0, F.plusMult(cPade[1]));   // W <-- W + B0*cPade[1]
+      U.assign (W, F.plus);                  // U <-- U + W
+      U = alge.mult(B, U);                   // U <-- B*U
+
+      // T = B2.copy();
+      W = B4.copy();
+      W.assign (F.mult(cPade[8]));           // W <-- W*cPade[8]
+      W.assign (T, F. plusMult(cPade[6]));   // W <-- W + T*cPade[6]
+      DoubleMatrix2D V = alge.mult(B4, W);   // V <-- B4*W
+
+      // T = B2.copy();
+      W = B4.copy();
+      W.assign (F.mult(cPade[4]));           // W <-- W*cPade[4]
+      W.assign (T, F.plusMult(cPade[2]));    // W <-- W + T*cPade[2]
+      W.assign (B0, F.plusMult(cPade[0]));   // W <-- W + B0*cPade[0]
+      V.assign (W, F.plus);                  // V <-- V + W
+
+      W = V.copy();
+      W.assign(U, F.plus);                   // W = V + U, Padé numerator
+      T = V.copy();
+      T.assign(U, F.minus);                  // T = V - U, Padé denominator
+
+      // Compute Padé approximant for exponential = W / T
+      LUDecomposition lu = new LUDecomposition(T);
+      B = lu.solve(W);
+
+      if (false) {
+         // This overflows for large |mu|
+         // B <-- B^(2^s)
+         for(int i = 0; i < s; i++)
+            B = alge.mult(B, B);
+         /*
+         if (bal > 0) {
+            throw new UnsupportedOperationException ("   balancing");
+         } */
+         v = Math.exp(mu);
+         B.assign (F.mult(v));               // B <-- B*e^mu
+
+      } else {
+         // equivalent to B^(2^s) * e^mu, but only if no balancing
+         double r = mu * v;
+         r = Math.exp(r);
+         B.assign (F.mult(r));
+         for (int i = 0; i < s; i++)
+            B = alge.mult(B, B);
+      }
+
+      return B;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns $e^A$, the exponential of the square matrix $A$.
+%If \texttt{bal} $>0$, balancing is used to reduce the norm of $A$ and improve
+% the accuracy of the computation; if \texttt{bal} $=0$, no balancing is used.
+The squaring and scaling method \cite{mHIG09a} is used with
+Pad\'e approximants to compute the exponential.
+$A$ is unchanged by the method.
+\end{tabb}
+\begin{htmlonly}
+  \param{A}{input matrix}
+  \return{the exponential of $A$}
+\end{htmlonly}
+\begin{code}
+
+   public static DoubleMatrix2D expBidiagonal (final DoubleMatrix2D A) \begin{hide} {
+      // Use the diagonal Padé approximant of order [9/9] for exp:
+      // See Higham J.H., Functions of matrices, SIAM, 2008.
+
+      DoubleMatrix2D B = A.copy();
+      final int n = B.rows();
+      Algebra alge = new Algebra();
+      final double mu = alge.trace(B) / n;
+      double x;
+
+      // B <-- B - mu*I
+      for (int i = 0; i < n; ++i) {
+         x = B.getQuick(i, i);
+         B.setQuick(i, i, x - mu);
+      }
+
+      final double THETA9 = 2.097847961257068; // in Higham
+      final double norm = norm1(B) / THETA9;
+      int s;
+      if (norm > 1)
+         s = (int) Math.ceil(Num.log2(norm));
+      else
+         s = 0;
+
+      final double v = 1.0 / Math.pow(2.0, s);
+      if (v <= 0)
+         throw new IllegalArgumentException("   v <= 0");
+      DMatrix.multBand(B, 1, v); // B <-- B/2^s
+
+      DoubleFactory2D fac = DoubleFactory2D.dense;
+      DoubleMatrix2D T = fac.make(n, n);
+      DoubleMatrix2D B4 = fac.make(n, n);
+      DMatrix.multBand(B, 1, B, 1, T); // B^2
+      DMatrix.multBand(T, 2, T, 2, B4); // B^4
+
+      DoubleMatrix2D W = B4.copy(); // W = work matrix
+      DMatrix.addMultBand(cPade[9], W, 4, cPade[7], T, 2); // W <-- W*cPade[9] + T*cPade[7]
+      DoubleMatrix2D U = fac.make(n, n);
+      DMatrix.multBand(W, 4, B4, 4, U); // U <-- B4*W
+
+      W = B4.copy();
+      DMatrix.addMultBand(cPade[5], W, 4, cPade[3], T, 2); // W <-- W*cPade[5] + T*cPade[3]
+      for (int i = 0; i < n; ++i) {   // W <-- W + I*cPade[1]
+         x = W.getQuick(i, i);
+         W.setQuick(i, i, x + cPade[1]);
+      }
+      DMatrix.addMultBand(1.0, U, 8, 1.0, W, 4); // U <-- U + W
+      DMatrix.multBand(B, 1, U, 8, U); // U <-- B*U
+
+      W = B4.copy();
+      DMatrix.addMultBand(cPade[8], W, 4, cPade[6], T, 2); // W <-- W*cPade[8] + T*cPade[6]
+      DoubleMatrix2D V = B;
+      DMatrix.multBand(W, 4, B4, 4, V); // V <-- B4*W
+
+      W = B4.copy();
+      DMatrix.addMultBand(cPade[4], W, 4, cPade[2], T, 2); // W <-- W*cPade[4] + T*cPade[2]
+      for (int i = 0; i < n; ++i) {   // W <-- W + I*cPade[0]
+         x = W.getQuick(i, i);
+         W.setQuick(i, i, x + cPade[0]);
+      }
+      DMatrix.addMultBand(1.0, V, 8, 1.0, W, 4); // V <-- V + W
+
+      W = V.copy();
+      DMatrix.addMultBand(1.0, W, 9, 1.0, U, 9); // W = V + U, Padé numerator
+      T = V.copy();
+      DMatrix.addMultBand(1.0, T, 9, -1.0, U, 9); // T = V - U, Padé denominator
+
+      // Compute Padé approximant B = W/T for exponential
+      DMatrix.solveTriangular(T, W, B);
+
+      // equivalent to B^(2^s) * e^mu
+      double r = mu * v;
+      r = Math.exp(r);
+      DMatrix.multBand(B, n - 1, r); // B <-- B*r
+      for (int i = 0; i < s; i++) {
+         DMatrix.multBand(B, n - 1, B, n - 1, T);
+         B = T.copy();
+      }
+
+      return B;
+	}\end{hide}
+\end{code}
+\begin{tabb} Returns $e^A$, the exponential of the \emph{bidiagonal}
+ square matrix $A$. The only non-zero elements of $A$ are on the diagonal and
+ on the first superdiagonal. This method is faster than
+\method{exp}{(DoubleMatrix2D)}\texttt{(A)} because of the special form of
+$A$: as an example, for $100\times 100$ matrices, it is about 10 times faster
+than the general method \texttt{exp}.
+\end{tabb}
+\begin{htmlonly}
+  \param{A}{input bidiagonal matrix}
+  \return{the exponential of $A$}
+\end{htmlonly}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{hide}
+\begin{code}
+
+   static void multBand (final DoubleMatrix2D A, int sa,
+                                final DoubleMatrix2D B, int sb,
+                                DoubleMatrix2D C) \begin{hide} {
+      DoubleMatrix2D T, S;
+      if (A == C)
+         S = A.copy ();
+      else
+         S = A;
+      if (B == C)
+         T = B.copy ();
+      else
+         T = B;
+      innerMultBand (S, sa, T, sb, C);
+   } \end{hide}
+\end{code}
+\begin{tabb} Matrix multiplication $C = AB$. All three matrices are square,
+banded, and upper triangular. $A$ has a non-zero diagonal, \texttt{sa} non-zero
+ superdiagonals, and thus a bandwidth of \texttt{sa + 1}.
+The non-zero elements of $A_{ij}$ are those for which $j - s_a \le i \le j$.
+Similarly for $B$ which has a bandwidth of \texttt{sb + 1}.
+The resulting matrix $C$ has \texttt{sa + sb} non-zero superdiagonals, and a
+bandwidth of \texttt{sa + sb + 1}.
+\end{tabb}
+\begin{htmlonly}
+  \param{A}{input matrix}
+  \param{sa}{number of superdiagonals of A}
+  \param{B}{input matrix}
+  \param{sb}{number of superdiagonals of B}
+  \param{C}{result}
+\end{htmlonly}
+\begin{code}
+
+   static void multBand (DoubleMatrix2D A, int sa, double h) \begin{hide} {
+      final int n = A.rows();
+      double z;
+      for (int i = 0; i < n; ++i) {
+         int jmax = Math.min(i + sa, n - 1);
+         for (int j = i; j <= jmax; ++j) {
+            z = A.getQuick (i, j);
+            A.setQuick (i, j, z*h);
+         }
+      }
+   } \end{hide}
+\end{code}
+\begin{tabb} Multiplication of the matrix $A$ by the scalar $h$.
+$A$ is a square banded upper triangular matrix. It has a non-zero diagonal,
+\texttt{sa} superdiagonals, and thus a bandwidth of \texttt{sa + 1}.
+The result of the multiplication is put back in $A$.
+\end{tabb}
+\begin{htmlonly}
+  \param{A}{input and output matrix}
+  \param{sa}{number of superdiagonals of A}
+  \param{h}{scalar}
+\end{htmlonly}
+\begin{code}
+
+   static void addMultBand (double g, DoubleMatrix2D A, int sa,
+                                   double h, final DoubleMatrix2D B, int sb) \begin{hide} {
+      final int n = A.rows();
+      double z;
+      for (int i = 0; i < n; ++i) {
+         int jmax = Math.max(i + sa, i + sb);
+         jmax = Math.min(jmax, n - 1);
+         for (int j = i; j <= jmax; ++j) {
+            z = g*A.getQuick (i, j) + h*B.getQuick (i, j);
+            A.setQuick (i, j, z);
+         }
+      }
+   } \end{hide}
+\end{code}
+\begin{tabb} Addition of the matrices $gA + hB$ after multiplication with
+the scalar $g$ and $h$. $A$ is a square banded upper triangular matrix.
+It has a non-zero diagonal, \texttt{sa} superdiagonals, and thus a bandwidth
+of \texttt{sa + 1}. Similarly for $B$ which has a bandwidth of \texttt{sb + 1}.
+The result is put back in $A$.
+\end{tabb}
+\begin{htmlonly}
+  \param{g}{coefficient multiplying A}
+  \param{A}{input and output matrix}
+  \param{sa}{number of superdiagonals of A}
+  \param{h}{coefficient multiplying B}
+  \param{B}{input matrix}
+  \param{sb}{number of superdiagonals of B}
+\end{htmlonly}
+ \end{hide}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+
+   public static String toString(double[][] M) \begin{hide} {
+      StringBuffer sb = new StringBuffer();
+
+      sb.append("{" + PrintfFormat.NEWLINE);
+      for (int i = 0; i < M.length; i++) {
+         sb.append("   { ");
+         for(int j = 0; j < M[i].length; j++) {
+            sb.append(M[i][j] + " ");
+            if (j < M.length - 1)
+               sb.append(" ");
+         }
+         sb.append("}" + PrintfFormat.NEWLINE);
+      }
+      sb.append("}");
+
+      return sb.toString();
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns matrix $M$ as a string.
+It is displayed in matrix form, with each row on a line.
+\end{tabb}
+\begin{htmlonly}
+  \return{the content of $M$}
+\end{htmlonly}
+\begin{code}
+
+   public String toString() \begin{hide} {
+      return toString(mat);
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a \class{String} containing all the data of
+  the \texttt{DMatrix}. The result is displayed in matrix form, with
+  each row on a line.
+\end{tabb}
+\begin{htmlonly}
+  \return{the content of the \texttt{DMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public int numRows() \begin{hide} {
+      return r;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the number of rows of the \texttt{DMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \return{the number of rows}
+\end{htmlonly}
+\begin{code}
+
+   public int numColumns() \begin{hide} {
+      return c;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the number of columns of the \texttt{DMatrix}.
+\end{tabb}
+\begin{htmlonly}
+  \return{the number of columns}
+\end{htmlonly}
+\begin{code}
+
+   public double get (int row, int column) \begin{hide} {
+      if (row >= r || column >= c)
+         throw new IndexOutOfBoundsException();
+
+      return mat[row][column];
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the matrix element in the specified row and column.
+\end{tabb}
+\begin{htmlonly}
+  \param{row}{the row of the selected element}
+  \param{column}{the column of the selected element}
+  \return{the value of the element}
+  \exception{IndexOutOfBoundsException}{if the selected element would
+    be outside the \texttt{DMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public void set (int row, int column, double value) \begin{hide} {
+      if (row >= r || column >= c)
+         throw new IndexOutOfBoundsException();
+
+      mat[row][column] = value;
+   } \end{hide}
+\end{code}
+\begin{tabb} Sets the value of the element in the specified row and column.
+\end{tabb}
+\begin{htmlonly}
+  \param{row}{the row of the selected element}
+  \param{column}{the column of the selected element}
+  \param{value}{the new value of the element}
+  \exception{IndexOutOfBoundsException}{if the selected element would
+    be outside the \texttt{DMatrix}}
+\end{htmlonly}
+\begin{code}
+
+   public DMatrix transpose() \begin{hide} {
+      DMatrix result = new DMatrix(c,r);
+
+      for(int i = 0; i < r; i++)
+         for(int j = 0; j < c; j++)
+            result.mat[j][i] = mat[i][j];
+
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the transposed matrix. The rows and columns are
+  interchanged.
+\end{tabb}
+\begin{htmlonly}
+  \return{the transposed matrix}
+\end{htmlonly}
+
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

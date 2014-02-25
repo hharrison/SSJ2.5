@@ -1,0 +1,186 @@
+Compiling SSJ
+===========
+To rebuild SSJ, the SSJ source distribution is required.  The TCode
+tool is needed, together with a Perl interpreter, a Java 2 compiler
+and Apache Ant 1.5.3 or later.  To rebuild the Javadoc documentation,
+LaTeX2HTML is also needed.
+To build SSJ under Windows, the MSYS and MinGW packages are required.
+Although Ant can be called from the DOS prompt directly, the MSYS
+shell will be needed to compile UNURAN under Windows.
+
+Unpacking the SSJ source distribution ZIP file will create a ssj
+subdirectory containing all the required files. This source directory
+will be called here SSJSRCHOME, but it does not have to be set as an
+environment variable. However, for development convenience, SSJHOME
+should be set to SSJSRCHOME and SSJ should be initialized using one of
+the Ssjrc, Ssj.sh or Ssj.bat scripts in the SSJSRCHOME directory. The
+directory contains the following files and directories
+
+   bin - Files included in the binary distribution's root directory
+   build - This directory is created during the build process and
+           contains all the class files.
+   doc - This directory is created during the build process and
+         contains the Javadoc documentation.
+   lib - This directory is created during the build process and
+         contains the JAR file and shared libraries.
+   source - source tree containing all the SSJ LaTeX files. When
+            texjava.pl is used, this directory also contains Java
+            files.
+   build.xml - Ant build file
+   README.txt - Readme file
+   COMPILE.txt - This file
+   INSTALL.txt - Installation manual
+   Ssjrc - C-shell initialization script
+   Ssj.sh - Bourne shell initialization script
+   Ssj.bat - Windows initialization script
+   ssj.properties - User-customizable properties file   
+
+
+The ssj.properties file must be edited to customize the build process.
+This file is a standard ASCII files containing name=value or name
+lines. Each name corresponds to a property that will be used by the
+Ant build system. If a pound sign precedes a line, this line will be
+ignored. This can be used to unset unmamed properties.  In that file,
+the texjava.texjava variable must point to the absolute path of
+texjava.pl, including texjava.pl itself. The path can also be relative
+to SSJHOME.  If LaTeX2HTML is not available, texjava.html must be set
+to no and ssj.htmldoc should be unset.  The former will prevent
+texjava.pl from trying to call LaTeX2HTML whereas the latter will
+prevent building the Javadoc documentation.  If pdfLaTeX is not
+available, the ssj.pdfdoc line must be commented to avoid bulding the
+PDF documentation.  To avoid building the JNI (Chrono or UNURAN
+support) libraries, the ssj.buildjnichrono or ssj.buildjniunuran must
+be unset. The ssj.debug can be changed as needed; it affects every call
+to the java compiler.
+
+SSJ is provided with an Ant build.xml file that should not have to be
+modified to build SSJ successfully.  It defines targets allowing to
+perform the build tasks. Targets are specified as an argument to the
+ant command. There is one target for each SSJ subpackage along with
+maintenance targets allowing to perform tasks related to the entire
+SSJ package.  For example, to recompile the Probdist package, the
+following command can be used
+
+   ant probdist
+
+The current directory must be SSJSRCHOME or Ant will not find the
+build.xml file. To address this inconvenience, the setup scripts of SSJ
+define an alias called ssjant which acts like ant but can be executed
+everywhere. For each subpackage target, there is a j-suffixed target
+that only converts the .tex files into .java file. This is useful to
+build the documentation without recompiling the sources. For example,
+randvarj will convert the .tex files into .java files for the
+umontreal.iro.lecuyer.randvar package. These targets have no
+description, so they will not be displayed when typing ssjant
+-projecthelp.
+
+The build.xml also provides targets to build the SSJ JAR file and
+documentation and to distribute the library.
+
+lib:
+   The lib target builds ssj.jar into SSJSRCHOME/lib/ssj.jar. The
+   compiled class files are stored into the SSJSRCHOME's build
+   subdirectory. They are not needed as soon as the JAR file is
+   generated.
+
+jni:
+   The jni target can be used to compile to native C libraries for the
+   Chrono and UNURAN support. These libraries will be compiled only if
+   the ssj.buildjnichrono or ssj.buildjniunuran properties are set in
+   ssj.properties.
+
+doc, pdfdoc and htmldoc:
+   The pdfdoc and htmldoc respectively create the PDF and HTML
+   documentation. The doc target can be used as a shortcut to create
+   both documentation formats. The HTML documentation is stored into
+   SSJSRCHOME/doc whereas the PDF files are stored in subpackage's
+   directories. For example, the guideutil.pdf is stored in
+   SSJSRCHOME/source/umontreal/iro/lecuyer/util/guideutil.pdf.
+
+dist:
+   The dist target can be used to create a binary-only SSJ
+   distribution. The distribution comprises the ssj.jar archive,
+   the shared libraries for native code, the PDF and HTML
+   documentation, and the example programs.
+   The binary distribution offers simpler setup scripts that are
+   copied from the bin directory of the source distribution. The
+   binary distribution should not be unpacked into the source
+   distribution, otherwise the source distribution setup scripts would
+   be overwritten.
+
+srcdist:
+   The srcdist target can be used to package the source distribution.
+   It cleans all generated files and directories and zips the SSJHOME
+   directory.
+
+clean targets:
+   The clean targets can be used to delete generated
+   files. cleanbuild, cleanlib and cleandoc erases the build, doc and
+   lib directories, respectively. The clean target removes all backup
+   and LaTeX auxiliary files from the source tree. The cleanmore
+   target executes clean and removes all classes and HTML files from
+   the source tree, but source/overview.html remains untouched. The
+   cleanall target calls cleanmore and removes the .bbl files from the
+   source tree. After cleanall is applied, the SSJSRCHOME directory is
+   ready to be packaged and distributed.
+
+JNI libraries
+==============
+SSJ contains two optional native-mode libraries: Chrono and
+UNURAN. The Chrono can be used to determine the CPU time taken by
+parts of a Java application whereas UNURAN is a rich set of
+non-uniform random number generators. The native code is compiled
+using the jni project target which create files in the SSJSRCHOME/lib
+subdirectory. To be able to compile DLLs using Ant, the PATH
+environment variable must point to the location of GCC (usually
+c:\mingw\bin), and the C_INCLUDE_PATH and LIBRARY_PATH must be set to
+include and library paths, respectively (usually c:\msys\1.0\include
+and c:\msys\1.0\lib, respectively).
+
+Chrono can be compiled easily under Linux and Windows because it does
+not require any additional library. Its compilation will generate
+libssjutil.so under Linux and ssjutil.dll under Windows.
+
+To use the interface to UNURAN, the UNURAN library must be compiled
+and installed. Inside MSYS shell, the installation is the same as in Linux.
+See the UNURAN user's manual for more information about
+the installation procedure.. To get the library compatible with SSJ,
+UNURAN must be configured to use the UNUR_URNG_GENERIC generator type.
+It is also a good idea to disable logging in order to avoid cluttering
+directories with log files.  Disabling shared library compilation, by
+passing --disable-shared to UNURAN's configure script, is
+recommended. It will make a self-contained shared library and the
+builded SSJ will not need UNURAN to be installed on the target system.
+
+Development environment
+=======================
+The SSJ setup scripts define some useful aliases that can save time
+when working with the SSJ source tree.
+
+ssjant:
+   The ssjant alias mentioned earlier allows to call Ant with the
+   SSJ's build.xml from any directory.  This allows to compile and
+   test parts of the library without having to go to the root SSJHOME
+   directory all the times.
+
+cdssj:
+   The cdssj alias can be used to change to current directory to any
+   SSJHOME's subdirectory. For example,
+
+      cdssj doc
+
+   will switch to SSJHOME/doc.
+
+cdssjsrc:
+   The cdssjsrc alias is similar but it is rooted to the
+   SSJHOME/source/umontreal/iro/lecuyer directory. It can be useful to
+   cd to a subpackage source directory. For example,
+
+      cdssjsrc randvar
+
+   will switch to the randvar source directory.
+
+Envirnment variables:
+   The SSJSRC environment variable contains
+   SSJHOME/source/umontreal/iro/lecuyer. It can be used in text
+   editors unaware of shell aliases.

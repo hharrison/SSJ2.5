@@ -1,0 +1,67 @@
+\documentclass [12pt]{article}
+\usepackage{amssymb}
+%\usepackage{myarticle}
+%\usepackage{alltt}
+%\usepackage{html}
+%\usepackage{tcode}
+%begin{latexonly}
+%\usepackage{url}
+%end{latexonly}
+\usepackage{ssj}
+
+\mytwoheads
+
+\def\bX{\textbf{X}}
+\def\bZ{\textbf{Z}}
+\def\bA{\textbf{A}}
+\def\bI{\textbf{I}}
+\def\bmu{\boldmu}
+\def\bzero{\textbf{0}}
+\def\bSigma{\boldSigma}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+
+\title{randvarmulti}{Generating Random Vectors}
+
+This package is a multivariate version of the package \texttt{randvar}.
+It implements random number generators for some
+(nonuniform) multivariate distributions.
+
+
+\vfill
+\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+
+\include{overview}
+
+%\include{general}
+\include{RandomMultivariateGen}
+\include{IIDMultivariateGen}
+%\include{RandomVariateGenInt}
+
+%%
+%\include{discrete}
+
+%%
+%\include{continuous}
+\include{MultinormalGen}
+\include{MultinormalCholeskyGen}
+\include{MultinormalPCAGen}
+\include{DirichletGen}
+
+
+\bibliography{simul,random,ift,stat,prob,math}
+\bibliographystyle{plain}
+
+\end{document}

@@ -1,0 +1,231 @@
+\defclass {ErlangDist}
+
+Extends the class \class{GammaDist} for the special case
+of the {\em Erlang\/} distribution with
+shape parameter $k > 0$ and scale parameter $\lambda > 0$.
+This distribution is a special case of the gamma distribution
+for which the shape parameter $k=\alpha$ is an integer.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ErlangDist
+ * Description:  Erlang distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+
+public class ErlangDist extends GammaDist\begin{hide} {
+\end{hide}\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public ErlangDist (int k)\begin{hide} {
+      super (k);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{ErlangDist} object with parameters
+  $k$ = \texttt{k} and $\lambda=1$.
+  \end{tabb}
+\begin{code}
+
+   public ErlangDist (int k, double lambda)\begin{hide} {
+      super (k, lambda);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{ErlangDist} object with parameters
+  $k$ = \texttt{k}  and $\lambda$ = \texttt{lambda}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double density (int k, double lambda, double x)\begin{hide} {
+      return density ((double)k, lambda, x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int k, double lambda, int d, double x)\begin{hide} {
+      return cdf ((double)k, d, lambda*x);
+   }\end{hide}
+\end{code}
+ \begin{tabb} Computes the distribution function using
+   the gamma distribution function.
+\end{tabb}
+\begin{code}
+
+   public static double barF (int k, double lambda, int d, double x)\begin{hide} {
+      return barF ((double)k, d, lambda*x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the complementary distribution function.
+\end{tabb}
+\begin{code}
+
+   public static double inverseF (int k, double lambda, int d, double u)\begin{hide} {
+      return inverseF ((double)k, lambda, d, u);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the inverse distribution function.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = GammaDist.getMLE (x, n);
+      parameters[0] = Math.round (parameters[0]);
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Estimates the parameters $(k,\lambda)$ of the Erlang distribution
+   using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$k$, $\lambda$].
+   \begin{detailed}
+   The equations of the maximum likelihood are the same as for
+   the gamma distribution. The $k$ parameter is the rounded value of the
+   $\alpha$ parameter of the gamma distribution, and the $\lambda$ parameter
+   is equal to the $\beta$ parameter of the gamma distribution.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{k}$, $\hat{\lambda}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static ErlangDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new ErlangDist ((int) parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of an Erlang distribution with parameters $k$ and
+   $\lambda$ estimated
+   using the maximum likelihood method based on the $n$ observations $x[i]$,
+   $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (int k, double lambda)\begin{hide} {
+      if (k <= 0)
+         throw new IllegalArgumentException ("k <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      return (k / lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean, $E[X] = k/\lambda$,
+   of the Erlang distribution with parameters $k$ and $\lambda$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the Erlang distribution $E[X] = k / \lambda$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int k, double lambda)\begin{hide} {
+      if (k <= 0)
+         throw new IllegalArgumentException ("k <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+
+      return (k / (lambda * lambda));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance, $\mbox{Var}[X] = k/\lambda^2$,
+   of the Erlang distribution with parameters $k$ and $\lambda$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Erlang distribution $\mbox{Var}[X] = k / \lambda^2$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int k, double lambda)\begin{hide} {
+      if (k <= 0)
+         throw new IllegalArgumentException ("k <= 0");
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+
+      return (Math.sqrt (k) / lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the Erlang
+   distribution with parameters $k$ and $\lambda$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the Erlang distribution}
+\end{htmlonly}
+\begin{code}
+
+   public int getK()\begin{hide} {
+      return (int) getAlpha();
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $k$ for this object.
+  \end{tabb}
+\begin{code}
+
+   public void setParams (int k, double lambda, int d)\begin{hide} {
+      setParams (k, lambda, d);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Sets the parameters $k$ and $\lambda$ of the distribution for this
+  object.  Non-static methods are computed with a rough target of
+  \texttt{d} decimal digits of precision.
+  \end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      return super.getParams();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing parameters of the current distribution.
+   This table is put in regular order: [$k$, $\lambda$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : k = " + (int)super.getAlpha() + ", lambda = " + super.getLambda();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

@@ -1,0 +1,212 @@
+\defclass {GeometricBrownianMotion}
+
+Represents a \emph{geometric Brownian motion} (GBM) process $\{S(t),\, t\ge 0\}$,  
+which evolves according to the stochastic differential equation 
+\begin{equation}
+   dS(t) = \mu S(t) dt + \sigma S(t) dB(t),
+                                               \label{eq:GBM}
+\end{equation}
+where $\mu$ and $\sigma$ are the drift and volatility parameters,
+and $\{B(t),\, t\ge 0\}$ is a standard Brownian motion 
+(for which $B(t)\sim N(0,t)$).
+This process can also be written as the exponential of a Brownian motion:
+\begin{equation}
+  S(t) = S(0) \exp \left[ (\mu - \sigma^{2}/2) t + \sigma t B(t) \right]
+       = S(0) \exp \left[ X(t) \right],
+                                               \label{eq:GBM2}
+\end{equation}
+where $X(t) = (\mu - \sigma^{2}/2) t + \sigma t B(t)$.
+The GBM process is simulated by simulating the BM process $X$ and taking the exponential.
+This BM process is stored internally.
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GeometricBrownianMotion
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stochprocess;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.randvar.*;
+
+\end{hide}
+
+public class GeometricBrownianMotion extends StochasticProcess \begin{hide} {
+
+    protected NormalGen      gen;
+    protected BrownianMotion bm;   // The underlying BM process X.
+    protected double         mu,
+                             sigma;
+    protected double[]       mudt;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public GeometricBrownianMotion (double s0, double mu, double sigma,
+                                   RandomStream stream) \begin{hide} {
+        this (s0, mu, sigma, new BrownianMotion (0.0, 0.0, 1.0, stream));
+    }\end{hide}
+\end{code}
+\begin{tabb} 
+Same as \texttt{GeometricBrownianMotion (s0, mu, sigma,
+new BrownianMotion (0.0, 0.0, 1.0, stream))}.
+\end{tabb}
+\begin{code}
+
+   public GeometricBrownianMotion (double s0, double mu, double sigma,
+                                   BrownianMotion bm) \begin{hide} {
+        this.bm = bm;
+        setParams (s0, mu, sigma);
+    }\end{hide}
+\end{code}
+\begin{tabb} 
+Constructs a new \texttt{GeometricBrownianMotion} with parameters
+ $\mu = \texttt{mu}$, $\sigma = \texttt{sigma}$, and $S(t_0) = \texttt{s0}$,
+using \texttt{bm} as the underlying \class{BrownianMotion}.
+The parameters of \texttt{bm} are automatically reset to
+$\mu-\sigma^2/2$ and $\sigma$, regardless of the original parameters
+ of \texttt{bm}.
+The observation times are the same as those of \texttt{bm}. The generation
+method depends on that of \texttt{bm} (sequential, bridge sampling, PCA, etc.).
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+   public void setObservationTimes (double[] t, int d) {
+        this.d = d;
+        super.setObservationTimes (t, d);
+        bm.setObservationTimes (t, d);
+    }
+
+   public double nextObservation() {
+        // Note : this implementation is general, to deal with
+        // the possibility of generating bm with bridge sampling, for example.  ???
+
+        double s = x0 * Math.exp (bm.nextObservation());
+        observationIndex = bm.getCurrentObservationIndex();
+        path[observationIndex] = s;
+        // Could be different than simply 'observationCounter++' because of the
+        // possibility of Brownian bridge
+
+        return s;
+    }
+
+   public double[] generatePath() {
+        path[0] = x0;
+        bm.generatePath ();
+        for (int i = 1; i <= d; ++i)
+            path[i] = x0 * Math.exp (bm.getObservation(i));
+        observationCounter = d;
+        return path;
+    }
+
+   public double[] generatePath (RandomStream stream) {
+        setStream (stream);
+        return generatePath();
+    }\end{hide}
+
+   public void resetStartProcess() \begin{hide} {
+        observationCounter = 0;
+        bm.resetStartProcess();
+    }\end{hide}
+\end{code}
+\begin{tabb} Same as in \texttt{StochasticProcess}, but also invokes 
+\texttt{resetStartProcess} for the underlying \texttt{BrownianMotion} object.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double s0, double mu, double sigma) \begin{hide} { 
+        this.x0    = s0;
+        this.mu    = mu;
+        this.sigma = sigma;
+        bm.setParams (0.0, mu - 0.5 * sigma * sigma, sigma);
+        if (observationTimesSet) init(); // Otherwise not needed.
+    }\end{hide}
+\end{code}
+\begin{tabb} 
+Sets the parameters $S(t_{0}) = \texttt{s0}$, $\mu = \texttt{mu}$ and 
+$\sigma = \texttt{sigma}$ of the process. 
+\emph{Warning}: This method will recompute some quantities stored internally, 
+which may be slow if called repeatedly.
+\end{tabb}
+\begin{code}
+
+   public void setStream (RandomStream stream) \begin{hide} { (bm.gen).setStream (stream); }\end{hide}
+\end{code}
+\begin{tabb} 
+Resets the \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} 
+for the underlying Brownian motion to \texttt{stream}.
+\end{tabb}
+\begin{code}
+
+   public RandomStream getStream() \begin{hide} { return (bm.gen).getStream (); }\end{hide}
+\end{code}
+\begin{tabb} 
+Returns the \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}
+for the underlying Brownian motion.
+\end{tabb}
+\begin{code}
+
+   public double getMu() \begin{hide} { return mu; }\end{hide}
+\end{code}
+\begin{tabb} Returns the value of $\mu$.
+\end{tabb}
+\begin{code}
+
+   public double getSigma() \begin{hide} { return sigma; }\end{hide}
+\end{code}
+\begin{tabb} Returns the value of $\sigma$. 
+\end{tabb}
+\begin{code}
+
+   public NormalGen getGen() \begin{hide} { return gen; }\end{hide}
+\end{code}
+\begin{tabb} 
+Returns the \externalclass{umontreal.iro.lecuyer.randvar}{NormalGen} used.
+\end{tabb}
+\begin{code}
+
+   public BrownianMotion getBrownianMotion() \begin{hide} { 
+        return bm;
+    }\end{hide}
+\end{code}
+\begin{tabb} Returns a reference to the \class{BrownianMotion} object
+used to generate the process.
+\end{tabb}
+
+\begin{code} \begin{hide}
+
+    protected void init() {
+        super.init();   // Maybe useless...
+    }
+
+}
+\end{hide}\end{code}

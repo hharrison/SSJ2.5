@@ -1,0 +1,462 @@
+\defclass{SimProcess}
+
+This abstract class provides process scheduling tools.
+Each type of process should be defined as a subclass of the
+class \texttt{SimProcess}, and must provide an implementation of the method
+\method{actions}{} which describes the life of a process of this class.
+Whenever a process instance starts, its \method{actions}{} method
+begins executing.
+
+Just like an event, a process must first be constructed, then scheduled.
+Scheduling a process is equivalent to placing an event in the event list
+that will start this process when
+the simulation clock reaches the specified time.
+The \method{toString}{} method can be overridden to return
+information about the process.  This information will
+be returned when formating the event list as a string, if the
+process is delayed.
+
+A process can be in one of the following states: \texttt{INITIAL},
+\texttt{EXECUTING}, \texttt{DELAYED}, \texttt{SUSPENDED}, and \texttt{DEAD}
+\latex{(see the diagram)}.
+At most {\em one\/} process can be in the \texttt{EXECUTING} state at
+any given time, and when there is one, this executing process
+(called the {\em current process\/}) is said to {\em have control\/}
+and is executing one of the instructions of its \method{actions}{} method.
+% Note that the simulation executive (in the class \texttt{Sim}) is also
+% a process and it is the one who has control, e.g, when an \texttt{Event}
+% is being executed.
+%  ^^^^  No longer true.
+\begin{latexonly}
+\begin{figure}[htb]
+\caption{The possible states and state transitions of a \texttt{SimProcess}}
+%
+\setlength{\unitlength}{1in}
+\begin{picture}(6.4,5.5)(0.0,0.0)\thicklines\tt
+%  Les boites et le texte:
+\put(2.0,0.5){\makebox(0,0)\texttt{EXECUTING}}
+\put(3.5,2.0){\makebox(0,0)\texttt{SUSPENDED}}
+\put(2.0,3.5){\makebox(0,0)\texttt{DELAYED}}
+\put(2.0,5.0){\makebox(0,0)\texttt{INITIAL}}
+\put(2.0,0.5){\oval(3.0,0.4)}
+\put(3.5,2.0){\oval(3.0,0.4)}
+\put(2.0,3.5){\oval(3.0,0.4)}
+\put(2.0,5.0){\oval(3.0,0.4)}
+\put(0.0,5.0){\vector(1,0){0.5}}
+\put(0.25,5.2){\makebox(0,0){\rm \texttt{new}}}
+\put(1.0,4.25){\makebox(0,0){\rm \texttt{schedule}}}
+\put(1.0,4.05){\vector(0,-1){.34}}
+\put(1.0,4.80){\line(0,-1){.40}}
+\put(3.0,4.25){\makebox(0,0){\rm \texttt{scheduleNext}}}
+\put(3.0,4.05){\vector(0,-1){.34}}
+\put(3.0,4.80){\line(0,-1){.40}}
+\put(0.8,2.5){\makebox(0,0){\rm ({\em event})}}
+\put(0.8,2.35){\vector(0,-1){1.64}}
+\put(0.8,2.65){\line(0,1){.65}}
+\put(1.6,1.5){\makebox(0,0){delay}}
+\put(1.6,1.65){\vector(0,1){1.64}}
+\put(1.6,1.35){\line(0,-1){.65}}
+\put(3.2,1.4){\makebox(0,0){suspend}}
+\put(3.2,0.7){\line(0,1){0.53}}
+\put(3.2,1.55){\vector(0,1){.24}}
+\put(3.55,2.55){\makebox(0,0){suspend, cancel}}
+\put(3.3,3.3){\line(0,-1){0.6}}
+\put(3.3,2.4){\vector(0,-1){.19}}
+\put(2.4,2.95){\makebox(0,0){reschedule}}
+\put(2.4,2.75){\makebox(0,0){resume}}
+\put(2.3,2.2){\line(0,1){0.40}}
+\put(2.3,3.1){\vector(0,1){.19}}
+\put(2.9,3.3){\line(0,-1){0.7}}
+\put(2.7,2.6){\oval(0.4,0.2)[b]}
+\put(2.5,3.1){\vector(0,1){.19}}
+\put(5.5,0.5){\makebox(0,0){kill}}
+\put(3.5,0.5){\line(1,0){1.8}}
+\put(5.7,0.5){\vector(1,0){0.25}}
+\put(5.5,2.0){\makebox(0,0){kill}}
+\put(5.0,2.0){\line(1,0){0.3}}
+\put(5.7,2.0){\vector(1,0){.25}}
+\put(5.5,3.5){\makebox(0,0){kill}}
+\put(3.5,3.5){\line(1,0){1.8}}
+\put(5.7,3.5){\vector(1,0){.25}}
+\put(5.5,5.0){\makebox(0,0){kill}}
+\put(3.5,5.0){\line(1,0){1.8}}
+\put(5.7,5.0){\vector(1,0){.25}}
+\end{picture}
+\end{figure}
+\end{latexonly}
+A process that has been constructed but not yet scheduled is in
+the \texttt{INITIAL} state.
+A process is in the \texttt{DELAYED} state if there is a planned event
+in the event list to activate it (give it control).
+When a process is scheduled, it is placed in the \texttt{DELAYED} state.
+It is in the \texttt{SUSPENDED} state if it is waiting to be reactivated
+(i.e., obtain control) without having an event to do so in the event list.
+A process can suspends itself by calling \method{suspend}{} directly or
+indirectly (e.g., by requesting a busy \class{Resource}).
+Usually, a \texttt{SUSPENDED} process must be reactivated by another process
+or event via the \method{resume}{} method.
+A process in the \texttt{DEAD} state no longer exists.
+
+To construct new processes, the user needs to extend \class{SimProcess}.
+
+Note: the user needs to ensure that the \texttt{actions}
+method of any process can be terminated, i.e., no infinite loops.
+For example, using threads process-oriented simulator,
+if such a method never terminates, threads will not be recycled,
+causing memory problems.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        SimProcess
+ * Description:  Abstract class providing process scheduling tools
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simprocs;\begin{hide}
+
+import umontreal.iro.lecuyer.simevents.Event;
+import umontreal.iro.lecuyer.simevents.eventlist.EventList;
+import umontreal.iro.lecuyer.simevents.Simulator;
+import umontreal.iro.lecuyer.simprocs.ProcessSimulator;\end{hide}
+
+public class SimProcess \begin{hide} {
+\end{hide}
+\end{code}
+\subsubsection*{Possible states of a process}
+
+\begin{code}
+
+   public static final int INITIAL   = 0;
+\end{code}
+\begin{tabb}   The process has been created but not yet scheduled. \end{tabb}
+\begin{code}
+
+   public static final int EXECUTING = 1;
+\end{code}
+\begin{tabb}   The process is the one currently executing its
+   \method{actions}{} method. \end{tabb}
+\begin{code}
+
+   public static final int DELAYED   = 2;
+\end{code}
+\begin{tabb}   The process is not executing but has an event in the event list to
+   reactivate it later on.  \end{tabb}
+\begin{code}
+
+   public static final int SUSPENDED = 3;
+\end{code}
+\begin{tabb}   The process is not executing and will have to be reactivated by another
+   process or event later on.  \end{tabb}
+\begin{code}
+
+   public static final int DEAD      = 4;
+\end{code}
+\begin{tabb}   The process has terminated its execution.  \end{tabb}
+\begin{code}\begin{hide}
+   // The state of a process is not kept explicitly, but
+   // can be recovered from its eventTime variable.
+    public static final double STARTING = -20.0;
+    public static final double WAITING  = -10.0;
+    // Variables
+
+   protected ProcessSimulator sim;
+   // Simulator linked with this simProcess.
+
+   protected Event scheduledEvent = null;
+   // the next scheduled event
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}
+
+   public SimProcess() \begin{hide} {
+      this((ProcessSimulator)Simulator.getDefaultSimulator());
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Constructs a new process without scheduling it
+  and associates this new process with the default simulator; one
+  can get additional knowledge with
+ \externalclass{umontreal.iro.lecuyer.simevents}{Simulator} static methods.
+   It will have to be scheduled later on.
+   The process is in the \texttt{INITIAL} state.
+ \end{tabb}
+\begin{code}
+
+   public SimProcess (ProcessSimulator sim) \begin{hide} {
+      this.sim = sim;
+      scheduledEvent = sim.createControlEvent(this);
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Constructs a new process associated with \texttt{sim}
+  without scheduling it. It will have to be scheduled later on.
+   The process is in the \texttt{INITIAL} state.
+ \end{tabb}
+ \begin{htmlonly}
+   \param{sim}{Link the current variable to ProcessSimulator \texttt{sim}}
+\end{htmlonly}
+
+%%%%%%
+%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public void schedule (double delay) \begin{hide} {
+      if (scheduledEvent == null)
+         throw new IllegalStateException ("Cannot schedule a dead process");
+      if (scheduledEvent.time() != STARTING)
+         throw new IllegalStateException ("Only a process in INITIAL state can call schedule");
+
+      scheduledEvent.schedule (delay);
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Schedules the process to start in \texttt{delay} time units.
+   This puts the process in the \texttt{DELAYED} state.
+  \end{tabb}
+\begin{htmlonly}
+   \param{delay}{delay, in simulation time, before the process starts}
+\end{htmlonly}
+\begin{code}
+
+   public void scheduleNext() \begin{hide} {
+      if (scheduledEvent == null)
+         throw new IllegalStateException ("Cannot schedule a dead process");
+      if (scheduledEvent.time() != STARTING)
+         throw new IllegalStateException
+            ("Only a process in INITIAL state can call scheduleNext");
+      scheduledEvent.scheduleNext();
+   } \end{hide}
+\end{code}
+\begin{tabb}  Schedules this process to start at the current time, by placing
+   it at the beginning of the event list.
+   This puts the process in the \texttt{DELAYED} state.
+  \end{tabb}
+\begin{code}
+
+   public Event scheduledEvent() \begin{hide} {
+      return scheduledEvent;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{Event} associated with the current variable.
+  \end{tabb}
+\begin{code}
+
+   public void setScheduledEvent (Event scheduledEvent) \begin{hide} {
+      this.scheduledEvent = scheduledEvent;
+   } \end{hide}
+\end{code}
+\begin{tabb}  Sets the event associated to the current variable.
+  \end{tabb}
+\begin{htmlonly}
+   \param{scheduledEvent}{new scheduledEvent for the current variable}
+\end{htmlonly}
+\begin{code}
+
+   public double priority() \begin{hide} {
+      return scheduledEvent.priority();
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Returns the priority of the current variable.
+\end{tabb}
+\begin{htmlonly}
+   \return{priority of the current variable.}
+\end{htmlonly}
+\begin{code}
+
+   public void setPriority (double priority) \begin{hide} {
+      scheduledEvent.setPriority(priority);
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Sets the priority assigned to the current variable in the simulation.
+   This method should never be called after the event has been scheduled, otherwise
+   the events will not execute in ascending priority order anymore.
+  \end{tabb}
+\begin{htmlonly}
+   \param{priority}{priority assigned to the current variable in the simulation}
+\end{htmlonly}
+\begin{code}
+
+   public final boolean isAlive() \begin{hide} {
+      return scheduledEvent != null;
+   } \end{hide}
+\end{code}
+  \begin{tabb} Returns \texttt{true} if the process is alive, otherwise \texttt{false}.
+  \end{tabb}
+\begin{htmlonly}
+   \return{\texttt{true} if the process is not in the \texttt{DEAD} state}
+\end{htmlonly}
+\begin{code}
+
+   public int getState() \begin{hide} {
+      if (scheduledEvent == null)                return DEAD;
+      else if (sim.currentProcess() == this)             return EXECUTING;
+      else if (scheduledEvent.time() >= 0.0)  return DELAYED;
+      else if (scheduledEvent.time() == STARTING) return INITIAL;
+      else return SUSPENDED;
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Returns the state of the process.
+  \end{tabb}
+\begin{htmlonly}
+   \return{one of the process states \method{INITIAL}{},
+      \method{EXECUTING}{}, \method{DELAYED}{}, \method{SUSPENDED}{}, or
+      \method{DEAD}{}.}
+\end{htmlonly}
+\begin{code}
+
+   public double getDelay() \begin{hide} {
+      if (scheduledEvent == null)
+         throw new IllegalStateException ("Trying to getDelay() on a dead process");
+      if (scheduledEvent.time() < 0.0)
+         throw new IllegalStateException
+                   ("Calling getDelay for a process not in DELAYED state");
+      return scheduledEvent.time() - sim.time();
+   } \end{hide}
+\end{code}
+  \begin{tabb}  If the process is in the \texttt{DELAYED} state, returns
+   the remaining time until the planned occurrence of its
+   activating event.
+   Otherwise, an illegal state exception will be thrown printing an error message.
+  \end{tabb}
+\begin{htmlonly}
+   \return{remaining delay before the process starts}
+   \exception{IllegalStateException}{if the process is not in \texttt{DELAYED} state}
+\end{htmlonly}
+\begin{code}
+
+   public void reschedule (double delay) \begin{hide} {
+      if (sim.currentProcess() == this)
+         throw new IllegalStateException
+                   ("reschedule() for a process in EXECUTING state");
+      if (scheduledEvent == null)
+         throw new IllegalStateException ("reschedule() for a dead process ");
+      if (delay < 0.0) throw new IllegalArgumentException
+                                 ("Calling reschedule() with negative delay");
+      scheduledEvent.reschedule (delay);
+   } \end{hide}
+\end{code}
+  \begin{tabb}  If the process is in the \texttt{DELAYED} state, removes it from
+   the event list and reschedules it in \texttt{delay} units of time.
+   Example: If the process \texttt{p} has called \method{delay}{}\texttt{(5.0)}
+   at time 10.0, and another process invokes \method{reschedule}{}\texttt{(p, 6.2)}
+   at time 13.5, then the process \texttt{p} will resume at time
+   $13.5 + 6.2 = 19.7$.
+  \end{tabb}
+\begin{htmlonly}
+   \param{delay}{new delay, in simulation time units, before the process starts or is resumed}
+\end{htmlonly}
+\begin{code}
+
+   public void resume() \begin{hide} {
+      if (scheduledEvent == null)   // DEAD state
+         throw new IllegalStateException ("calling resume() for a dead process");
+      if (scheduledEvent.time() >= 0.0)  scheduledEvent.cancel();
+      scheduledEvent.scheduleNext();
+   } \end{hide}
+\end{code}
+  \begin{tabb} Places this process at the beginning of the event list
+   to resume its execution.  If the process was \texttt{DELAYED}, cancels
+   its earlier activating event.
+  \end{tabb}
+\begin{code}
+
+   public boolean cancel() \begin{hide} {
+      if (scheduledEvent == null) // DEAD state
+         throw new IllegalStateException ("calling cancel() for a dead process");
+      if (scheduledEvent.time() < 0.0 )
+         throw new IllegalStateException
+                   ("cancel() for a process not in DELAYED state");
+      boolean removed = scheduledEvent.cancel();
+      scheduledEvent.setTime (WAITING);
+      return removed;
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Cancels the activating event that was supposed to resume
+   this process, and places the process in the \texttt{SUSPENDED} state.
+   This method can be invoked only for a process in the \texttt{DELAYED}
+   state.
+  \end{tabb}
+\begin{htmlonly}
+   \return{\texttt{true} if the process was canceled successfully}
+\end{htmlonly}
+\begin{code}
+
+   public void delay (double delay) \begin{hide} {
+      sim.delay(this, delay);
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Suspends the execution of the currently executing process and
+    schedules it to resume its execution in \texttt{delay} units of simulation
+    time.  It moves in the \texttt{DELAYED} state.
+    Only the process in the \texttt{EXECUTING} state can call this method.
+  \end{tabb}
+\begin{code}
+
+   public void suspend() \begin{hide} {
+      sim.suspend(this);
+   } \end{hide}
+\end{code}
+  \begin{tabb} This method can only be invoked for the \texttt{EXECUTING}
+   or a \texttt{DELAYED} process.
+   If the process is \texttt{EXECUTING}, suspends execution.
+   If the process is \texttt{DELAYED}, cancels its activating event.
+   This places the process in the \texttt{SUSPENDED} state.
+  \end{tabb}
+\begin{code}
+
+   public void kill() \begin{hide} {
+      sim.kill(this);
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Terminates the life of this process and sets its state to
+   \texttt{DEAD}, after canceling its activating event if there is one.
+  \end{tabb}
+\begin{code}
+
+   public void actions()\begin{hide} { }; \end{hide}
+\end{code}
+  \begin{tabb}  This is the method that is called when this process is
+   executing. Every subclass of \texttt{SimProcess} that is to be
+    instantiated must provide an implementation of this method.
+  \end{tabb}
+\begin{code}
+
+   public static void init() \begin{hide} {
+      ProcessSimulator.initDefault();
+   } \end{hide}
+\end{code}
+  \begin{tabb}  This method calls \texttt{ProcessSimulator.initDefault()},
+    which initializes the default simulator to use processes.
+  \end{tabb}
+\begin{code} \begin{hide}
+}\end{hide}
+\end{code}

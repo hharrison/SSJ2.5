@@ -1,0 +1,220 @@
+\defclass {GeometricLevyProcess}
+
+Abstract class used as a parent class for the exponentiation
+of a L\'evy process $X(t)$:
+\begin{equation}
+S(t) = S(0) \exp\left(X(t) + (r - \omega_{RN}) t\right).
+\end{equation}
+The interest is here denoted $r$ and is refered to
+as \texttt{muGeom} in the class below.
+The risk neutral correction is given by $\omega_{RN}$
+and takes into account risk aversion in the pricing of
+assets; its value depends on the specific L\'evy process
+that is used.
+
+\class{GeometricNormalInverseGaussianProcess} is
+implemented as a child of this class
+and so could \class{GeometricVarianceGammaProcess}
+and \class{GeometricBrownianMotion}.
+
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GeometricLevyProcess
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stochprocess;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.randvar.*;
+
+\end{hide}
+
+public abstract class GeometricLevyProcess extends StochasticProcess \begin{hide} {
+
+    protected StochasticProcess levyProcess;
+    protected double omegaRiskNeutralCorrection;
+    protected double muGeom;  // usually the interest rate
+    protected double[] muGeomRNdt; // risk neutral corrected 
+    protected double[] muGeomRNdT; // risk neutral corrected, from time t0.
+
+    protected void init()
+    {
+        super.init();
+        if (observationTimesSet)
+        {
+            // Telling the variance gamma proc. about the observ. times
+            levyProcess.setObservationTimes (t, d);
+
+            // We need to know in which order the observations are generated
+            this.observationIndexFromCounter 
+                = levyProcess.getArrayMappingCounterToIndex();
+
+            muGeomRNdt = new double[d];
+            for (int i = 0; i < d; i++){
+                muGeomRNdt[i] = (muGeom-omegaRiskNeutralCorrection) * 
+                                (t[i+1] - t[i]);
+            }
+            muGeomRNdT = new double[d+1];
+            for (int i = 0; i <= d; i++){
+                muGeomRNdT[i] = (muGeom-omegaRiskNeutralCorrection) * 
+                                (t[i] - t[0]);                
+            }
+        }
+    }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public double[] generatePath() \begin{hide} {
+        double s = x0;
+        resetStartProcess();
+        double[] arithmPath = levyProcess.generatePath();
+        for (int i = 0; i < d; i++)
+        {
+            s *= Math.exp (muGeomRNdt[i] + arithmPath[i+1] - arithmPath[i]);
+            path[i+1] = s;
+        }
+        observationIndex = d;
+        return path;
+    }\end{hide}
+\end{code}
+\begin{tabb} Generates a path.
+\end{tabb}
+\begin{code}
+
+   public double nextObservation() \begin{hide} {
+       double levy = levyProcess.nextObservation();
+       observationIndex = levyProcess.getCurrentObservationIndex();
+       path[observationIndex] = x0 * 
+             Math.exp( muGeomRNdT[observationIndex] + levy );
+       return path[observationIndex];
+    }\end{hide}
+\end{code}
+\begin{tabb} 
+Returns the next observation. 
+It will also work on a L\'evy process which is sampled using
+the bridge order, but it will return the observations in 
+the bridge order.
+If the underlying L\'evy process is of the PCA type, this
+method is not usable.
+\end{tabb}
+\begin{code}
+
+   public void resetStartProcess() \begin{hide} {
+        super.init();
+        levyProcess.resetStartProcess();
+    }\end{hide}
+\end{code}
+\begin{tabb} Resets the step counter of the geometric process and 
+the underlying L\'evy process to the start value.
+\end{tabb}
+\begin{code}
+
+   public void setObservationTimes(double[] time, int d) \begin{hide} {
+        super.setObservationTimes(time, d);
+        levyProcess.setObservationTimes(time, d);
+    }\end{hide}
+\end{code}
+\begin{tabb} Sets the observation times on the geometric process
+and the underlying L\'evy process.
+\end{tabb}
+\begin{code}
+
+   public double getOmega() \begin{hide} {
+        return omegaRiskNeutralCorrection;
+    }\end{hide}
+\end{code}
+\begin{tabb} Returns the risk neutral correction.
+\end{tabb}
+\begin{code}
+
+   public double getMuGeom() \begin{hide} {
+        return muGeom;
+    }\end{hide}
+\end{code}
+\begin{tabb} Returns the geometric drift parameter,
+which is usually the interest rate, $r$.
+\end{tabb}
+\begin{code}
+
+   public void setMuGeom (double muGeom) \begin{hide} {
+        this.muGeom = muGeom;
+    }\end{hide}
+\end{code}
+\begin{tabb} Sets the drift parameter (interest rate) of the geometric term.
+\end{tabb}
+\begin{code}
+
+   public StochasticProcess getLevyProcess() \begin{hide} {
+        return levyProcess;
+    }\end{hide}
+\end{code}
+\begin{tabb} Returns the L\'evy process.
+\end{tabb}
+\begin{code}
+
+   public void resetRiskNeutralCorrection (double omegaRN) \begin{hide} {
+       omegaRiskNeutralCorrection = omegaRN;
+       init();
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Changes the value of $\omega_{RN}$.
+There should usually be no need to redefine the risk neutral
+correction from the value set by the constructor.  However it
+is sometimes not unique, e.g. in \class{GeometricNormalInverseGaussianProcess}
+\cite{fALB04a}.
+\end{tabb}
+\begin{code}
+
+   public RandomStream getStream() \begin{hide} {
+        return levyProcess.getStream();
+    }\end{hide}
+\end{code}
+\begin{tabb} Returns the stream from the underlying L\'evy process.
+If the underlying L\'evy process has multiple streams, it returns
+what the \texttt{getStream()} method of that process was made to return.
+\end{tabb}
+\begin{code}
+
+   public void setStream (RandomStream stream) \begin{hide} {
+        levyProcess.setStream(stream);
+    }\end{hide}
+\end{code}
+\begin{tabb} Resets the stream in the underlying L\'evy process.
+If the underlying L\'evy process has multiple streams, it sets
+the streams on this process in the same way as \texttt{setStream()}
+for that process.
+\end{tabb}
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

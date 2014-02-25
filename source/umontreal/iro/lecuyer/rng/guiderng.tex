@@ -1,0 +1,60 @@
+\documentclass [twoside,12pt]{article}
+\usepackage{amssymb}
+\usepackage{ssj}
+
+\mytwoheads
+% \dateheadtrue
+% \fulltrue   %%  Writes all the hidden code.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{titlepage}
+
+\title{rng}{Random Number Generators}
+
+\vfill
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+% \include{avantpro}
+%
+\pagenumbering{arabic}
+
+\include{overview}
+
+\include{RandomStream}
+\include{CloneableRandomStream}
+\include{RandomStreamBase}
+\include{RandomPermutation}
+\include{RandomStreamManager}
+\include{RandomStreamFactory}
+\include{BasicRandomStreamFactory}
+\include{RandomStreamInstantiationException}
+
+\include{RandomStreamWithCache}
+\include{AntitheticStream}
+\include{BakerTransformedStream}
+\include{TruncatedRandomStream}
+
+\include{RandMrg}
+\include{MRG32k3a}
+\include{MRG32k3aL}
+\include{MRG31k3p}
+\include{LFSR113}
+\include{LFSR258}
+\include{WELL512}
+\include{WELL607}
+\include{WELL1024}
+\include{GenF2w32}
+\include{MT19937}
+\include{F2NL607}
+\include{RandRijndael}
+
+%\setcounter{section}{1}
+%\renewcommand{\thesection}{\Alph{section}.}
+
+\bibliography{simul,random,ift,stat,prob}
+\bibliographystyle{plain}
+
+\end{document}

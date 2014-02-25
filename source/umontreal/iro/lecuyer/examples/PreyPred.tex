@@ -1,0 +1,38 @@
+%%%%%%%%%%%%%
+\section {Continuous simulation: A prey-predator system}
+\label {sec:preypred}
+
+We consider a classical prey-predator system, where the preys
+are food for the predators (see, e.g., \cite{sLAW00a}, page 87).
+Let $x(t)$ and $z(t)$ be the numbers of preys and predators
+at time $t$, respectively.
+These numbers are integers, but as an approximation,
+we shall assume that they are real-valued variables evolving
+according to the differential equations
+\begin{eqnarray*}
+  x'(t) &= &\ r x(t) - c x(t) z(t)\\
+  z'(t) &= & -s z(t) + d x(t) z(t)
+\end{eqnarray*}
+with initial values $x(0)=x_0>0$ et $z(0)=z_0>0$.
+This system is actually a Lotka-Volterra system of differential
+equations, and has a known analytical solution.
+Here, in the program of Listing~\ref{lst:PreyPred},
+we simply simulate its evolution, to illustrate the continuous
+simulation facilities of SSJ.
+
+%\bigskip
+\lstinputlisting[label=lst:PreyPred,caption={Simulation of the prey-predator system},lineskip=-1pt,%
+emph={main}]{PreyPred.java}
+
+
+This program prints the triples $(t, x(t), z(t))$ at values of
+$t$ that are multiples of \texttt{h}, one triple per line.
+This is done by an event of class \texttt{PrintPoint}, which is
+rescheduled at every \texttt{h} units of time.
+This output can be redirected to a file for later use,
+for example to plot a graph of the trajectory.
+The continuous variables \texttt{x} and \texttt{z} are instances of the
+classes \texttt{Preys} and \texttt{Preds}, whose method \texttt{derivative}
+give their derivative $x'(t)$ and $z'(t)$, respectively.
+The differential equations are integrated by a Runge-Kutta method
+of order 4.

@@ -1,0 +1,183 @@
+\defclass {BetaSymmetricalBestGen}
+
+This class implements {\em symmetrical beta\/} random variate generators using
+Devroye's one-liner method. It is based on Best's relation  \cite{rBES78a} 
+between a Student-$t$ variate and a symmetrical beta variate:
+\[
+  B_{\alpha, \alpha} \stackrel{\mathcal L}{=} \frac 1 2 \left(
+  1 + \frac{T_{2\alpha}}{\sqrt{2\alpha + T_{2\alpha}^2}}\right).
+\]
+If $S$ is a random sign and $U_1$, $U_2$ are two independent uniform $[0,1]$
+random variates, then the following gives a symmetrical
+ beta variate \cite{rDEV96a}:
+\begin{equation}
+  B_{\alpha, \alpha} \stackrel{\mathcal L}{=} \frac 1 2 + \frac{S}{2
+  \sqrt{1 + \frac{1}{\left(U_1^{-1/\alpha} - 1\right)\cos^2(2\pi U_2)}}}
+\label{eq.beta.best}
+\end{equation}
+valid for any shape parameter $\alpha > 0$.
+
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BetaSymmetricalBestGen
+ * Description:  symmetrical beta random variate generators using
+                 Devroye's one-liner method.
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.BetaSymmetricalDist;
+\end{hide}
+
+public class BetaSymmetricalBestGen extends BetaSymmetricalGen \begin{hide} {
+   private RandomStream stream2;
+   private RandomStream stream3;
+   private double afactor;          // = 1/alpha
+   private static final double TWOPI = 2.0*Math.PI;      // = 2 Pi
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public BetaSymmetricalBestGen (RandomStream s1, RandomStream s2,
+                                  RandomStream s3, double alpha) \begin{hide} {
+      super (s1, null);
+      stream2 = s2;
+      stream3 = s3;
+      afactor = 1.0/alpha;
+      setParams (alpha, alpha, 0.0, 1.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a symmetrical beta random variate generator with
+ parameter $\alpha =$ \texttt{alpha}, using stream \texttt{s1} to generate
+  $U_1$, stream \texttt{s2} to generate $U_2$ and stream \texttt{s3} to
+  generate $S$, as given in equation (\ref{eq.beta.best}).
+  \end{tabb}
+\begin{code}
+
+   public BetaSymmetricalBestGen (RandomStream s1, double alpha) \begin{hide} {
+     this (s1, s1, s1, alpha);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a symmetrical beta random variate generator with
+ parameter $\alpha =$ \texttt{alpha},  using only one stream \texttt{s1}
+  to generate $U_1$, $U_2$, and $S$ as given in equation (\ref{eq.beta.best}).
+  \end{tabb}
+\begin{code}
+
+   public BetaSymmetricalBestGen (RandomStream s1, RandomStream s2,
+                                  RandomStream s3, BetaSymmetricalDist dist) \begin{hide} {
+      super (s1, dist);
+      stream2 = s2;
+      stream3 = s3;
+      afactor = 1.0/dist.getAlpha();
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getAlpha(), dist.getA(), dist.getB());
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator for the distribution \texttt{dist},
+ using stream \texttt{s1} to generate $U_1$, stream \texttt{s2} to generate $U_2$
+ and stream \texttt{s3} to generate $S$ as given in equation (\ref{eq.beta.best}).
+  \end{tabb}
+\begin{code}
+
+   public BetaSymmetricalBestGen (RandomStream s1, BetaSymmetricalDist dist) \begin{hide} {
+     this (s1, s1, s1, dist);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator for the distribution \texttt{dist},
+     using only one stream \texttt{s1}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double nextDouble (RandomStream s1, RandomStream s2,
+                                    RandomStream s3, double alpha) \begin{hide}  {
+      double cos, temp, v, S;
+      cos = Math.cos (TWOPI * s2.nextDouble());
+      temp = 1.0/Math.pow(s1.nextDouble(), 1.0/alpha) - 1.0;
+      v = Math.sqrt(1.0 + 1.0 / (temp*cos*cos));
+      S = s3.nextDouble();
+      if (S < 0.5)
+         return 0.5 - 0.5/v;
+      else
+         return 0.5 + 0.5/v;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Generates a random number using Devroye's one-liner method.
+   Restriction:  $\alpha > 0$.
+  \end{tabb}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha) \begin{hide}  {
+      return nextDouble (s, s, s, alpha);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Generates a random number using Devroye's one-liner method with
+  only one stream \texttt{s}.
+  Restriction:  $\alpha > 0$.
+  \end{tabb}
+\begin{code}\begin{hide}
+
+   public double nextDouble() {
+      // Generates a random number using Devroye's one liner method
+      double cos, temp, v, S;
+      cos = Math.cos (TWOPI * stream2.nextDouble());
+      temp = 1.0/Math.pow(stream.nextDouble(), afactor) - 1.0;
+      v = Math.sqrt(1.0 + 1.0 / (temp*cos*cos));
+      S = stream3.nextDouble();
+      if (S < 0.5)
+         return 0.5 - 0.5/v;
+      else
+         return 0.5 + 0.5/v;
+  }\end{hide}
+
+   public RandomStream getStream2()\begin{hide} {
+      return stream2;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns stream \texttt{s2} associated with this object.
+\end{tabb}
+\begin{code}
+
+   public RandomStream getStream3()\begin{hide} {
+      return stream3;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns stream \texttt{s3} associated with this object.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}
+\end{hide}
+\end{code}

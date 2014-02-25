@@ -1,0 +1,346 @@
+\defclass {UniformIntDist}
+
+Extends the class \class{DiscreteDistributionInt} for
+the {\em discrete uniform\/} distribution over the range $[i,j]$.
+Its mass function is given by
+\begin{htmlonly}
+\eq
+   p(x) = 1 / (j - i + 1)  \qquad\mbox{ for } x = i, i + 1, \ldots, j
+   \eqlabel{eq:fmassuniformint}
+\endeq
+and 0 elsewhere.  The distribution function is
+\eq
+   F(x) = (\lfloor x\rfloor -i+1)/(j-i+1) \qquad\mbox { for } i\le x\le j
+                                          \eqlabel{eq:cdfuniformint}
+\endeq
+and its inverse is
+\eq
+   F^{-1}(u) = i + (j - i + 1)u
+      \qquad\mbox{for }0 \le u \le 1.     \eqlabel{eq:invuniformint}
+\endeq
+\end{htmlonly}%
+\begin{latexonly}
+\eq
+   p(x) = \frac{1}{j - i + 1}  \qquad\mbox{ for } x = i, i + 1, \ldots, j
+   \eqlabel{eq:fmassuniformint}
+\endeq
+and 0 elsewhere.  The distribution function is
+\eq
+   F(x) = \left\{\begin{array}{ll}
+     0, & \mbox { for } x < i\\[5pt]
+     \displaystyle \frac{\lfloor x\rfloor -i+1}{j-i+1},  & \mbox { for } i\le x < j\\[12pt]
+     1, & \mbox { for } x \ge j.
+  \end{array}\right.
+                                          \eqlabel{eq:cdfuniformint}
+\endeq
+and its inverse is
+\eq
+   F^{-1}(u) = i + \lfloor (j - i + 1)u\rfloor
+      \qquad\mbox{for }0 \le u \le 1.     \eqlabel{eq:invuniformint}
+\endeq
+\end{latexonly}
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        UniformIntDist
+ * Description:  discrete uniform distribution
+ * Environment:  Java
+ * Software:     SSJ
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+
+
+public class UniformIntDist extends DiscreteDistributionInt\begin{hide} {
+   protected int i;
+   protected int j;
+\end{hide}\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public UniformIntDist (int i, int j)\begin{hide} {
+      setParams (i, j);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a discrete uniform distribution over the interval $[i,j]$.
+  \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double prob (int x) {
+      return prob (i, j, x);
+   }
+
+   public double cdf (int x) {
+      return cdf (i, j, x);
+   }
+
+   public double barF (int x) {
+      return barF (i, j, x);
+   }
+
+   public int inverseFInt (double u) {
+      return inverseF (i, j, u);
+   }
+
+   public double getMean() {
+      return getMean (i, j);
+   }
+
+   public double getVariance() {
+      return getVariance (i, j);
+   }
+
+   public double getStandardDeviation() {
+      return getStandardDeviation (i, j);
+   }\end{hide}
+
+   public static double prob (int i, int j, int x)\begin{hide} {
+      if (j < i)
+         throw new IllegalArgumentException ("j < i");
+      if (x < i || x > j)
+         return 0.0;
+
+      return (1.0 / (j - i + 1.0));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the discrete uniform probability $p(x)$%
+\latex{ defined in  (\ref{eq:fmassuniformint})}.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int i, int j, int x)\begin{hide} {
+      if (j < i)
+         throw new IllegalArgumentException ("j < i");
+      if (x < i)
+         return 0.0;
+      if (x >= j)
+         return 1.0;
+
+      return ((x - i + 1) / (j - i + 1.0));
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the discrete uniform distribution function
+defined in (\ref{eq:cdfuniformint}).
+ \end{tabb}
+\begin{code}
+
+   public static double barF (int i, int j, int x)\begin{hide} {
+      if (j < i)
+        throw new IllegalArgumentException ("j < i");
+      if (x <= i)
+         return 1.0;
+      if (x > j)
+         return 0.0;
+
+      return ((j - x + 1.0) / (j - i + 1.0));
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the discrete uniform complementary distribution function
+  $\bar{F}(x)$.
+  \emph{WARNING:} The complementary distribution function is defined as
+    $\bar F(x) = P[X \ge x]$.
+ \end{tabb}
+\begin{code}
+
+   public static int inverseF (int i, int j, double u)\begin{hide} {
+      if (j < i)
+        throw new IllegalArgumentException ("j < i");
+
+       if (u > 1.0 || u < 0.0)
+           throw new IllegalArgumentException ("u not in [0, 1]");
+
+       if (u <= 0.0)
+           return i;
+       if (u >= 1.0)
+           return j;
+
+       return i + (int) (u * (j - i + 1.0));
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the inverse of the discrete uniform distribution function
+ (\ref{eq:invuniformint}).
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (int[] x, int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double parameters[] = new double[2];
+      parameters[0] = (double) Integer.MAX_VALUE;
+      parameters[1] = (double) Integer.MIN_VALUE;
+      for (int i = 0; i < n; i++) {
+         if ((double) x[i] < parameters[0])
+            parameters[0] = (double) x[i];
+         if ((double) x[i] > parameters[1])
+            parameters[1] = (double) x[i];
+      }
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $(i, j)$ of the uniform distribution
+   over integers using the maximum likelihood method, from the $n$ observations
+   $x[k]$, $k = 0, 1, \ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$i$, $j$].
+   \begin{detailed}
+   The maximum likelihood estimators are the values
+   $(\hat{\imath}$, $\hat{\jmath})$ that satisfy the equations
+   \begin{eqnarray*}
+      \hat{\imath} & = & \mbox{min} \{x_k\}\\
+      \hat{\jmath} & = & \mbox{max} \{x_k\}
+   \end{eqnarray*}
+   where  $\bar x_n$ is the average of $x[0],\dots,x[n-1]$.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{\imath}$, $\hat{\jmath}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static UniformIntDist getInstanceFromMLE (int[] x, int n)\begin{hide} {
+
+      double parameters[] = getMLE (x, n);
+
+      return new UniformIntDist ((int) parameters[0], (int) parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a discrete uniform distribution over integers with parameters
+   $i$ and $j$ estimated using the maximum likelihood method based on the $n$ observations
+   $x[k]$, $k = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (int i, int j)\begin{hide} {
+      if (j < i)
+        throw new IllegalArgumentException ("j < i");
+
+      return ((i + j) / 2.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = (i + j)/2$
+   of the discrete uniform distribution.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the discrete uniform distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int i, int j)\begin{hide} {
+      if (j < i)
+        throw new IllegalArgumentException ("j < i");
+
+      return (((j - i + 1.0) * (j - i + 1.0) - 1.0) / 12.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+   $\mbox{Var}[X] = [(j - i + 1)^2 - 1]/{12}$
+   of the discrete uniform distribution.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the discrete uniform distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int i, int j)\begin{hide} {
+      return Math.sqrt (UniformIntDist.getVariance (i, j));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the discrete uniform distribution.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the discrete uniform distribution}
+\end{htmlonly}
+\begin{code}
+
+   public int getI()\begin{hide} {
+      return i;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the parameter $i$.
+ \end{tabb}
+\begin{code}
+
+   public int getJ()\begin{hide} {
+      return j;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the parameter $j$.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (int i, int j)\begin{hide} {
+      if (j < i)
+        throw new IllegalArgumentException ("j < i");
+
+      supportA = this.i = i;
+      supportB = this.j = j;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Sets the parameters $i$ and $j$ for this object.
+ \end{tabb}
+ \begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {i, j};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$i$, $j$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : i = " + i + ", j = " + j;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

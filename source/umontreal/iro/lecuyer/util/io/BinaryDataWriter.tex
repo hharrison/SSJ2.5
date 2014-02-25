@@ -1,0 +1,447 @@
+\defclass{BinaryDataWriter}
+
+Binary data writer.
+
+Stores a sequence of fields in binary file, which can be either atoms or arrays,
+each of which having the following format:
+\begin{itemize}
+   \item Field label:
+      \begin{itemize}
+         \item Pipe character (\texttt{|})
+         \item Label length (32-bit integer, big endian)
+         \item Label string (array of bytes of the specified length)
+      \end{itemize}
+   
+   \item Field type (byte):
+      \begin{itemize}
+         \item \texttt{i} (32-bit integer)
+         \item \texttt{f} (32-bit float)
+         \item \texttt{d} (64-bit double)
+         \item \texttt{S} (string)
+      \end{itemize}
+   
+   \item Number of dimensions (8-bit integer)
+   \item Dimensions (array of 32-bit integers, big endian)
+   \item Field data (in the specified format, big endian)
+\end{itemize}
+
+In the case of an atomic field, the number of dimensions is set to zero.
+
+A string field is stored in the following format:
+\begin{itemize}
+   \item String length (32-bit integer)
+   \item Array of bytes of the specified length
+\end{itemize}
+
+Also supports anonymous fields (fields with an empty label).
+
+Arrays up to two dimensions are supported.
+
+Modules for reading data exported with this class are available in Java (\class{BinaryDataReader}), Matlab and Python (numpy).
+
+\begin{comment}
+Provide links for the import modules.
+\end{comment}
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BinaryDataWriter
+ * Description:  Binary data writer
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger 
+ * @since        August 2009
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util.io;
+\begin{hide}
+import java.io.*;
+\end{hide}
+
+public class BinaryDataWriter extends AbstractDataWriter \begin{hide} {
+   protected DataOutputStream out;
+   
+   /**
+    * Utility method to write string data.
+    *
+    */    
+   protected void writeStringData(String s) throws IOException {
+      if (s != null) {
+         out.writeInt(s.length());
+         out.writeBytes(s);
+      }
+      else {
+         out.writeInt(0);
+      }
+   }
+   
+   /**
+    * Starts a new field by writing its label.
+    *
+    * @param label   name of the field (can be {@code null})
+    *
+    */
+   protected void writeLabel(String label) throws IOException {
+      out.writeByte(TYPECHAR_LABEL);
+      writeStringData(label);
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Fields}
+
+\begin{code}
+   public final static byte TYPECHAR_LABEL   = '|';
+\end{code}
+\begin{tabb}
+\emph{Field-type} symbol indicating a label (it more accurately a field separator symbol).
+\end{tabb}
+\begin{code}
+
+   public final static byte TYPECHAR_STRING  = 'S';
+\end{code}
+\begin{tabb}
+\emph{Field-type} symbol indicating \texttt{String} data.
+\end{tabb}
+\begin{code}
+
+   public final static byte TYPECHAR_INTEGER = 'i';
+\end{code}
+\begin{tabb}
+\emph{Field-type} symbol indicating \texttt{int} data.
+\end{tabb}
+\begin{code}
+
+   public final static byte TYPECHAR_FLOAT   = 'f';
+\end{code}
+\begin{tabb}
+\emph{Field-type} symbol indicating \texttt{float} data.
+\end{tabb}
+\begin{code}
+
+   public final static byte TYPECHAR_DOUBLE  = 'd';
+\end{code}
+\begin{tabb}
+\emph{Field-type} symbol indicating \texttt{double} data.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+
+   public BinaryDataWriter (String filename, boolean append)
+         throws IOException \begin{hide} {
+      this.out = new DataOutputStream(new FileOutputStream(filename, append));
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+ Data will be output to the file with the specified name.
+\end{tabb}
+\begin{htmlonly}
+\param{filename}{name of the file to be created or appended to}
+\param{append}  {an existing file with the specified name will be appended to if \texttt{true} or truncated if \texttt{false}}
+\end{htmlonly}
+\begin{code}
+   
+   public BinaryDataWriter (File file, boolean append) throws IOException \begin{hide} {
+      this.out = new DataOutputStream(new FileOutputStream(file, append));
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+ Data will be output to the specified file.
+\end{tabb}
+\begin{htmlonly}
+\param{file}    {file to be created or appended to}
+\param{append}  {an existing file with the specified name will be appended to if \texttt{true} or truncated if \texttt{false}}
+\end{htmlonly}
+\begin{code}
+   
+   public BinaryDataWriter (String filename) throws IOException \begin{hide} {
+      this.out = new DataOutputStream(new FileOutputStream(filename));
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+ Truncates any existing file with the specified name.
+\end{tabb}
+\begin{htmlonly}
+\param{filename}{name of the file to be created}
+\end{htmlonly}
+\begin{code}
+
+   public BinaryDataWriter (File file) throws IOException \begin{hide} {
+      this.out = new DataOutputStream(new FileOutputStream(file));
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+ Truncates any existing file with the specified name.
+\end{tabb}
+\begin{htmlonly}
+\param{file}{file to be created}
+\end{htmlonly}
+\begin{code}
+
+   public BinaryDataWriter (OutputStream outputStream) throws IOException \begin{hide} {
+      this.out = new DataOutputStream(outputStream);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Constructor.
+\end{tabb}
+\begin{htmlonly}
+\param{outputStream} {output stream to write to}
+\end{htmlonly}
+
+   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Writing atomic data}
+
+\begin{code}
+   public void write (String label, String s) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_STRING);
+      out.writeByte(0);
+      writeStringData(s);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes an atomic string field.
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, int a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_INTEGER);
+      out.writeByte(0);
+      out.writeInt(a);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes an atomic 32-bit integer (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, float a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_FLOAT);
+      out.writeByte(0);
+      out.writeFloat(a);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes an atomic 32-bit float  (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, double a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_DOUBLE);
+      out.writeByte(0);
+      out.writeDouble(a);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes an atomic 64-bit double (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Writing one-dimensional arrays}
+
+\begin{code}
+
+   public void write (String label, String[] a, int n) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_STRING);
+      out.writeByte(1);
+      out.writeInt(n);
+      for (int i = 0; i < n; i++)
+         writeStringData(a[i]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes the first \texttt{n} elements of a one-dimensional array
+of strings.
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, int[] a, int n) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_INTEGER);
+      out.writeByte(1);
+      out.writeInt(n);
+      for (int i = 0; i < n; i++)
+         out.writeInt(a[i]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes the first \texttt{n} elements of a one-dimensional array
+of 32-bit integers (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, float[] a, int n) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_FLOAT);
+      out.writeByte(1);
+      out.writeInt(n);
+      for (int i = 0; i < n; i++)
+         out.writeFloat(a[i]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes the first \texttt{n} elements of a one-dimensional array
+of 32-bit floats (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, double[] a, int n) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_DOUBLE);
+      out.writeByte(1);
+      out.writeInt(n);
+      for (int i = 0; i < n; i++)
+         out.writeDouble(a[i]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes the first \texttt{n} elements of a one-dimensional array
+of 64-bit doubles (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Writing two-dimensional arrays}
+
+\begin{code}
+
+   public void write (String label, String[][] a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_STRING);
+      out.writeByte(2);
+      out.writeInt(a.length);
+      out.writeInt(a[0].length);
+      for (int i = 0; i < a.length; i++)
+         for (int j = 0; j < a[i].length; j++)
+            writeStringData(a[i][j]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes a two-dimensional array of strings.
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, int[][] a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_INTEGER);
+      out.writeByte(2);
+      out.writeInt(a.length);
+      out.writeInt(a[0].length);
+      for (int i = 0; i < a.length; i++)
+         for (int j = 0; j < a[i].length; j++)
+            out.writeInt(a[i][j]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes a two-dimensional array of 32-bit integers (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, float[][] a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_FLOAT);
+      out.writeByte(2);
+      out.writeInt(a.length);
+      out.writeInt(a[0].length);
+      for (int i = 0; i < a.length; i++)
+         for (int j = 0; j < a[i].length; j++)
+            out.writeFloat(a[i][j]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes a two-dimensional array of 32-bit floats (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+\begin{code}
+
+   public void write (String label, double[][] a) throws IOException \begin{hide} {
+      writeLabel(label);
+      out.writeByte(TYPECHAR_DOUBLE);
+      out.writeByte(2);
+      out.writeInt(a.length);
+      out.writeInt(a[0].length);
+      for (int i = 0; i < a.length; i++)
+         for (int j = 0; j < a[i].length; j++)
+            out.writeDouble(a[i][j]);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Writes a two-dimensional array of 64-bit doubles (big endian).
+Writes an anonymous field if \texttt{label} is \texttt{null}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Other methods}
+\begin{code}
+
+   public void close() throws IOException \begin{hide} {
+      out.close();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Flushes any pending data and closes the file.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

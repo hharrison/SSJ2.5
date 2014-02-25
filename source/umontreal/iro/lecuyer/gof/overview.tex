@@ -1,0 +1,122 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+
+This package contains tools for performing
+univariate \emph{goodness-of-fit} (GOF) statistical tests.
+% and collect statistics.
+Methods for computing (or approximating) the distribution
+function $F(x)$ of certain GOF test statistics, as well as their
+complementary distribution function $\bar F(x) = 1 - F(x)$, are
+implemented in classes of package
+\externalclass{umontreal.iro.lecuyer}{probdist}.
+Tools for computing the GOF test statistics and the corresponding
+$p$-values, and for formating the results, are provided in classes
+\externalclass{umontreal.iro.lecuyer.gof}{GofStat} and
+\externalclass{umontreal.iro.lecuyer.gof}{GofFormat}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsection* {Goodness-of-fit tests}
+
+% The \texttt{GofStat} class provides tools for computing {\em goodness-of-fit\/}
+We are concerned here with GOF test statistics for testing the hypothesis
+$\cH_0$ that a sample of $N$ observations
+$X_1,\dots,X_N$ comes from a
+given univariate probability distribution $F$.
+We consider tests such as those of Kolmogorov-Smirnov, Anderson-Darling,
+Cr\'amer-von Mises, etc.
+These test statistics generally measure, in different ways, the
+distance between a {\em continuous\/} distribution function $F$ and
+the {\em empirical distribution function\/}
+(EDF) $\hat F_N$ of $X_1,\dots,X_N$.
+They are also called EDF test statistics.
+The observations $X_i$ are usually transformed into $U_i = F (X_i)$,
+which satisfy $0\le U_i\le 1$ and which
+follow the $U(0,1)$ distribution under $\cH_0$.
+(This is called the {\em probability integral transformation}.)
+Methods for applying this transformation, as well as other types of
+transformations, to the observations $X_i$ or $U_i$
+are provided in \externalclass{umontreal.iro.lecuyer.gof}{GofStat}.
+
+Then the GOF tests are applied to the $U_i$ sorted by increasing order.
+The corresponding $p$-values are easily computed by calling the appropriate
+methods in the classes of package \externalclass{umontreal.iro.lecuyer}{probdist}.
+If a GOF test statistic $Y$ has a continuous distribution under
+$\cH_0$ and takes the value $y$, its (right) $p$-value is defined as
+$p = P[Y \ge y \mid \cH_0]$.  The test usually rejects
+$\cH_0$ if $p$
+is deemed too close to 0 (for a one-sided test) or too close to 0 or 1
+(for a two-sided test).
+
+In the case where $Y$ has a {\em discrete distribution\/}
+under $\cH_0$, we distinguish the {\em right $p$-value\/}
+$p_R =  P[Y \ge y \mid \cH_0]$ and the {\em left $p$-value\/}
+$p_L =  P[Y \le y \mid \cH_0]$.
+We then define the $p$-value for a two-sided test as
+\begin{htmlonly}
+\[\begin{array}{rll}
+  p=&p_R&\qquad\mbox{if } p_R < p_L,\\
+  p=&1 - p_L&\qquad\mbox{if } p_R \ge p_L\mbox{ and }p_L < 0.5,\\
+  p=&0.5 &\qquad\mbox{otherwise.}
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\begin{eqnarray}
+   p & = & \left\{
+ \begin{array}{l@{\qquad}l}
+      p_R, & \mbox{if } p_R <  p_L \\[6pt]
+  1 - p_L, & \mbox{if } p_R \ge p_L \mbox{ and } p_L < 0.5 \\[6pt]
+      0.5  &         \mbox{otherwise.}
+ \end{array}\right.                               \label{eq:pdisc}
+\end{eqnarray}
+\end{latexonly}
+Why such a definition?
+Consider for example a Poisson random variable $Y$ with mean 1
+under $\cH_0$.
+If $Y$ takes the value 0, the right $p$-value is
+$p_R =  P[Y \ge 0 \mid \cH_0] = 1$.  In the uniform case, this would
+obviously lead to rejecting $\cH_0$
+on the basis that the $p$-value is too close to 1.
+However, $P[Y = 0 \mid \cH_0] = 1/e
+\approx 0.368$, so it does not
+really make sense to reject $\cH_0$ in this case.
+In fact, the left $p$-value here is $p_L = 0.368$, and the $p$-value
+computed with the above definition is $p = 1 - p_L \approx 0.632$.
+Note that if $p_L$ is very small, in this definition, $p$ becomes
+close to 1.   If the left $p$-value was defined as
+$p_L = 1 - p_R = P[Y < y \mid \cH_0]$, this would also lead to problems.
+In the example, one would have $p_L = 0$ in that case.
+
+A very common type of test in the discrete case is the
+{\em chi-square\/} test, which applies when the possible outcomes are
+partitioned into a finite number of categories.
+Suppose there are $k$ categories and that each observation belongs
+to category $i$ with probability $p_i$, for $0\le i < k$.
+If there are $n$ independent observations, the expected number of
+observations in category $i$ is $e_i = n p_i$, and the chi-square
+test statistic is defined as
+\eq
+ X^2 = \sum_{i=0}^{k-1} \latex{\frac{(o_i - e_i)^2}{e_i}   \label{eq:chi-square0}}
+\html{(o_i - e_i)^2/e_i}
+\endeq
+where $o_i$ is the actual number of observations in category $i$.
+Assuming that all $e_i$'s are large enough (a popular rule of thumb
+asks for $e_i \ge 5$ for each $i$), $X^2$ follows approximately the
+chi-square distribution with $k-1$ degrees of freedom \cite{tREA88a}.
+The class
+\externalclass{umontreal.iro.lecuyer.gof}{GofStat.OutcomeCategoriesChi2},
+a nested class defined inside the
+ \externalclass{umontreal.iro.lecuyer.gof}{GofStat} class, provides tools to automatically
+regroup categories in the cases where some $e_i$'s are too small.
+
+The class \externalclass{umontreal.iro.lecuyer.gof}{GofFormat}
+contains methods used to format results of GOF
+test statistics, or to apply several such tests simultaneously to a
+given data set and format the results to produce a report that also
+contains the $p$-values of all these tests.
+A C version of this class is actually used extensively in the package
+TestU01, which applies statistical tests to random number generators
+\cite{iLEC01t}.
+The class also provides tools to plot an empirical or
+theoretical distribution function, by creating a data file that
+contains a graphic plot in a format compatible with a given software.
+
+

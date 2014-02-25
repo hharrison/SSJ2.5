@@ -1,0 +1,45 @@
+\documentclass[12pt]{article}
+\usepackage{ssj}
+\mytwoheads
+\dateheadtrue
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{titlepage}
+\title{functions}{Functions utilities}
+
+\vfill
+This package contains a few utilities classes representing univariate 
+mathematical functions. They are useful, for example, when one wants to pass
+an arbitrary function of one variable as argument to a method.
+They allow one to apply mathematical operations like squaring, power, etc.
+on generic functions. There are also utilities for numerical
+differentiation and integration. 
+\vfill
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+
+\pagenumbering{arabic}
+\include{MathFunction}
+\include{MathFunctionUtil}
+\include{MathFunctionWithFirstDerivative}
+\include{MathFunctionWithDerivative}
+\include{MathFunctionWithIntegral}
+\include{PowerMathFunction}
+\include{ShiftedMathFunction}
+\include{SqrtMathFunction}
+\include{SquareMathFunction}
+\include{AverageMathFunction}
+\include{IdentityMathFunction}
+\include{PiecewiseConstantFunction}
+\include{Polynomial}
+
+%\bibliographystyle{plain}
+%\bibliography{simul,random,ift,stat,prob,math}  % Dans texmac.
+
+\end{document}

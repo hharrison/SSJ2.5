@@ -1,0 +1,139 @@
+\defclass {BinomialGen}
+
+This class implements random variate generators for the 
+{\em binomial\/} distribution. It has parameters $n$ and $p$ with
+ mass function
+\begin{htmlonly}
+\eq
+     p(x) = \mbox{nCr}(n, x) p^x (1-p)^{n-x} =  
+        n!/(x!(n-x)!)\; p^x (1-p)^{n-x} \qquad \mbox {for }
+           x=0,1,2,\dots, n
+\endeq
+where nCr$(n,x)$ is the number of combinations of $x$ objects
+among $n$,
+\end{htmlonly}
+\begin{latexonly}
+\eq
+     p(x) = {n \choose x} p^x (1-p)^{n-x} =  
+        \frac {n!}{x!(n-x)!}\; p^x (1-p)^{n-x} \qquad \mbox {for }
+           x=0,1,2,\dots, n                     \label{eq:fmass-binomial}
+\endeq
+where
+\end{latexonly}
+$n$ is a positive integer, and $0\le p\le 1$.
+
+% No local copy of the parameters $n$ and $p$ is maintained in this class.
+The (non-static) \texttt{nextInt} method simply calls \texttt{inverseF} on the
+distribution.
+ 
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BinomialGen
+ * Description:  random variate generators for the binomial distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.rng.*;\end{hide}
+
+public class BinomialGen extends RandomVariateGenInt \begin{hide} {
+   protected int    n = -1;
+   protected double p = -1.0;    
+    
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public BinomialGen (RandomStream s, int n, double p)\begin{hide} {
+      super (s, new BinomialDist (n, p));
+      setParams (n, p);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Creates a binomial random variate generator with parameters $n$ and $p$,
+  using stream \texttt{s}.
+ \end{tabb}
+\begin{code}
+
+   public BinomialGen (RandomStream s, BinomialDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getN(), dist.getP());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a random variate generator for the {\em binomial\/} 
+    distribution \texttt{dist} and the random stream \texttt{s}. 
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static int nextInt (RandomStream s, int n, double p)\begin{hide} {
+      return BinomialDist.inverseF (n, p, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Generates a new integer from the {\em binomial\/} distribution with
+  parameters
+   $n = $~\texttt{n} and $p = $~\texttt{p}, using the given stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public int getN()\begin{hide} {
+      return n;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $n$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double getP()\begin{hide} {
+      return p;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $p$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (int n, double p) {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in range [0, 1]");
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      this.p = p;
+      this.n = n;
+   }
+\end{code}
+\begin{tabb} Sets the parameter $n$ and $p$ of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

@@ -1,0 +1,627 @@
+\section {Process-Oriented Programs}
+\label {sec:process}
+
+The process-oriented programs discussed in this section are
+based on the \texttt{simprocs} package and were initially designed
+to run using \emph{Java green threads}, which are actually \emph{simulated}
+threads and have been available only in JDK versions 1.3.1 or earlier,
+unfortunately.
+The green threads in these early versions of JDK were obtained
+by running the program with the ``\texttt{java -classic}'' option.
+
+With \emph{native threads}, these programs run more slowly
+and may crash if too many threads are initiated.
+This is a serious limitation of the package \texttt{simprocs},
+due to the fact that Java threads are \emph{not} designed for simulation.
+
+A second implementation of \texttt{simprocs}, available in DSOL
+(see the class \texttt{DSOLProcess\-Simulator})
+and provided to us by Peter Jacobs, does not use the Java threads.
+It is based on a Java reflection mechanism
+that interprets the code of processes at runtime and transforms everything into events.
+A program using the process view and implemented with the DSOL interpreter
+can be 500 to 1000 times slower than the corresponding event-based program.
+On the other hand, it is a good and safe teaching tool for process-oriented programming,
+and the number of processes is limited only by the available memory.
+To use the DSOL system with a program that imports \texttt{simprocs},
+it suffices to run the program with
+the ``\texttt{java -Dssj.withDSOL ...}'' option.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {The single queue}
+
+\lstinputlisting[%
+label=lst:QueueProc,
+caption={Process-oriented simulation of an $M/M/1$ queue},float=tp,
+emph={simulateOneRun,actions,main}
+]%
+{QueueProc.java}
+
+Typical simulation languages offer higher-level constructs than those used
+in the program of Listing~\ref{lst:QueueEv}, and so does SSJ.
+This is illustrated by our second implementation of the single-server
+queue model, in Listing~\ref{lst:QueueProc}, based on a
+paradigm called the {\em process-oriented\/} approach.
+% initiated in the early sixties by the GPSS language (\cite {sSCH90a}).
+
+In the event-oriented implementation, each customer was a {\em passive\/}
+object, storing two real numbers, and performing no action by itself.
+In the process-oriented implementation given in Listing~\ref{lst:QueueProc},
+each customer (instance of the class \texttt{Customer}) is a
+\emph{process} whose activities are described by its \texttt{actions} method.
+This is implemented by associating a Java \texttt{Thread} to each
+\texttt{SimProcess}.
+The server is an object of the class \texttt{Resource}, created when
+\texttt{QueueProc} is instantiated by \texttt{main}.
+It is a {\em passive\/} object, in the sense that it executes no code.
+Active resources, when needed, can be implemented as processes.
+
+When it starts executing its actions, a customer first schedules
+the arrival of the next customer, as in the event-oriented case.
+(Behind the scenes, this effectively schedules an event, in the
+event list, that will start a new customer instance.
+The class \texttt{SimProcess} contains all scheduling facilities of {\tt
+  Event}, which permits one
+to schedule processes just like events.)
+The customer then requests the server by invoking \texttt{server.request}.
+If the server is free, the customer gets it and can continue its
+execution immediately.  Otherwise, the customer is automatically
+(behind the scenes) placed in the server's queue, is suspended,
+and resumes its execution only when it obtains the server.
+When its service can start, the customer invokes \texttt{delay} to
+freeze itself for a duration equal to its service time, which is
+again generated from the exponential distribution with mean $1/\mu$
+using the random variate generator \texttt{genServ}.
+After this delay has elapsed, the customer
+releases the server and ends its life.
+Invoking \texttt{delay(d)} can be interpreted as scheduling an event that
+% (behind the scenes)
+will resume the execution of the process in \texttt{d} units of time.
+Note that several distinct customers can
+co-exist in the simulation at any given point in time, and
+be at different phases of their \texttt{actions} method.
+However, only one process is executing at a time.
+
+The constructor \texttt{QueueProc} initializes the simulation,
+invokes \texttt{setStatCollecting (true)} to specify that detailed statistical
+collection must be performed automatically for the resource \texttt{server},
+schedules an event \texttt{EndOfSim} at the time horizon,
+schedules the first customer's arrival, and starts the simulation.
+The \texttt{EndOfSim} event stops the simulation.
+The \texttt{main} program then regains control and prints a detailed
+statistical report on the resource \texttt{server}.
+
+It should be pointed out that in the \texttt{QueueProc} program,
+the service time of a customer is generated
+only when the customer starts its service, whereas for \texttt{QueueEv},
+it was generated at customer's arrival.
+For this particular model, it turns out that this makes no difference
+in the results, because the customers are served in a FIFO order
+and because one random number stream is dedicated to the generation
+of service times.
+However, this may have an impact in other situations.
+
+The process-oriented program here is more compact and
+more elegant than its event-oriented counterpart.
+This tends to be often true: Process-oriented programming
+frequently gives less cumbersome and better looking programs.
+On the other hand, the process-oriented implementations also tend to
+execute more slowly, because they involve more overhead.
+For example, the process-driven single-server queue simulation
+is two to three times slower than its event-driven counterpart.
+In fact, process management is done via the event list:
+processes are started, suspended, reactivated, and so on,
+by hidden events.
+If the execution speed of a simulation program is really important,
+it may be better to stick to an event-oriented implementation.
+
+%%%%%%%%%%%%%%%
+\lstinputlisting[label=res:QueueProc,
+caption={Results of the program \texttt{QueueProc}}]%
+{QueueProc.res}
+
+% \bigskip
+
+\iffalse %%%%%%%%%%%%
+\setbox5=\vbox{\hsize=5.8in
+\begin{verbatim}
+REPORT ON RESOURCE : Server
+  From time : 0.0    to time : 1000.0
+                 min          max      average    Std. Dev.  num.obs.
+  Capacity        1            1          1
+  Utilisation     0            1         0.999
+  Queue Size      0           12         4.85
+  Wait            0         113.721     49.554     22.336      97
+  Service        0.065       41.021     10.378     10.377      96
+  Sojourn       12.828      124.884     60.251     21.352      96
+
+\end{verbatim}
+}
+
+\begin{figure}[htb]
+\centerline {\boxit{\box5}}
+\caption {Results of the program \texttt{QueueProc}.}
+\label {fig:quresProc}
+\end{figure}
+\fi  %%%%%%%%%%%%
+
+Listing~\ref{res:QueueProc} shows the output of the program \texttt{QueueProc}.
+It contains more information than the output of \texttt{QueueEv}.
+It gives statistics on the server utilization, queue size,
+waiting times, service times, and sojourn times in the system.
+(The sojourn time of a customer is its waiting time plus its service time.)
+
+We see that by time $T =1000$, 1037 customers have completed their waiting
+and all of them have completed their service.
+The maximal queue size has been 10 and its average length
+between time 0 and time 1000 was 0.513.
+The waiting times were in the range from 0 to 6.262, with an average of 0.495,
+while the service times were from 0.00065 to 3.437, with an average of 0.511
+(recall that the theoretical mean service time is $1/\mu = 0.5$).
+Clearly, the largest waiting time and largest service time
+belong to different customers.
+% The average waiting and service times do not sum up to
+% the average sojourn time because there is one more observation for the
+% waiting times.
+
+The report also gives the empirical standard deviations of the waiting,
+service, and sojourn times.  It is important to note that these
+standard deviations should {\em not\/} be used to compute confidence
+intervals for the expected average waiting times or sojourn times
+in the standard way, because the observations here (e.g., the successive
+waiting times) are strongly dependent, and also not identically distributed.
+Appropriate techniques for computing confidence intervals in this type of
+situation are described, e.g., in \cite{sFIS96a,sLAW00a}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {A job shop model}
+\label {sec:jobshop}
+
+This example is adapted from \cite[Section 2.6]{sLAW00a},
+and from \cite{sLEC88a}.
+A job shop contains $M$ groups of machines, the $m$th group having
+$s_m$ identical machines, for $m=1,\dots,M$.
+It is modeled as a network of queues:
+each group has a single FIFO queue, with $s_m$ identical servers for the
+$m$th group.  There are $N$ types of tasks arriving to the shop
+at random.  Tasks of type $n$ arrive according to a Poisson process
+with rate $\lambda_n$ per hour, for $n=1,\dots,N$.
+Each type of task requires a fixed sequence of operations,
+where each operation must be performed on a specific type of machine
+and has a deterministic duration.
+A task of type $n$ requires $p_n$ operations, to be performed on
+machines $m_{n,1},m_{n,2},\dots,m_{n,p_n}$, in that order, and whose
+respective durations are $d_{n,1},d_{n,2},\dots,d_{n,p_n}$, in hours.
+A task can pass more than once on the same machine type, so $p_n$ may
+exceed $M$.
+
+We want to simulate the job shop for $T$ hours,
+assuming that it is initially empty, and start collecting statistics
+only after a warm-up period of $T_0$ hours.
+We want to compute: (a) the average sojourn time in the shop for
+each type of task and
+(b) the average utilization rate, average length of the waiting
+queue, and average waiting time, for each type of machine,
+over the time interval $[T_0,T]$.
+For the average sojourn times and waiting times, the counted
+observations are the sojourn times and waits that {\em end\/} during
+the time interval $[T_0,T]$.
+Note that the only randomness in this model is in the task
+arrival process.
+
+The class \texttt{Jobshop} in Listing~\ref{lst:Jobshop} performs this
+simulation.  Each group of machine is viewed as a resource, with
+capacity $s_m$ for the group $m$.
+The different {\em types\/} of task are objects of the class \texttt{TaskType}.
+This class is used to store the parameters of the different types:
+their arrival rate, the number of operations, the machine type
+and duration for each operation, and a statistical collector for
+their sojourn times in the shop.
+(In the program, the machine types and task types are numbered
+from 0 to $M-1$ and from 0 to $N-1$, respectively,
+because array indices in Java start at 0.)
+
+The tasks that circulate in the shop are objects of the class \texttt{Task}.
+The \texttt{actions} method in class \texttt{Task} describes the behavior
+of a task from its arrival until it exits the shop.
+Each task, upon arrival, schedules the arrival of the next task of the
+same type.  The task then runs through the list of its operations.
+For each operation, it requests the appropriate type of machine,
+keeps it for the duration of the operation, and releases it.
+When the task terminates, it sends its sojourn time as a new observation
+to the collector \texttt{statSojourn}.
+
+Before starting the simulation, the method \texttt{simulateOneRun}
+schedules an event for the end of the simulation and another one
+for the end of the warm-up period.  The latter simply starts the
+statistical collection.
+It also schedules the arrival of a task of each type.
+Each task will in turn schedules the arrival of the next task of
+its own type.
+
+With this implementation, the event list always
+contain $N$ ``task arrival'' events, one for each type of task.
+An alternative implementation would be that each task schedules
+another task arrival in a number of hours that is an exponential r.v.\
+with rate $\lambda$, where $\lambda = \lambda_0 + \cdots + \lambda_{N-1}$
+is the global arrival rate, and then the type of each arriving task is
+$n$ with probability $\lambda_n/\lambda$, independently of the others.
+Initially, a {\em single\/} arrival would be scheduled by the class
+\texttt{Jobshop}.
+This approach is stochastically equivalent to the current implementation
+(see, e.g., \cite{sBRA87a,pWOL89a}), but the event list contains only
+one ``task arrival'' event at a time.
+On the other hand, there is the additional work of generating the task
+type on each arrival.
+
+At the end of the simulation, the \texttt{main} program prints the
+statistical reports.  Note that if one wanted to perform several independent
+simulation runs with this program, the statistical collectors would
+have to be reinitialized before each run, and additional collectors
+would be required to collect the run averages and compute confidence
+intervals.
+
+
+%%%%%%%%%%%%%%%%
+\lstinputlisting[label=lst:Jobshop,
+caption={A job shop simulation},
+emph={printReportOneRun,simulateOneRun,actions,readData,performTask,main}
+]{Jobshop.java}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {A time-shared computer system}
+\label {sec:timeshared}
+
+This example is adapted from \cite{sLAW00a}, Section~2.4.
+Consider a simplified time-shared computer system comprised of $T$
+identical and independent terminals, all busy, using a common server
+(e.g., for database requests, or central processing unit (CPU)
+consumption, etc.).
+Each terminal user sends a task to the server at some random time and
+waits for the response.  After receiving the response, he thinks
+for some random time before submitting a new task, and so on.
+
+We assume that the thinking time is an exponential  random variable
+with mean $\mu$, whereas the server's time needed for a request is a
+Weibull random variable with parameters $\alpha$, $\lambda$ and $\delta$.
+The tasks waiting for the server form a single queue with a
+{\em round robin\/} service policy with {\em quantum size\/} $q$,
+which operates as follows.
+When a task obtains the server, if it can be completed in less than $q$
+seconds, then it keeps the server until completion.
+Otherwise, it gets the server for $q$ seconds and returns to the back
+of the queue to be continued later.
+In both cases, there is also $h$ additional seconds of {\em overhead\/}
+for changing the task that has the server's attention.
+
+
+The {\em response time\/} of a task is defined as the difference
+between the time when the task ends (including the overhead $h$ at the
+end) and the arrival time of the task to the server.
+We are interested in the {\em mean response time}, in steady-state.
+We will simulate the system until $N$ tasks have ended, with all
+terminals initially in the ``thinking'' state.
+To reduce the initial bias, we will start collecting statistics only
+after $N_0$ tasks have ended (so the first $N_0$ response times are
+not counted by our estimator, and we take the average response
+time for the $N-N_0$ response times that remain).
+This entire simulation is repeated $R$ times, independently,
+so we can estimate the variance of our estimator.
+% and compute a confidence interval for the true mean response time.
+
+
+\unitlength=1in
+\begin{picture}(6.0, 2.9)(0.0,0.3)
+\thicklines\bf
+\put(1.5,1.0){\circle{0.4}}
+\put(1.5,1.5){\circle{0.4}}
+\put(1.5,2.5){\circle{0.4}}
+\put(1.5,1.0){\makebox(0,0){1}}
+\put(1.5,1.5){\makebox(0,0){2}}
+\put(1.5,2.5){\makebox(0,0){T}}
+\multiput(1.5,1.85)(0.0,0.15){3}{\circle*{0.05}}
+\put(3.9,1.7){\framebox(0.8,0.4){CPU}}
+\multiput(3.5,1.75)(0.1,0.0){4}{\line(0,1){0.3}}
+\put(1.1,1.2){\line(0,1){1.1}}
+\put(1.9,1.2){\line(0,1){1.1}}
+\put(0.7,2.2){\line(0,1){0.5}}
+\put(0.9,2.0){\vector(1,0){0.2}}
+\put(1.9,2.0){\vector(1,0){1.5}}
+\put(3.0,1.8){\vector(1,0){0.4}}
+\put(3.0,1.4){\line(1,0){2.1}}
+\put(4.7,1.9){\line(1,0){0.4}}
+\put(0.9,2.9){\line(1,0){4.2}}
+\put(1.3,1.2){\oval(0.4,0.4)[bl]}
+\put(1.3,1.7){\oval(0.4,0.4)[bl]}
+\put(1.3,2.3){\oval(0.4,0.4)[tl]}
+\put(1.7,2.3){\oval(0.4,0.4)[tr]}
+\put(1.7,1.7){\oval(0.4,0.4)[br]}
+\put(1.7,1.2){\oval(0.4,0.4)[br]}
+\put(0.9,2.2){\oval(0.4,0.4)[bl]}
+\put(0.9,2.7){\oval(0.4,0.4)[tl]}
+\put(3.0,1.6){\oval(0.4,0.4)[l]}
+\put(5.1,1.65){\oval(0.4,0.5)[r]}
+\put(5.1,2.4){\oval(0.4,1.0)[r]}
+\small\rm
+\put(1.5,0.65){\makebox(0,0){Terminals}}
+\put(4.1,1.25){\makebox(0,0){End of quantum}}
+\put(3.2,2.75){\makebox(0,0){End of task}}
+\put(3.65,2.2){\makebox(0,0){Waiting queue}}
+\end{picture}
+
+
+Suppose we want to compare the mean response times for two
+different configurations of this system, where a configuration is
+characterized by the vector of parameters
+$(T, q, h, \mu, \alpha, \lambda, \delta)$.
+We will make $R$ independent simulation runs (replications)
+for each configuration.
+To compare the two configurations, we want to use {\em common random
+numbers}, i.e., the same streams of random numbers
+across the two configurations.
+We couple the simulation runs by pairs:
+for run number $i$, let $R_{1i}$ and $R_{2i}$ be the mean response times
+for configurations 1 and 2, and let
+      $$D_i = R_{1i} - R_{2i}.$$
+We use the same random numbers to obtain $R_{1i}$ and $R_{2i}$,
+for each $i$.
+The $D_i$ are nevertheless independent random variables (under the blunt
+assumption that the random streams really produce independent uniform
+random variables) and we can use them to compute a confidence interval
+for the difference $d$ between the theoretical mean response times of the
+two systems.
+Using common random numbers across $R_{1i}$ and $R_{2i}$ should reduce
+the variance of the $D_i$ and the size of the confidence interval.
+
+
+\lstinputlisting[label=lst:TimeShared,
+caption={Simulation of a time shared system},%
+emph={simulateConfigs,actions,simulOneRun,main}
+]%
+{TimeShared.java}
+
+% \bigskip
+
+The program of Listing~\ref{lst:TimeShared} performs this simulation.
+In the \texttt{simulateConfigs} method, we perform \texttt{numRuns}
+pairs of simulation runs, one with quantum size \texttt{q1} and one
+with quantum size {q2}.
+Each random stream is reset to the beginning of its \emph{current} substream
+after the first run, and to the beginning of its \emph{next} substream
+after the second run, to make sure that for each pair of runs,
+the generators start from exactly the same
+seeds and generate exactly the same random numbers in the same order.
+The variable \texttt{mean1} memorizes the values of $R_{1i}$ after the
+first run, and the statistical probe \texttt{statDiff} collects the
+differences $D_i$, in order to compute a confidence interval for $d$.
+
+For each simulation run, the statistical probe \texttt{meanInRep}
+is used to compute the average response time for the $N - N_0$ tasks
+that terminate after the warm-up.
+It is initialized before each run and updated with a new observation
+at the $i$th task termination, for $i = N_0+1,\dots,N$.
+At the beginning of a run, a \texttt{Terminal} process is activated for
+each terminal.  When the $N$th task terminates, the corresponding
+process invokes \texttt{Sim.stop} to stop the simulation and
+to return the control to
+the instruction that follows the call to \texttt{simulOneRun}.
+
+% \bigskip
+
+\iffalse  %%%%%%%%%
+\setbox3=\vbox {\hsize = 6.0in
+\begin{verbatim}
+REPORT on Tally stat. collector ==> Differences on mean response times
+   min          max        average      standard dev.   nb. obs.
+   -0.134      0.369        0.168         0.175            10
+
+        90.0% confidence interval for mean (student): ( 0.067, 0.269 )
+\end{verbatim}
+}
+
+\begin{figure}[ht]
+\centerline{\boxit{\box3}}
+\caption {Difference in the mean response times for $q=0.1$ and $q=0.2$
+    for the time shared system.}
+\label {fig:timeshared-res}
+\end{figure}
+\fi   %%%%%%
+
+For a concrete example, let $T=20$, $h=.001$, $\mu=5$ sec., $\alpha=1/2$,
+$\lambda=1$ and $\delta=0$ for the two configurations.
+With these parameters, the mean of the Weibull distribution is 2.
+Take $q=0.1$ for configuration 1 and $q=0.2$ for configuration 2.
+We also choose $N_0=100$, $N=1100$, and $R=10$ runs.
+With these numbers, the program gives the results of
+Listing~\ref{res:TimeShared}.
+The confidence interval on the difference between the response time
+with $q=0.1$ and that with $q=0.2$ contains only positive numbers.
+We can therefore conclude that
+the mean response time is significantly shorter (statistically)
+with $q=0.2$ than with $q = 0.1$ (assuming that we can neglect the
+bias due to the choice of the initial state).
+To gain better confidence in this conclusion, we could repeat the
+simulation with larger values of $N_0$ and $N$.
+
+\lstinputlisting[label=res:TimeShared,
+caption={Difference in mean response times
+  for $q=0.1$ and $q=0.2$, for time shared system}]%
+{TimeShared.res}
+
+Of course, the model could be made more realistic by considering,
+for example, different types of terminals, with different parameters,
+a number of terminals that changes with time,
+different classes of tasks with priorities, etc.
+SSJ offers the tools to implement these generalizations easily.
+% The program would be more elaborate but its structure would be similar.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Guided visits}
+\label {sec:visits}
+
+This example is translated from \cite{sLEC88a}.
+A touristic attraction offers guided visits, using three guides.
+The site opens at 10:00 and closes at 16:00.
+Visitors arrive in small groups (e.g., families) and the arrival
+process of
+those groups is assumed to be a Poisson process
+with rate of 20 groups per hour, from 9:45 until 16:00.
+The visitors arriving before 10:00 must wait for the opening.
+After 16:00, the visits already under way can be completed,
+but no new visit is undertaken, so that all the visitors still
+waiting cannot visit the site and are lost.
+
+The size of each arriving group of visitors is a discrete random
+variable taking the value $i$ with probability $p_i$ given in the
+following table:
+\begin{center}
+\begin{tabular}{r|rrrr}         \hline
+   $i$ \ \  & 1  & 2  & 3  & 4\\  \hline
+   $p_i$ \  & \ .2 & \ .6 & \ .1 & \ .1\\ \hline
+\end{tabular}
+\end{center}
+
+Visits are normally made by groups of 8 to 15 visitors.
+Each visit requires one guide and lasts 45 minutes.
+People waiting for guides form a single queue.
+When a guide becomes free, if there is less than 8 people
+in the queue, the guide waits until the queue grows to at
+least 8 people, otherwise she starts a new visit right away.
+If the queue contains more than 15 people, the first 15 will
+go on this visit.
+At 16:00, if there is less than 8 people in the queue
+and a guide is free, she starts a visit with the remaining
+people.
+At noon, each free guide takes 30 minutes for lunch.
+The guides that are busy at that time will take 30 minutes
+for lunch as soon as they complete their on-going visit.
+
+Sometimes, an arriving group of visitors may decide to just
+go away (balk) because the queue is too long.
+%  These visitors are lost.
+We assume that the probability of balking when the queue
+size is $n$ is given by
+$$
+   R(n) = \cases {0          & for $n\le 10;$\cr
+                  (n-10)/30  & for $10< n< 40$;\cr
+                  1          & for $n\ge 40$.}
+$$
+
+The aim is to estimate the average number of visitors lost
+per day, in the long run.
+The visitors lost are those that balk or are still in the
+queue after 16:00.
+
+A simulation program for this model is given in
+Listing~\ref{lst:Visits}.
+Here, time is measured in hours, starting at midnight.
+At time 9:45, for example, the simulation clock is at 9.75.
+The (process) class \texttt{Guide} describes the daily
+behavior of a guide (each guide is an instance of this
+class), whereas \texttt{Arrival} generates the arrivals
+according to a Poisson process, the group sizes,
+and the balking decisions.
+The event \texttt{closing} closes the site at 16:00.
+
+The \texttt{Bin} mechanism \texttt{visitReady} is used to
+synchronize the \texttt{Guide} processes.
+The number of tokens in this bin is 1 if there are
+enough visitors in the queue to start a visit (8 or more)
+and is 0 otherwise.
+When the queue size reaches 8 due to a new arrival,
+the \texttt{Arrival} process puts a token into the bin.
+This wakes up a guide if one is free.
+A guide must take a token from the bin to start a new
+visit.  If there are still 8 people or more in the queue
+when she starts the visit, she puts the token back to
+the bin immediately, to indicate that another visit is
+ready to be undertaken by the next available guide.
+
+%%%%%%%%%%%%%%%%
+\lstinputlisting[label=lst:Visits,
+caption={Simulation of guided visits},
+emph={simulateRuns,actions,oneDay,balk,main},%
+lineskip=-1pt]{Visits.java}
+
+% \clearpage
+
+The simulation results are in Listing~\ref{res:Visits}.
+
+
+%%%%%%%%%%%%%%%%
+\lstinputlisting[label=res:Visits,
+caption={Simulation results for the guided visits model},
+ lineskip=-1pt]{Visits.res}
+
+%\bigskip
+
+\iffalse %%%%%%%%%%%%
+\setbox3=\vbox {\hsize = 6.0in
+\begin{verbatim}
+REPORT on Tally stat. collector ==> Nb. of visitors lost per day
+   min        max        average      standard dev.   nb. obs.
+    3         48          21.78         10.639          100
+
+        90.0 confidence interval for mean ( 20.014, 23.546 )
+\end{verbatim}
+}
+
+\begin{figure}[ht]
+\centerline{\boxit{\box3}}
+\caption {Simulation results for the guided visits model.}
+\label {fig:visits-res}
+\end{figure}
+\fi  %%%%%%%%%%
+
+Could we have used a \texttt{Condition} instead of a \texttt{Bin}
+for synchronizing the \texttt{Guide} processes?
+The problem would be that if several guides are waiting for a
+condition indicating that the queue size has reached 8,
+{\em all\/} these guides (not only the first one)
+would resume their execution
+simultaneously when the condition becomes true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Return to the simplified bank}
+\label {sec:bank-proc}
+
+Listing~\ref{lst:BankProc} gives a process-oriented simulation
+program for the bank model of Section~\ref{sec:bank}.
+Here, the customers are viewed as processes.
+There are still events at the fixed times 9:45, 10:00, etc.,
+and these events do the same thing,
+but they are implicit in the process-oriented implementation.
+The next planned arrival event \texttt{nextArriv} is replaced by the
+next planned arriving customer \texttt{nextCust}.
+
+Instead of using the default process simulator as in the previous
+examples, here one creates a \class{ThreadProcessSimulator} object that
+will manage the processes of this simulation.
+
+The process-oriented version of the program is shorter,
+because certain aspects (such as the details of an arrival
+or departure event) are taken care of automatically by the
+process/resource construct, and the events 9:45, 10:00, etc.,
+are replaced by a single process.
+At 10 o'clock, the \texttt{setCapacity} statement that fixes the
+number of tellers also takes
+care of starting service for the appropriate number of customers.
+The two programs produce exactly the same results, given in
+Listing~\ref{lst:BankEv}.
+However, the process-oriented program take approximately 4 to 5 times
+longer to run than its event-oriented counterpart.
+
+% \clearpage
+
+\lstinputlisting[label=lst:BankProc,
+caption={Process-oriented simulation of the bank model},
+emph={simulOneDay,simulateDays,actions,balk,main}]%
+{BankProc.java}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

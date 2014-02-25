@@ -1,0 +1,485 @@
+\defclass {ScatterChart}
+
+% Extends \externalclass{umontreal.iro.lecuyer.charts}{XYChart}.
+This class provides tools to create and manage scatter plots. Using the
+\class{ScatterChart} class is the simplest way to produce scatter plots only.
+Each \class{ScatterChart} object is linked with a
+\externalclass{umontreal.iro.lecuyer.charts}{XYListSeriesCollection} data set.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ScatterChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   org.jfree.chart.axis.NumberAxis;
+import   org.jfree.chart.ChartFactory;
+import   org.jfree.chart.ChartPanel;
+import   org.jfree.chart.plot.XYPlot;
+import   org.jfree.chart.plot.PlotOrientation;
+import   org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import   org.jfree.chart.renderer.xy.XYDotRenderer;
+import   org.jfree.data.xy.XYSeriesCollection;
+import   java.util.Locale;
+import   java.util.Formatter;
+import   cern.colt.list.DoubleArrayList;
+import   javax.swing.JFrame;
+\end{hide}
+
+public class ScatterChart extends XYChart \begin{hide} {
+
+   protected void init (String title, String XLabel, String YLabel) {
+      // create the chart...
+      chart = ChartFactory.createScatterPlot (
+         title,                    // chart title
+         XLabel,                   // x axis label
+         YLabel,                   // y axis label
+         dataset.getSeriesCollection(), // data
+         PlotOrientation.VERTICAL,
+         true,                     // include legend
+         true,                     // tooltips
+         false                     // urls
+      );
+
+      ((XYPlot)chart.getPlot()).setRenderer(dataset.getRenderer());
+      // Initialize axis variables
+      initAxis();
+
+      int nb = getSeriesCollection().getSeriesCollection().getSeriesCount();
+      for (int i = 0 ; i < nb ; i++) {
+         getSeriesCollection().setDashPattern(i, "only marks");
+         getSeriesCollection().setMarksType(i, "+");
+      }
+   }
+
+   protected void initAxis(){
+      XAxis = new Axis((NumberAxis)((XYPlot)chart.getPlot()).getDomainAxis(),
+                        Axis.ORIENTATION_HORIZONTAL);
+      YAxis = new Axis((NumberAxis)((XYPlot)chart.getPlot()).getRangeAxis(),
+                        Axis.ORIENTATION_VERTICAL);
+      setAutoRange(true, true);
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+
+   public ScatterChart() \begin{hide} {
+      super();
+      dataset = new XYListSeriesCollection();
+      init (null, null, null);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{ScatterChart} instance with an empty data set.
+\end{tabb}
+\begin{code}
+
+   public ScatterChart (String title, String XLabel, String YLabel,
+                        double[][]... data) \begin{hide} {
+      super();
+      dataset = new XYListSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Initializes a new \texttt{ScatterChart} instance with data \texttt{data}.
+\texttt{title} is a title, \texttt{XLabel} is a short description of the
+$x$-axis and \texttt{YLabel} a short description of the $y$-axis.
+The input parameter \texttt{data}  represents sets of plotting data.
+%
+ For example, if one $n$-row matrix \texttt{data1} is given as argument
+ \texttt{data}, then the first row \texttt{data1}$[0]$ represents the
+ $x$-coordinate vector, and every other row \texttt{data1}$[i],
+   i=1,\ldots, n-1$, represents the $y$-coordinates of a set of points.
+  Therefore matrix \texttt{data1}  corresponds
+   to $n-1$ sets of points, all with the same $x$-coordinates.
+%
+  However, one may want to plot sets of points with different $x$-coordinates.
+  In that case, one should give the points as matrices with two rows.
+For examples, if the argument \texttt{data} is made of three 2-row matrices
+\texttt{data1}, \texttt{data2} and \texttt{data3}, then they represents
+ three different sets of points, \texttt{data*}$[0]$ giving the $x$-coordinates,
+ and  \texttt{data*}$[1]$  the $y$-coordinates of the points.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public ScatterChart (String title, String XLabel, String YLabel,
+                        double[][] data, int numPoints) \begin{hide} {
+      super();
+      dataset = new XYListSeriesCollection(data, numPoints);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Initializes a new \texttt{ScatterChart} instance with sets of points \texttt{data}.
+\texttt{title} is a title, \texttt{XLabel} is a short description of the
+$x$-axis, and \texttt{YLabel} a short description of the $y$-axis.
+ If \texttt{data} is a $n$-row matrix,
+ then the first row \texttt{data}$[0]$ represents the
+ $x$-coordinate vector, and every other row \texttt{data}$[i],
+   i=1,\ldots, n-1$, represents a $y$-coordinate vector.
+  Therefore matrix \texttt{data}$[i][\ ]$, $i=0,\ldots, n-1$,  corresponds
+   to $n-1$ sets of points, all with the same $x$-coordinates.
+  However, only \emph{the first} \texttt{numPoints} of each set \texttt{data}$[i]$
+  (i.e. the first \texttt{numPoints} columns of each row)
+  will be plotted.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+   \param{numPoints}{Number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public ScatterChart (String title, String XLabel, String YLabel,
+                        double[][] data, int x, int y) \begin{hide} {
+      super();
+      int len = data[0].length;
+      double[][] proj = new double[2][len];
+      for (int i = 0; i < len; i++) {
+         proj[0][i] = data[x][i];
+         proj[1][i] = data[y][i];
+      }
+      dataset = new XYListSeriesCollection(proj);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Initializes a new \texttt{ScatterChart} instance using subsets of \texttt{data}.
+\texttt{data[x][.]} will form the $x$-coordinates and
+\texttt{data[y][.]} will form the $y$-coordinates of the chart.
+\texttt{title} sets a title, \texttt{XLabel} is a short description of the
+$x$-axis, and \texttt{YLabel} is a short description of the $y$-axis.
+Warning: if the new $x$-axis coordinates are not monotone increasing, then
+they will automatically be sorted in increasing order so the points will
+be reordered, but the original \texttt{data} is not changed.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+   \param{x}{Index of data forming the $x$-coordinates}
+   \param{y}{Index of data forming the $y$-coordinates}
+\end{htmlonly}
+\begin{code}
+
+   public ScatterChart (String title, String XLabel, String YLabel,
+                        DoubleArrayList... data) \begin{hide} {
+      super();
+      dataset = new XYListSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{ScatterChart} instance with data \texttt{data}.
+   The input parameter \texttt{data} represents a set of plotting data. A
+   \externalclass{cern.colt.list}{DoubleArrayList} from the Colt library is
+   used to store the data. The description is similar to the above
+   constructor with \texttt{double[]... data}.
+% Therefore \texttt{data}$[0]$ will form the first
+ %   curve, \texttt{data}$[1]$ forms the second and in general,
+%    \texttt{data}$[i], i = 0, \ldots,n,$ forms a point set.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public ScatterChart (String title, String XLabel, String YLabel,
+                        XYSeriesCollection data) \begin{hide} {
+      super();
+      dataset = new XYListSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{ScatterChart} instance with data \texttt{data}.
+   The input parameter \texttt{data} represents a set of plotting data.
+   \externalclass{org.jfree.data.xy}{XYSeriesCollection} is a
+   \texttt{JFreeChart} container class to store $XY$ plots.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series collection.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public int add (double[] x, double[] y, String name, String plotStyle) \begin{hide} {
+      int seriesIndex = add(x,y);
+      getSeriesCollection().setName(seriesIndex, name);
+      getSeriesCollection().setPlotStyle (seriesIndex, plotStyle);
+      return seriesIndex;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{x} represents
+   the $x$-coordinates and vector \texttt{y} represents the $y$-coordinates of
+   the series. \texttt{name} and \texttt{plotStyle} are the name and the plot
+   style associated to the series.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{$x_i$ coordinates.}
+   \param{y}{$y_i$ coordinates.}
+   \param{name}{Name of the series.}
+   \param{plotStyle}{Plot style of the series.}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{XYSeriesCollection} object.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (double[] x, double[] y) \begin{hide} {
+      return add (x, y, x.length);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{x} represents
+   the $x$-coordinates and vector \texttt{y} represents the $y$-coordinates of
+   the series.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{$x_i$ coordinates.}
+   \param{y}{$y_i$ coordinates.}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{XYSeriesCollection} object.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (double[] x, double[] y, int numPoints) \begin{hide} {
+      int seriesIndex = getSeriesCollection().add(x, y, numPoints);
+      initAxis();
+      getSeriesCollection().setMarksType(seriesIndex, "+");
+      getSeriesCollection().setDashPattern(seriesIndex, "only marks");
+      return seriesIndex;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{x} represents
+   the $x$-coordinates and vector \texttt{y} represents the $y$-coordinates of
+   the series. Only \emph{the first} \texttt{numPoints} of \texttt{x} and
+   \texttt{y} will be taken into account for the new series.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{$x_i$ coordinates.}
+   \param{y}{$y_i$ coordinates.}
+   \param{numPoints}{Number of points to add.}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{XYSeriesCollection} object.}
+\end{htmlonly}
+\begin{code}
+
+   public XYListSeriesCollection getSeriesCollection() \begin{hide} {
+      return (XYListSeriesCollection)dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's dataset.
+\end{tabb}
+\begin{htmlonly}
+   \return{the chart's dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setSeriesCollection (XYListSeriesCollection dataset) \begin{hide} {
+      this.dataset = dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Links a new dataset to the current chart.
+\end{tabb}
+\begin{htmlonly}
+   \param{dataset}{new dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setTicksSynchro (int s) \begin{hide} {
+      XYSeriesCollection seriesCollection =
+          (XYSeriesCollection)this.dataset.getSeriesCollection();
+      double[] values = new double[seriesCollection.getItemCount(s)];
+
+      for(int i = 0; i < seriesCollection.getItemCount(s); i++)
+         values[i] = seriesCollection.getXValue(s, i);
+
+      XAxis.setLabels(values);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Synchronizes $X$-axis ticks to the $s$-th series $x$-values.
+\end{tabb}
+\begin{htmlonly}
+   \param{s}{series used to define ticks.}
+\end{htmlonly}
+\begin{code}
+
+   public JFrame view (int width, int height) \begin{hide} {
+      JFrame myFrame;
+      if (chart.getTitle () != null)
+         myFrame = new JFrame ("ScatterChart from SSJ: " + chart.getTitle ().getText ());
+      else
+         myFrame = new JFrame ("ScatterChart from SSJ");
+      XYPlot plot = chart.getXYPlot ();
+
+/*    // The drawn points are somewhat big, of different shapes, unfilled
+      XYLineAndShapeRenderer shape = new XYLineAndShapeRenderer(false, true);
+      int nb = getSeriesCollection().getSeriesCollection().getSeriesCount();
+      for (int i = 0 ; i < nb ; i++) {
+         shape.setSeriesShapesFilled(i, false);
+         plot.setRenderer(i, shape);
+      }
+*/
+      // The drawn points are all square, filled
+      XYDotRenderer shape = new XYDotRenderer();
+      final int dotSize = 3;
+      shape.setDotWidth(dotSize);
+      shape.setDotHeight(dotSize);
+      int nb = getSeriesCollection().getSeriesCollection().getSeriesCount();
+      for (int i = 0 ; i < nb ; i++)
+         plot.setRenderer(i, shape);
+
+      ChartPanel chartPanel = new ChartPanel (chart);
+      chartPanel.setPreferredSize (new java.awt.Dimension(width, height));
+      myFrame.setContentPane (chartPanel);
+      myFrame.pack();
+      myFrame.setDefaultCloseOperation (JFrame.DISPOSE_ON_CLOSE);
+      myFrame.setLocationRelativeTo (null);
+      myFrame.setVisible (true);
+      return myFrame;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Displays chart on the screen using Swing.
+   This method creates an application containing a chart panel displaying
+   the chart. The created frame is positioned on-screen, and displayed before
+   it is returned. The \texttt{width} and the \texttt{height}
+   of the chart are measured in pixels.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{frame width in pixels.}
+   \param{height}{frame height in pixels.}
+   \return{frame containing the chart.};
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{LaTex-specific method}
+
+\begin{code}
+
+   public String toLatex (double width, double height) \begin{hide} {
+      double xunit=0, yunit=0;
+      double[] save = new double[4];
+
+      if(dataset.getSeriesCollection().getSeriesCount() == 0)
+         throw new IllegalArgumentException("Empty chart");
+
+      //Calcul des parametres d'echelle et de decalage
+      double XScale = computeXScale(XAxis.getTwinAxisPosition());
+      double YScale = computeYScale(YAxis.getTwinAxisPosition());
+
+         //taille d'une unite en x et en cm dans l'objet "tikzpicture"
+      xunit = width / ((Math.max(XAxis.getAxis().getRange().getUpperBound(),
+                            XAxis.getTwinAxisPosition()) * XScale)
+             - (Math.min(XAxis.getAxis().getRange().getLowerBound(),
+                    XAxis.getTwinAxisPosition()) * XScale));
+         //taille d'une unite en y et en cm dans l'objet "tikzpicture"
+      yunit = height / ((Math.max(YAxis.getAxis().getRange().getUpperBound(),
+                         YAxis.getTwinAxisPosition()) * YScale)
+           - (Math.min(YAxis.getAxis().getRange().getLowerBound(),
+                  YAxis.getTwinAxisPosition()) * YScale));
+
+      Formatter formatter = new Formatter(Locale.US);
+
+      /*Entete du document*/
+      if (latexDocFlag) {
+         formatter.format("\\documentclass[12pt]{article}%n%n");
+         formatter.format("\\usepackage{tikz}%n\\usetikzlibrary{plotmarks}%n\\begin{document}%n%n");
+      }
+      if(chart.getTitle() != null)
+         formatter.format("%% PGF/TikZ picture from SSJ: %s%n", chart.getTitle().getText());
+      else
+         formatter.format("%% PGF/TikZ picture from SSJ %n");
+      formatter.format("%% XScale = %s,  YScale = %s,  XShift = %s,  YShift = %s%n", XScale, YScale, XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition());
+      formatter.format("%% Therefore, thisFileXValue = (originalSeriesXValue+XShift)*XScale%n");
+      formatter.format("%%        and thisFileYValue = (originalSeriesYValue+YShift)*YScale%n%n");
+      if (chart.getTitle() != null)
+         formatter.format("\\begin{figure}%n");
+      formatter.format("\\begin{center}%n");
+      formatter.format("\\begin{tikzpicture}[x=%scm, y=%scm]%n", xunit, yunit);
+      formatter.format("\\footnotesize%n");
+      if(grid)
+         formatter.format("\\draw[color=lightgray] (%s, %s) grid[xstep = %s, ystep=%s] (%s, %s);%n",
+            (Math.min(XAxis.getAxis().getRange().getLowerBound(),
+              XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.min(YAxis.getAxis().getRange().getLowerBound(),
+             YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale,
+            xstepGrid*XScale, ystepGrid*YScale,
+            (Math.max(XAxis.getAxis().getRange().getUpperBound(),
+              XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.max(YAxis.getAxis().getRange().getUpperBound(),
+              YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale );
+      setTick0Flags();
+      formatter.format("%s", XAxis.toLatex(XScale) );
+      formatter.format("%s", YAxis.toLatex(YScale) );
+
+      formatter.format("%s", dataset.toLatex(XScale, YScale,
+            XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition(),
+            XAxis.getAxis().getLowerBound(), XAxis.getAxis().getUpperBound(),
+            YAxis.getAxis().getLowerBound(), YAxis.getAxis().getUpperBound()));
+
+      formatter.format("\\end{tikzpicture}%n");
+      formatter.format("\\end{center}%n");
+      if (chart.getTitle() != null) {
+         formatter.format("\\caption{");
+         formatter.format(chart.getTitle().getText());
+         formatter.format("}%n\\end{figure}%n");
+      }
+      if (latexDocFlag)
+         formatter.format("\\end{document}%n");
+      return formatter.toString();
+   }\end{hide}
+\end{code}
+\begin{code}
+\begin{hide}
+}\end{hide}
+\end{code}

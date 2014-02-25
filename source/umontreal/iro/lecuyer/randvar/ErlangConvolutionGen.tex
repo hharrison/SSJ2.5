@@ -1,0 +1,98 @@
+\defclass {ErlangConvolutionGen}
+
+This class implements {\em Erlang\/} random variate generators using
+the {\em convolution\/} method.  This method uses inversion to
+generate $k$ exponential variates with parameter $\lambda$ and returns
+their sum.
+
+% A local copy of the parameters $k$ and $\lambda$ is maintained in this class.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ErlangConvolutionGen
+ * Description:  Erlang random variate generators using the convolution method
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class ErlangConvolutionGen extends ErlangGen \begin{hide} {
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public ErlangConvolutionGen (RandomStream s, int k, double lambda) \begin{hide} {
+      super (s, null);
+      setParams (k, lambda);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates an Erlang random variate generator with parameters
+ \texttt{k} and $\lambda $ = \texttt{lambda},
+  using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public ErlangConvolutionGen (RandomStream s, int k) \begin{hide} {
+      this (s, k, 1.0);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates an Erlang random variate generator with parameters
+ \texttt{k} and $\lambda = 1$, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+ 
+   public ErlangConvolutionGen (RandomStream s, ErlangDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getK(), dist.getLambda());
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a new generator for the distribution \texttt{dist}
+    and stream \texttt{s}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%%%\subsubsection* {Methods}
+\begin{code} \begin{hide}
+
+   public double nextDouble() {
+      return convolution (stream, k, lambda);
+   }
+
+   public static double nextDouble (RandomStream s, int k, double lambda) {
+      return convolution (s, k, lambda);
+   }
+
+   private static double convolution (RandomStream s, int k, double lambda) {
+      double x = 0.0;
+      for (int i=0;  i<k;  i++)  
+         x += ExponentialDist.inverseF (lambda, s.nextDouble());
+      return x;
+   }
+}\end{hide}
+\end{code}

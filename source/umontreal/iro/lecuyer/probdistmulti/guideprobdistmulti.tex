@@ -1,0 +1,67 @@
+\documentclass[12pt]{article}
+
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{alltt}
+\usepackage{html}
+% \usepackage{tcode}
+\usepackage{ssj}
+
+\newcommand{\cH}{\latex{\mathcal{H}}\html{H}}
+
+\mytwoheads\dateheadtrue
+\detailedfalse
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+
+\title{probdistmulti}{Multivariate Probability Distributions}
+
+%\footnote{\normalsize 
+%    Mathieu Bague and Richard Simard
+%    have participated in the design and implementation of ProbDistMulti}
+
+This package provides tools to compute densities, mass functions, 
+distribution functions 
+for various continuous and discrete multivariate probability distributions.
+% It also offers facilities for performing and
+% reporting different types of univariate goodness-of-fit tests.
+
+\vfill
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+
+\include{overview}
+
+%% General 
+\include{general}
+\include{DiscreteDistributionIntMulti}
+\include{ContinuousDistributionMulti}
+\include{ContinuousDistribution2Dim}
+
+\include{discrete}
+\include{MultinomialDist}
+\include{NegativeMultinomialDist}
+
+\include{continuous2dim}
+%% Continuous 2-Dimensionnal distributions
+\include{BiNormalDist}
+\include{BiNormalGenzDist}
+\include{BiNormalDonnellyDist}
+\include{BiStudentDist}
+
+\include{continuous}
+\include{MultiNormalDist}
+\include{DirichletDist}
+
+\bibliographystyle{plain}
+\bibliography{stat,random,simul,math,ift,callc}
+
+\end{document}

@@ -1,0 +1,137 @@
+\defclass{HyperbolicSecantGen}
+
+This class implements random variate generators for the 
+ {\em hyperbolic secant\/} distribution with location
+ parameter $\mu$ and scale parameter $\sigma$.
+The density function of this distribution is
+\begin{htmlonly}
+\eq
+   f(x) = 1/(2\sigma) \mbox{ sech}(\pi/2 (x - \mu) / \sigma),
+   \qquad -\infty <x < \infty.
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+   f(x) = \frac{1}{2 \sigma} \mbox{ sech}\left(\frac{\pi}{2} \frac{(x - \mu)}{\sigma}\right),  \qquad -\infty <x < \infty.
+\eqlabel{eq:fHyperbolicSecant}
+\endeq
+\end{latexonly}%
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HyperbolicSecantGen
+ * Description:  random variate generators for the hyperbolic secant distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class HyperbolicSecantGen extends RandomVariateGen \begin{hide} {
+   protected double mu;
+   protected double sigma;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public HyperbolicSecantGen (RandomStream s, double mu, double sigma) \begin{hide} {
+      super (s, new HyperbolicSecantDist(mu, sigma));
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a {\em hyperbolic secant\/} random variate generator
+  with parameters $\mu=$ \texttt{mu} and $\sigma=$ \texttt{sigma},
+  using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public HyperbolicSecantGen (RandomStream s) \begin{hide} {
+      this (s, 0.0, 1.0);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a {\em hyperbolic secant\/} random variate generator
+  with parameters $\mu=0$ and $\sigma=1$,
+  using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public HyperbolicSecantGen (RandomStream s, HyperbolicSecantDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getMu(), dist.getSigma());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double mu, double sigma)\begin{hide} {
+      return HyperbolicSecantDist.inverseF (mu, sigma, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the {\em hyperbolic secant\/} distribution with
+   location parameter $\mu$ and scale parameter $\sigma$.
+\end{tabb}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\mu$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return sigma;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\sigma$ of this object.
+ \end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double mu, double sigma) {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      this.mu = mu;
+      this.sigma = sigma;
+   }
+\end{code}
+\begin{tabb}
+   Sets the parameters $\mu$ and $\sigma$ of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

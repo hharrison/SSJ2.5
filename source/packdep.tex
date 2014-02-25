@@ -1,0 +1,170 @@
+
+\begin{latexonly} %%%%%%%
+
+The packages currently offered are the following:
+%
+\begin{verse}
+\externalclass{umontreal.iro.lecuyer}{util}
+  contains utility classes used in the implementation of SSJ,
+  and which are often useful elsewhere.
+  For example, there are timers (for CPU usage),
+  utilities to read or format numbers and arrays from/to text,
+  operations on binary vectors and matrices,
+  some mathematical functions and constants,
+  root-finding tools,
+  facilities for SQL database interface, and so on.
+
+\externalclass{umontreal.iro.lecuyer}{probdist}
+  contains a set of Java classes providing methods to compute mass,
+  density, distribution, complementary distribution,
+  and inverse distribution functions for many discrete and continuous
+  probability distributions, as well as estimating the parameters of
+  these distributions.
+
+\externalclass{umontreal.iro.lecuyer}{probdistmulti}
+  contains a set of Java classes providing methods to compute mass,
+  density, distribution, complementary distribution,
+  for some multi-dimensionnal discrete and continuous
+  probability distributions.
+
+\externalclass{umontreal.iro.lecuyer}{rng}
+  provides facilities for generating uniform random numbers over the
+  interval $(0,1)$, or over a given range of integer values, and other
+  types of simple random objects such as random permutations.
+
+\externalclass{umontreal.iro.lecuyer}{hups}
+ provides classes implementing highly uniform point sets and
+ sequences (HUPS), also called low-discrepancy sets and sequences,
+ and  tools for their randomization.
+
+\externalclass{umontreal.iro.lecuyer}{randvar}
+  provides a collection of classes for non-uniform random variate
+  generation, primarily from standard distributions.
+
+\externalclass{umontreal.iro.lecuyer}{randvarmulti}
+  provides a collection of classes for
+  random number generators for some multi-dimensional distributions.
+
+\externalclass{umontreal.iro.lecuyer}{gof}
+  contains tools for performing univariate goodness-of-fit
+  (GOF) statistical tests.
+
+\externalclass{umontreal.iro.lecuyer}{stat}
+  provides elementary tools for collecting statistics
+  and computing confidence intervals.
+
+\externalclass{umontreal.iro.lecuyer}{stat.list}
+  this subpackage of \texttt{stat}
+  provides support to manage lists of statistical collectors.
+% Statistical operations may be applied on all the collectors easily.
+
+\externalclass{umontreal.iro.lecuyer}{simevents}
+  provides and manages the event-driven simulation facilities as well
+  as the simulation clock.  Can manage several simulations in parallel,
+  in the same program.
+
+\externalclass{umontreal.iro.lecuyer}{simevents.eventlist}
+ this subpackage of \texttt{simevents} offers several kinds of event
+ list implementations.
+
+\externalclass{umontreal.iro.lecuyer}{simprocs}
+  provides and manages the process-driven simulation facilities.
+%  This package requires \emph{green threads}, which are available
+%  only in JDK version 1.3.1 or earlier (unfortunately).
+%
+%  simprocs ne nécessite pas les green threads absolument.
+%  Premièrement, si l'interpréteur D-SOL est employé, tout fonctionne #1, même
+%  sans green threads. Avec l'implantation par défaut de SimProcess, qui utilise
+%  les threads, c'est mieux avec les green threads, mais cela peut fonctionner
+%  (quoique pas toujours stable) avec les native threads. Il faudrait donc dire,
+%  dans le texte, qu'il est recommandé d'utiliser une JVM avec green threads,
+%  comme Sun JRE <=1.3.1.
+
+\externalclass{umontreal.iro.lecuyer}{functions}
+ contains classes that allow one to pass an arbitrary function of one variable
+ as argument to a method
+ and to apply elementary mathematical operations on generic functions.
+
+\externalclass{umontreal.iro.lecuyer}{functionfit}
+provides basic facilities for curve fitting and interpolation
+with polynomials. % as, for example, least square fit and spline interpolation.
+
+\externalclass{umontreal.iro.lecuyer}{charts}
+provides tools for easy construction, visualization, and customization
+of $xy$ plots, histograms, and empirical styled charts
+from a Java program.
+
+\externalclass{umontreal.iro.lecuyer}{stochprocess}
+implements different kinds of stochastic processes.
+%%
+\end{verse}
+\end{latexonly}  %%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Dependence on other libraries}
+
+SSJ uses some classes from other free Java libraries.
+
+The \htmladdnormallink{Colt library}{http://acs.lbl.gov/software/colt/},
+ developed at the Centre Europ\'een de Recherche
+Nucl\'eaire (CERN) in Geneva \cite{iHOS04a},
+is a large library that provides a wide range of facilities for
+high performance scientific and technical computing in Java.
+SSJ uses the class \externalclass{cern.colt.list}{DoubleArrayList}
+from Colt in a few of its classes, namely in packages
+\externalclass{umontreal.iro.lecuyer}{stat} and
+\externalclass{umontreal.iro.lecuyer}{hups}.
+The reason is that this class provides a very efficient and convenient
+implementation of an (automatically) extensible array of {\tt double},
+together with several methods for computing statistics for the observations
+% Javadoc does not find cern.jet.stat.Descriptive and issues
+% a warning; maybe a bug in Javadoc.
+stored in the array (see, e.g., {\tt Descriptive}).
+% The Colt library must be installed (see the installation instructions
+% of SSJ) if one wishes to use a class relying on it.
+% Otherwise, Colt is not needed.
+The Colt library is distributed with the SSJ package as \textbf{colt.jar}.
+It  must be added in the CLASSPATH environment variable.
+
+
+The \textbf{linear\_algebra} library is based on public domain LINPACK routines.
+They were translated from Fortran to Java by Steve Verrill at the
+    USDA Forest Products Laboratory
+    Madison, Wisconsin, USA.
+This software is also in the public domain and is included in the
+SSJ distribution as the \textbf{Blas.jar} archive. It is used only in the
+\texttt{probdist} package to compute maximum likelihood estimators.
+
+
+The optimization package of Steve Verrill includes Java translations of the
+\htmladdnormallink{MINPACK}{http://www.iro.umontreal.ca/~simardr/Uncmin_f77/Minpack_f77.html}
+ routines \cite{iMOR80a} for  nonlinear least squares problems as well as
+\htmladdnormallink{UNCMIN}{http://www.iro.umontreal.ca/~simardr/Uncmin_f77/Uncmin_f77.html}
+ routines \cite{iSCHa} for
+unconstrained optimization. They were translated from Fortran to Java by
+Steve Verrill and are in the public domain. They are included in the SSJ
+distribution as the \textbf{optimization.jar} archive. It is used only in the \texttt{probdist}
+ package to compute maximum likelihood estimators.
+
+
+\htmladdnormallink{JFreeChart}{http://www.jfree.org/jfreechart/index.html} is a free
+Java library that can generate a wide variety of charts and plots for use in
+applications, applets and servlets. \textbf{JFreeChart}  currently supports, amongst
+others, bar charts, pie charts, line charts, XY-plots, histograms, scatter plots and
+time series plots. It is distributed with SSJ as \textbf{jfreechart-*.jar}.
+\htmladdnormallink{JCommon}{http://www.jfree.org/jcommon/index.php} is a free
+general purpose Java library containing many useful classes used by JFreeChart and
+ other Java packages. It is distributed with SSJ as \textbf{jcommon-*.jar}.
+JFreeChart (and JCommon) are used in the SSJ package \textbf{charts} to create
+different kinds of charts.
+
+SSJ also provides an interface to the
+\htmladdnormallink{UNURAN}{http://statistik.wu-wien.ac.at/unuran/}
+library for nonuniform random number generation \cite{iLEY02a}, in the
+\externalclass{umontreal.iro.lecuyer}{randvar} package.
+UNURAN does not have to be installed to be used with SSJ, because it is
+linked statically with the appropriate SSJ native library.
+However, the UNURAN documentation will be required
+to take full advantage of the library.

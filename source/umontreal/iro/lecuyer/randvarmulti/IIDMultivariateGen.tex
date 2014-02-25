@@ -1,0 +1,124 @@
+\defclass{IIDMultivariateGen}
+
+Extends \class{RandomMultivariateGen} for a vector of independent identically distributed
+(i.i.d.) random variables.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        IIDMultivariateGen
+ * Description:  vector of independent identically distributed random variables
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger
+ * @since        January 2011
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvarmulti;
+\begin{hide}
+import umontreal.iro.lecuyer.randvar.RandomVariateGen;
+\end{hide}
+
+public class IIDMultivariateGen extends RandomMultivariateGen\begin{hide} {
+\end{hide}\end{code}
+
+\subsubsection*{Constructor}
+
+\begin{code}
+
+   public IIDMultivariateGen (RandomVariateGen gen1, int d) \begin{hide} {
+      setGen1 (gen1);
+      this.stream = gen1.getStream();
+      dimension = d;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+Constructs a generator for a \texttt{d}-dimensional vector of i.i.d.\ variates
+with a common one-dimensional generator \texttt{gen1}.
+\end{tabb}
+\begin{htmlonly}
+   \param{gen1}{the one-dimensional generator}
+   \param{d}{dimension of the vector (number of i.i.d.\ variates).}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public void setDimension (int d) \begin{hide} {
+      dimension = d;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+Changes the dimension of the vector to \texttt{d}.
+\end{tabb}
+\begin{code}
+
+   public void nextPoint (double[] p) \begin{hide} {
+      if (p.length != dimension)
+         throw new IllegalArgumentException(String.format(
+            "p's dimension (%d) does not mach dimension (%d)", p.length, dimension));
+
+      for (int i = 0; i < dimension; i++)
+         p[i] = gen1.nextDouble();
+   } \end{hide}
+\end{code}
+\begin{tabb}
+Generates a vector of i.i.d.\ variates.
+\end{tabb}
+\begin{code}
+
+   public void setGen1 (RandomVariateGen gen1)\begin{hide} {
+      if (gen1 == null)
+         throw new NullPointerException ("gen1 is null");
+      this.gen1 = gen1;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+Sets the common one-dimensional generator to \texttt{gen1}.
+\end{tabb}
+\begin{code}
+
+   public RandomVariateGen getGen1()\begin{hide} {
+     return gen1;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+Returns the common one-dimensional generator used in this class.
+\end{tabb}
+\begin{code}
+
+   public String toString() \begin{hide} {
+      return dimension + "-dimensional vector of i.i.d. " +
+            gen1.getDistribution().toString();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Returns a string representation of the generator.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

@@ -1,0 +1,118 @@
+\defclass {InverseGaussianMSHGen}
+
+This class implements \emph{inverse gaussian} random variate generators using
+the many-to-one transformation method of Michael, Schucany and Haas (MHS)
+ \cite{rMIC76a,rDEV06a}.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        InverseGaussianMSHGen
+ * Description:  inverse gaussian random variate generators
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class InverseGaussianMSHGen extends InverseGaussianGen \begin{hide} {
+   private NormalGen genN;
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public InverseGaussianMSHGen (RandomStream s, NormalGen sn,
+                                 double mu, double lambda) \begin{hide} {
+      super (s, null);
+      setParams (mu, lambda, sn);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates an \emph{inverse gaussian} random variate generator with
+ parameters $\mu = $ \texttt{mu} and $\lambda= $ \texttt{lambda},
+ using streams \texttt{s} and \texttt{sn}.
+\end{tabb}
+\begin{code}
+ 
+   public InverseGaussianMSHGen (RandomStream s, NormalGen sn,
+                                 InverseGaussianDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getMu(), dist.getLambda(), sn);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a new generator for the distribution \texttt{dist}
+ using streams \texttt{s} and \texttt{sn}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, NormalGen sn,
+                                    double mu, double lambda) \begin{hide} {
+      return mhs(s, sn, mu, lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a new variate from the \emph{inverse gaussian}
+distribution with parameters $\mu = $ \texttt{mu} and $\lambda= $
+\texttt{lambda}, using streams \texttt{s} and \texttt{sn}.
+\end{tabb}
+\begin{code}\begin{hide} 
+
+   public double nextDouble() {
+      return mhs(stream, genN, mu, lambda);
+   }
+
+
+//>>>>>>>>>>>>>>>>>>>>  P R I V A T E     M E T H O D S   <<<<<<<<<<<<<<<<<<<<
+
+   private static double mhs (RandomStream stream, NormalGen genN,
+                              double mu, double lambda) {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (mu <= 0.0)
+         throw new IllegalArgumentException ("mu <= 0");
+
+      double z = genN.nextDouble ();
+      double ymu = mu*z*z;
+      double x1 = mu + 0.5*mu*ymu/lambda - 0.5*mu/lambda *
+                  Math.sqrt(4.0*ymu*lambda + ymu*ymu);
+      double u = stream.nextDouble();
+      if (u <= mu/(mu + x1))
+         return x1;
+      return mu*mu/x1;
+   }
+
+
+   protected void setParams (double mu, double lambda, NormalGen sn) {
+      setParams (mu, lambda);
+      this.genN = sn;
+   }
+
+}\end{hide}
+\end{code}

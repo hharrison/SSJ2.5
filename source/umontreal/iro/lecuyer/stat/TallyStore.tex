@@ -1,0 +1,263 @@
+\defclass {TallyStore}
+
+This class is a variant of \class{Tally} for which the individual
+observations are stored in a list implemented as a
+\externalclass{cern.colt.list}{DoubleArrayList}.
+\begin{latexonly}%
+The class \texttt{DoubleArrayList} is imported from the COLT library and
+provides an efficient way of storing and manipulating a list of
+real-valued numbers in a dynamic array.
+\end{latexonly}%
+The \externalclass{cern.colt.list}{DoubleArrayList} object used to
+store the values can be either passed to the constructor or created by
+the constructor, and can be accessed via the
+\method{getDoubleArrayList}{} method.
+
+The same counters as in \class{Tally} are maintained and are used by
+the inherited methods.  One must access the list of observations
+to compute quantities not supported by the methods in
+\class{Tally}, and/or to use methods provided by the COLT package.
+
+
+\emph{Never add or remove observations directly} on the
+\externalclass{cern.colt.list}{DoubleArrayList} object,
+because this would put the counters of the \texttt{TallyStore} object in an
+inconsistent state.
+
+There are two potential reasons for using a \class{TallyStore} object
+instead of directly using a \externalclass{cern.colt.list}{DoubleArrayList} object:
+(a) it can broadcast observations and
+(b) it maintains a few additional counters that may speed up some operations
+such as computing the average.
+
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        TallyStore
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stat;\begin{hide}
+import cern.colt.list.DoubleArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+
+public class TallyStore extends Tally \begin{hide} {
+
+   private DoubleArrayList array = null;  // Where the observations are stored.
+   private Logger log = Logger.getLogger ("umontreal.iro.lecuyer.stat");
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public TallyStore() \begin{hide} {
+      super();
+      array = new DoubleArrayList();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs a new \texttt{TallyStore} statistical probe.
+\end{tabb}
+\begin{code}
+
+   public TallyStore (String name) \begin{hide} {
+      super (name);
+      array = new DoubleArrayList();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs a new \texttt{TallyStore} statistical probe with name \texttt{name}.
+\end{tabb}
+\begin{htmlonly}
+   \param{name}{the name of the tally.}
+\end{htmlonly}
+\begin{code}
+
+   public TallyStore (int capacity) \begin{hide} {
+      super();
+      array = new DoubleArrayList (capacity);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs a new \texttt{TallyStore} statistical probe
+    with given initial capacity \texttt{capacity} for its associated array.
+\end{tabb}
+\begin{htmlonly}
+   \param{capacity}{initial capacity of the array of observations}
+\end{htmlonly}
+\begin{code}
+
+   public TallyStore (String name, int capacity) \begin{hide} {
+      super (name);
+      array = new DoubleArrayList (capacity);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs a new \texttt{TallyStore} statistical probe with
+name \texttt{name} and given initial capacity \texttt{capacity} for its
+ associated array.
+\end{tabb}
+\begin{htmlonly}
+   \param{name}{the name of the tally.}
+   \param{capacity}{initial capacity of the array of observations}
+\end{htmlonly}
+\begin{code}
+
+   public TallyStore (DoubleArrayList a) \begin{hide} {
+      super();
+      array = a;
+      array.clear();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs a new \texttt{TallyStore} statistical probe
+    with given associated array.  This array must be empty.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{array that will contain observations}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public void init() {
+       super.init();
+       // We must call super before any actions inside constructors.
+       // Unfortunately, the base class calls init, which would
+       // result in a NullPointerException.
+       if (array != null)
+          array.clear();
+   }
+
+   public void add (double x) {
+      if (collect) array.add (x);
+      super.add(x);
+   }\end{hide}
+
+   public double[] getArray() \begin{hide} {
+      array.trimToSize();
+      return array.elements();
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the observations stored in this probe.
+%  \textbf{WARNING:}
+%     The returned array is the stored internal array itself, including invalid
+%     elements between size and capacity. If the returned \texttt{double} array is
+%     modified, then this probe itself will be modified. To get the number of
+%     valid elements (observations) in the array, use
+%     \externalmethod{umontreal.iro.lecuyer.stat}{Tally}{numberObs}{}.
+% \richard{I now use trimToSize to remove the extra elements.}
+\end{tabb}
+\begin{htmlonly}
+   \return{the array of observations associated with this object}
+\end{htmlonly}
+\begin{code}
+
+   public DoubleArrayList getDoubleArrayList() \begin{hide} {
+      array.trimToSize();
+      return array;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the \externalclass{cern.colt.list}{DoubleArrayList}
+   object that contains the observations for this probe. \textbf{WARNING:}
+   In previous releases, this function was named \texttt{getArray}.
+\end{tabb}
+\begin{htmlonly}
+   \return{the array of observations associated with this object}
+\end{htmlonly}
+\begin{code}
+
+   public void quickSort() \begin{hide} {
+       array.quickSort();
+   }\end{hide}
+\end{code}
+\begin{tabb} Sorts the elements of this probe using the \texttt{quicksort}
+  from Colt.
+\end{tabb}
+\begin{code}
+
+   public double covariance (TallyStore t2)\begin{hide} {
+      if (numberObs() != t2.numberObs()) {
+         //System.err.println
+         //   ("******* TallyStore.covariance():   Tally's with different number of observations");
+         log.logp (Level.WARNING, "TallyStore", "covariance",
+            "This tally, with name " + getName() + ", contains " + numberObs() + " observations while " +
+              "the given tally, with name " + t2.getName() + ", contains " + t2.numberObs()
+              + "observations");
+         return Double.NaN;
+      }
+
+      if (numberObs() < 2 || t2.numberObs() < 2) {
+         //System.err.println
+         //   ("******* TallyStore.covariance()   with " + numberObs() + " Observation");
+         log.logp (Level.WARNING, "TallyStore", "covariance",
+            "This tally, with name " + getName() + ", contains " + numberObs() + " observation");
+         return Double.NaN;
+      }
+
+      return cern.jet.stat.Descriptive.covariance (
+          getDoubleArrayList(), t2.getDoubleArrayList());
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the sample covariance of the observations contained
+ in this tally, and the other tally \texttt{t2}.
+ Both tallies must have the same number of observations.
+   This returns \texttt{Double.NaN}
+   if the tallies do not contain the same number of observations, or
+ if they contain less than two observations.
+\end{tabb}
+\begin{htmlonly}
+   \param{t2}{the other tally.}
+   \return{the sample covariance.}
+\end{htmlonly}
+\begin{code}
+
+   public TallyStore clone()\begin{hide} {
+      TallyStore t = (TallyStore)super.clone();
+      t.array = (DoubleArrayList)array.clone();
+      return t;
+   }\end{hide}
+\end{code}
+\begin{tabb} Clones this object and the array which stores the observations.
+\end{tabb}
+\begin{code}
+
+   public String toString()\begin{hide} {
+      StringBuffer sb = new StringBuffer ();
+      for (int i=0; i<numberObs(); i++)
+         sb.append (i + "    " + array.getQuick(i) +
+                           PrintfFormat.NEWLINE);
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the observations stored in this object as a \texttt{String}.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

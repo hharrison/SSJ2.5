@@ -1,0 +1,140 @@
+\defclass{KorobovLattice}
+
+This class implements \emph{Korobov lattices}, which represents the same point
+sets as in class \class{LCGPointSet}, but implemented differently.
+The parameters are the modulus $n$ and the multiplier $a$, for arbitrary
+integers $1 \le a < n$.
+The number of points is $n$, their dimension is 
+$s$, and they are defined by
+\[
+  \mathbf{u}_i = (i/n)(1, a, a^2, \ldots, a^{s-1}) \bmod 1
+\]
+for $i=0,\dots,n-1$.
+
+It is also possible to build a ``shifted'' Korobov lattice with the first
+$t$ coordinates rejected. The $s$-dimensionnal points are then defined as
+$$
+  \mathbf{u}_i = (i/n)(a^{t}, a^{t+1}, a^{t+2}, \ldots, a^{t+s-1}) \bmod 1
+$$
+for $i=0,\dots,n-1$ and fixed $t$.
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        KorobovLattice
+ * Description:  Korobov lattice
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;
+\begin{hide}
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+public class KorobovLattice extends Rank1Lattice \begin{hide} {
+   protected int genA;                        // Multiplier a.
+
+   // Method modPower is inherited from Rank1Lattice.
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+\begin{code}
+   public KorobovLattice (int n, int a, int s) \begin{hide} {
+      super (n, null, 0);
+      if (a < 1 || a >= n) 
+         throw new IllegalArgumentException 
+            ("KorobovLattice must have 1 <= a < n");
+      genA = a;
+      dim = s;
+      v = new double[s];
+      long[] B = new long[dim];
+      B[0] = 1;
+      v[0] = normFactor;
+      for (int j = 1; j < dim; j++) {
+         B[j] = (a * B[j - 1]) % n;
+         v[j] = normFactor * B[j];
+      }
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Instantiates a Korobov lattice point set with modulus $n$ and 
+   multiplier $a$ in dimension $s$.
+ \end{tabb}
+\begin{code}
+
+   public KorobovLattice (int n, int a, int s, int t) \begin{hide} {
+      super (n, null, 0);
+      if (a < 1 || a >= n) 
+         throw new IllegalArgumentException 
+            ("KorobovLattice must have 1 <= a < n");
+      if (t < 1) 
+         throw new IllegalArgumentException 
+            ("KorobovLattice: must have 0 < t");
+      dim = s;
+      genA = a;
+      v = new double[s];
+      long[] B = new long[dim];
+      int j;
+      B[0] = a;
+      for (j = 1; j < t; j++)
+         B[0] *= a;
+      v[0] = B[0] * normFactor;
+      for (j = 1; j < dim; j++) {
+         B[j] = (a * B[j - 1]) % n;
+         v[j] = normFactor * B[j];
+      }
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Instantiates a shifted Korobov lattice point set with modulus $n$ and 
+   multiplier $a$ in dimension $s$. The first $t$ coordinates of a
+   standard Korobov lattice are dropped as described above.
+   The case $t=0$ corresponds to the standard  Korobov lattice.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+\begin{code}
+
+   public int getA() \begin{hide} {
+      return genA;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the multiplier $a$ of the lattice.
+\end{tabb}
+\begin{code}
+\begin{hide}
+
+   public String toString() {
+      StringBuffer sb = new StringBuffer ("KorobovLattice:" +
+                                           PrintfFormat.NEWLINE);
+      sb.append ("Multiplier a: " + genA + PrintfFormat.NEWLINE);
+      sb.append (super.toString());
+      return sb.toString();
+   }
+}\end{hide}
+\end{code}

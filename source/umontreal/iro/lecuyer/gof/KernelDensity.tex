@@ -1,0 +1,112 @@
+\defclass {KernelDensity}
+
+This class provides methods to compute a kernel density estimator from a set
+of $n$ individual observations $x_0, \ldots, x_{n-1}$, and returns its value
+at $m$ selected points. For details on how the kernel density is defined,
+and how to select the kernel and the bandwidth $h$,
+see the documentation of class 
+\externalclass{umontreal.iro.lecuyer.randvar}{KernelDensityGen}
+in package \texttt{randvar}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        KernelDensity
+ * Description:  Kernel density estimators
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.gof;
+   import umontreal.iro.lecuyer.probdist.*;
+\begin{hide}
+import umontreal.iro.lecuyer.randvar.KernelDensityGen;
+\end{hide}
+
+public class KernelDensity \begin{hide} {
+
+   private static double estimate (EmpiricalDist dist,
+                                   ContinuousDistribution kern,
+                                   double h, double y) {
+      // Computes and returns the kernel density estimate at $y$, where the 
+      // kernel is the density kern.density(x), and the bandwidth is $h$.
+      double z;
+      double a = kern.getXinf();       // lower limit of density
+      double b = kern.getXsup();       // upper limit of density
+      double sum = 0;
+      int n = dist.getN();
+      for (int i = 0; i < n; i++) {
+         z = (y - dist.getObs(i))/h;
+         if ((z >= a) && (z <= b))
+            sum += kern.density(z);
+      }
+
+      sum /= (h*n);
+      return sum;
+   }\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double[] computeDensity (EmpiricalDist dist,
+                                          ContinuousDistribution kern,
+                                          double h, double[] Y)\begin{hide} {
+      int m = Y.length;
+      double[] u = new double[m];
+      for (int j = 0; j < m; j++)
+         u[j] = estimate (dist, kern, h, Y[j]);
+      return u;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+Given the empirical distribution \texttt{dist}, this method computes the 
+kernel density estimate at each of the $m$ points \texttt{Y[$j$]},
+ $j= 0, 1, \ldots, (m-1)$, where $m$ is the length of \texttt{Y}, the kernel
+ is \texttt{kern.density(x)},
+ and the bandwidth is $h$. Returns the estimates as an array of $m$ values.
+\end{tabb}
+\begin{code}
+
+   public static double[] computeDensity (EmpiricalDist dist,
+                                          ContinuousDistribution kern,
+                                          double[] Y)\begin{hide} {
+      double h = KernelDensityGen.getBaseBandwidth(dist);
+      return computeDensity (dist, kern, h, Y);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+Similar to method 
+\method{computeDensity}{(EmpiricalDist,ContinuousDistribution,double,double[])}
+\begin{latexonly}{ above}\end{latexonly},
+but the bandwidth $h$ is obtained from the method
+\clsexternalmethod{umontreal.iro.lecuyer.randvar}{KernelDensityGen}{getBaseBandwidth}{EmpiricalDist}\texttt{(dist)} in package \texttt{randvar}.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

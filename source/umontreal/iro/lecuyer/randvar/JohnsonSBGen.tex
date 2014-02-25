@@ -1,0 +1,146 @@
+\defclass {JohnsonSBGen}
+
+This class implements random variate generators for the 
+{\em Johnson $S_B$\/} distribution. 
+
+%The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+% distribution. 
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        JohnsonSBGen
+ * Description:  random variate generators for the Johnson $S_B$ distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+
+public class JohnsonSBGen extends RandomVariateGen \begin{hide} {
+   private double gamma;
+   private double delta;
+   private double xi;
+   private double lambda;
+
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public JohnsonSBGen (RandomStream s, double gamma, double delta,
+                        double xi, double lambda) \begin{hide} {
+      super (s, new JohnsonSBDist(gamma, delta, xi, lambda));
+      setParams (gamma, delta, xi, lambda);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a JohnsonSB random variate generator.
+\end{tabb}
+\begin{code}
+
+   public JohnsonSBGen (RandomStream s, JohnsonSBDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getGamma(), dist.getDelta(), dist.getXi(),
+                     dist.getLambda());
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Creates a new generator for the JohnsonSB
+   distribution \texttt{dist}, using stream \texttt{s}.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double gamma,
+                                    double delta, double xi, double lambda) \begin{hide} {
+      return JohnsonSBDist.inverseF (gamma, delta, xi, lambda,
+                                        s.nextDouble());
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Uses inversion to generate a new JohnsonSB variate,
+   using stream \texttt{s}.
+ \end{tabb}
+\begin{code}
+
+   public double getGamma()\begin{hide} {
+      return gamma;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\gamma$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public double getDelta()\begin{hide} {
+      return delta;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\delta$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public double getXi()\begin{hide} {
+      return xi;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\xi$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\lambda$ associated with this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double gamma, double delta,
+                         double xi, double lambda) {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (delta <= 0.0)
+         throw new IllegalArgumentException ("delta <= 0");
+      this.gamma = gamma;
+      this.delta = delta;
+      this.xi = xi;
+      this.lambda = lambda;
+   }
+\end{code}
+\begin{tabb} Sets the parameters of this object.
+\end{tabb}
+\begin{code}
+}\end{code}
+\end{hide}

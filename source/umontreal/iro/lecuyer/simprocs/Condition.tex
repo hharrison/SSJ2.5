@@ -1,0 +1,247 @@
+\defclass {Condition}
+
+A \texttt{Condition} is a boolean indicator, with a list of processes  
+waiting for the indicator to be \texttt{true} (when it is \texttt{false}).
+A process calling \method{waitFor}{} on a condition that is currently
+\texttt{false} is suspended until the condition becomes \texttt{true}.
+The list of waiting processes can be accessed via \method{waitList}{}.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Condition
+ * Description:  boolean indicator with a list of processes waiting for 
+                 the indicator to be true
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simprocs;\begin{hide}
+import java.util.Observable;
+import umontreal.iro.lecuyer.simevents.Simulator;
+import umontreal.iro.lecuyer.simevents.LinkedListStat;\end{hide}
+
+public class Condition extends Observable \begin{hide} {
+
+   private String name;
+   private LinkedListStat<UserRecord> waitingList;
+   private boolean state;
+   private boolean broadcasting;
+   private ProcessSimulator sim;
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public Condition (boolean val) \begin{hide} {
+      this (val, "");
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Constructs a new \texttt{Condition} with initial value \texttt{val}, linked with the default simulator.
+ \end{tabb}
+\begin{htmlonly}
+   \param{val}{initial state of the condition}
+\end{htmlonly}
+\begin{code}
+
+   public Condition (ProcessSimulator sim, boolean val) \begin{hide} {
+      this (sim, val, "");
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Constructs a new \texttt{Condition} with initial value \texttt{val}, linked with simulator \texttt{sim}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sim}{current simulator of the variable}
+   \param{val}{initial state of the condition}
+\end{htmlonly}
+\begin{code}
+
+   public Condition (boolean val, String name) \begin{hide} {
+      super();
+      try {
+         ProcessSimulator.initDefault();
+         this.sim = (ProcessSimulator)Simulator.getDefaultSimulator();
+         waitingList = new LinkedListStat<UserRecord>(sim);
+         this.name = name;
+         broadcasting = false;
+         state = val;
+      }
+      catch (ClassCastException e) {
+         throw new IllegalArgumentException("Wrong default Simulator type");
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs a new \texttt{Condition} with initial value \texttt{val}, 
+ identifier \texttt{name} and linked with the default simulator.
+\end{tabb}
+\begin{htmlonly}
+   \param{val}{initial state of the condition}
+   \param{name}{identifier or name for the condition}
+\end{htmlonly}
+\begin{code}
+
+   public Condition (ProcessSimulator sim, boolean val, String name) \begin{hide} {
+      super();
+      this.sim = sim;
+      waitingList = new LinkedListStat<UserRecord>(sim);
+      this.name = name;
+      broadcasting = false;
+      state = val;
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Constructs a new \texttt{Condition} with initial value \texttt{val}, 
+ identifier \texttt{name} and linked with simulator \texttt{sim}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sim}{current simulator of the variable}
+   \param{val}{initial state of the condition}
+   \param{name}{identifier or name for the condition}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public void init (boolean val) \begin{hide} {
+      waitingList.clear();
+      state = val;
+      if (broadcasting) {
+         setChanged();
+         notifyObservers (new Boolean (state));
+      }
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Reinitializes this \texttt{Condition} by clearing up 
+   its waiting list and resetting its state to \texttt{val}.
+   The processes in this list (if any) remain in the same states.
+ \end{tabb}
+\begin{htmlonly}
+   \param{val}{initial state of the condition}
+\end{htmlonly}
+\begin{code}
+
+   public void set (boolean val) \begin{hide} { 
+      state = val;
+      if (state) {
+         UserRecord record;
+         while (!waitingList.isEmpty()) {
+            record= waitingList.removeLast();
+            record.process.resume();
+         }    
+      } 
+      if (broadcasting) {
+         setChanged();
+         notifyObservers (new Boolean (val));
+      }
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Sets the condition to \texttt{val}.
+   If \texttt{val} is \texttt{true}, all the processes waiting 
+   for this condition now resume their execution, in the same order as
+   they have called \method{waitFor}{} for this condition.
+   (Note that a process can never wait for more than one condition at
+   a time, because it cannot call \method{waitFor}{} while it is suspended.
+ \end{tabb}
+\begin{htmlonly}
+   \param{val}{new state of the condition}
+\end{htmlonly}
+\begin{code}
+
+   public boolean state() \begin{hide} { 
+      return state;
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Returns the state (\texttt{true} or \texttt{false}) of the condition.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the current state of the condition}
+\end{htmlonly}
+\begin{code}
+
+   public void waitFor() \begin{hide} {
+      SimProcess p = sim.currentProcess();
+      if (state == true) {
+         // The process can continus right away.
+         if (waitingList.statSojourn() != null)
+            waitingList.statSojourn().add (0.0);
+         return;
+      }
+      else {
+         // The process joins the waitingList;
+         UserRecord record = new UserRecord (1, p, sim.time());
+         waitingList.addLast (record);
+         p.suspend();
+      }
+   }\end{hide}
+\end{code}
+ \begin{tabb}  The executing process invoking this method
+  must wait for this condition to be \texttt{true}.
+  If it is already \texttt{true}, the 
+  process continues its execution immediately
+   Otherwise, the executing process is placed into the 
+   \method{waitList}{} list for this condition and is suspended
+   until the condition becomes \texttt{true}.
+ \end{tabb}
+\begin{code}
+
+   public LinkedListStat waitList() \begin{hide} { 
+      return waitingList;
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Returns the list of \class{UserRecord}
+   for the processes waiting for this condition.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the list of processes user records waiting for the condition}
+\end{htmlonly}
+\begin{code}
+
+   public String getName()\begin{hide} {
+      return name;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the name (or identifier) associated
+  to this condition.
+\end{tabb}
+\begin{htmlonly}
+   \return{the name associated to this object}
+\end{htmlonly}
+\begin{code}
+
+   public void setBroadcasting (boolean b)\begin{hide} {
+      broadcasting = b;
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}  Instructs the condition to start or stop observation broadcasting.
+  When this is turned ON, a \class{Boolean} observation is notified to
+  registered observers when the state of the condition changes.  This
+  boolean gives the new state of the condition.
+
+Warning: Since this can reduce program performance, this should be
+turned on only when there are registered observers.
+\end{tabb}
+\begin{htmlonly}
+   \param{b}{\texttt{true} to turn broadcasting ON, \texttt{false} to turn it OFF}
+\end{htmlonly}

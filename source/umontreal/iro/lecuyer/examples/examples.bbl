@@ -1,0 +1,98 @@
+\begin{thebibliography}{10}
+
+\bibitem{ccAVR04a}
+A.~N. Avramidis, A.~Deslauriers, and P.~L'Ecuyer.
+\newblock Modeling daily arrivals to a telephone call center.
+\newblock {\em Management Science}, 50(7):896--908, 2004.
+
+\bibitem{sBRA87a}
+P.~Bratley, B.~L. Fox, and L.~E. Schrage.
+\newblock {\em A Guide to Simulation}.
+\newblock Springer-Verlag, New York, NY, second edition, 1987.
+
+\bibitem{sFIS96a}
+G.~S. Fishman.
+\newblock {\em {M}onte {C}arlo: Concepts, Algorithms, and Applications}.
+\newblock Springer Series in Operations Research. Springer-Verlag, New York,
+  NY, 1996.
+
+\bibitem{fGLA04a}
+P.~Glasserman.
+\newblock {\em Monte {C}arlo Methods in Financial Engineering}.
+\newblock Springer-Verlag, New York, 2004.
+
+\bibitem{iHOS04a}
+Wolfgang Hoschek.
+\newblock {\em The Colt Distribution: Open Source Libraries for High
+  Performance Scientific and Technical Computing in Java}.
+\newblock CERN, Geneva, 2004.
+\newblock Available at \url{http://dsd.lbl.gov/~hoschek/colt/}.
+
+\bibitem{iMOR80a}
+{J. J. Mor\'e and B. S. Garbow and K. E. Hillstrom}.
+\newblock {\em User Guide for MINPACK-1, Report ANL-80-74}.
+\newblock Argonne, Illinois, USA, 1980.
+\newblock See
+  \url{http://www-fp.mcs.anl.gov/otc/Guide/softwareGuide/Blurbs/minpack.html}.
+
+\bibitem{pKLE75a}
+L.~Kleinrock.
+\newblock {\em Queueing Systems, Vol. 1}.
+\newblock Wiley, New York, NY, 1975.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{sLEC88a}
+P.~L'{E}cuyer.
+\newblock {SIMOD}: D{\'e}finition fonctionnelle et guide d'utilisation (version
+  2.0).
+\newblock Technical Report DIUL-RT-8804, D{\'e}partement d'informatique,
+  Universit\'e Laval, Sept 1988.
+
+\bibitem{sLEC09a}
+P.~L'Ecuyer.
+\newblock {\em Stochastic Simulation}.
+\newblock 2008.
+\newblock Notes for a graduate simulation course, textbook in preparation.
+
+\bibitem{sLEC05a}
+P.~L'Ecuyer and E.~Buist.
+\newblock Simulation in {J}ava with {SSJ}.
+\newblock In M.~E. Kuhl, N.~M. Steiger, F.~B. Armstrong, and J.~A. Joines,
+  editors, {\em Proceedings of the 2005 Winter Simulation Conference}, pages
+  611--620, Pistacaway, NJ, 2005. {IEEE} Press.
+
+\bibitem{sLEC02a}
+P.~L'Ecuyer, L.~Meliani, and J.~Vaucher.
+\newblock {SSJ}: A framework for stochastic simulation in {J}ava.
+\newblock In E.~Y\"ucesan, C.-H. Chen, J.~L. Snowdon, and J.~M. Charnes,
+  editors, {\em Proceedings of the 2002 Winter Simulation Conference}, pages
+  234--242. {IEEE} Press, 2002.
+
+\bibitem{iLEY02a}
+J.~Leydold and W.~H\"ormann.
+\newblock {\em {UNURAN}---A Library for Universal Non-Uniform Random Number
+  Generators}, 2002.
+\newblock Available at \url{http://statistik.wu-wien.ac.at/unuran}.
+
+\bibitem{iSCHa}
+R.~B. Schnabel.
+\newblock {\em {UNCMIN}---Unconstrained Optimization Package, FORTRAN}.
+\newblock University of Colorado at Boulder.
+\newblock See \url{http://www.ici.ro/camo/unconstr/uncmin.htm}.
+
+\bibitem{ccWHI99c}
+W.~Whitt.
+\newblock Dynamic staffing in a telephone call center aiming to immediately
+  answer all calls.
+\newblock {\em Operations Research Letters}, 24:205--212, 1999.
+
+\bibitem{pWOL89a}
+R.~W. Wolff.
+\newblock {\em Stochastic Modeling and the Theory of Queues}.
+\newblock Prentice-Hall, New York, NY, 1989.
+
+\end{thebibliography}

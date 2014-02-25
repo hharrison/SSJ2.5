@@ -1,0 +1,25 @@
+\begin{thebibliography}{1}
+
+\bibitem{mCLE62a}
+C.~W. Clenshaw.
+\newblock Chebychev series for mathematical functions.
+\newblock National Physical Laboratory Mathematical Tables~5, Her Majesty's
+  Stationery Office, London, 1962.
+
+\bibitem{iGOS00a}
+J.~Gosling, B.~Joy, and G.~L. Steele~Jr.
+\newblock {\em The {J}ava Language Specification}.
+\newblock Addison-Wesley, second edition, 2000.
+\newblock Also available from \url{http://java.sun.com/docs/books/jls}.
+
+\bibitem{mHIG09a}
+N.~J. Higham.
+\newblock The scaling and squaring method for the matrix exponential revisited.
+\newblock {\em {SIAM} Review}, 51(4):747--764, 2009.
+
+\bibitem{iKNU73a}
+D.~E. Knuth.
+\newblock {\em The Art of Computer Programming, Vol. 1}.
+\newblock Addison-Wesley, Reading, MA, second edition, 1973.
+
+\end{thebibliography}

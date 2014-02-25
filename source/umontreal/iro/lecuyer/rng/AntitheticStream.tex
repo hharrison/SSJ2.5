@@ -1,0 +1,147 @@
+\defmodule {AntitheticStream}
+
+This container class allows the user to force any \class{RandomStream} to 
+return antithetic variates.  That is, \method{nextDouble}{} returns 
+$1-u$ instead of $u$ and the corresponding change is made in 
+\method{nextInt}{}.
+Any instance of this class behaves exactly like a \class{RandomStream},
+except that it depends on another random number generator stream, called the
+\emph{base stream}, to generate its numbers. 
+Any call to one of the \texttt{next...}
+methods of this class will modify the state of the base stream. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        AntitheticStream
+ * Description:  container class allows the user to force any RandomStream
+                 to return antithetic variates
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.rng; 
+
+public class AntitheticStream implements RandomStream \begin{hide} {
+
+   // The base stream.
+   private RandomStream st;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public AntitheticStream (RandomStream stream) \begin{hide} {
+      this.st = stream;
+   } \end{hide}
+\end{code}
+\begin{tabb} Constructs a new antithetic stream, using the random numbers
+  from the base stream \texttt{stream}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+   public void resetStartStream() {
+      st.resetStartStream();
+   }
+
+   public void resetStartSubstream() {
+      st.resetStartSubstream();
+   }
+
+   public void resetNextSubstream() {
+      st.resetNextSubstream();
+   }\end{hide}
+
+   public String toString() \begin{hide} {
+      return "Antithetic of " + st.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns a string starting with \texttt{"Antithetic of "}
+  and finishing with the result of the call to the \texttt{toString}
+  method of the generator.
+\end{tabb}
+\begin{code}
+
+   public double nextDouble() \begin{hide} {
+      return 1.0 - st.nextDouble();
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns \texttt{1.0 - s.nextDouble()} where \texttt{s} is the 
+  base stream.
+\end{tabb}
+\begin{code}
+
+   public int nextInt (int i, int j) \begin{hide} {
+      // pas (j - st.nextInt(0,j-i)), au cas ou le resultat varie.
+      return j - i - st.nextInt(i, j);
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns \texttt{j - i - s.nextInt(i, j)} where \texttt{s} is the
+  base stream.
+\end{tabb}
+\begin{code}
+
+   public void nextArrayOfDouble (double[] u, int start, int n) \begin{hide} {
+       st.nextArrayOfDouble (u, start, n);
+       for (int ii = start; ii < start + n; ii++)
+          u[ii] = 1.0 - u[ii];
+   }\end{hide}
+\end{code} 
+\begin{tabb} Calls \texttt{nextArrayOfDouble (u, start, n)} for the base stream,
+  then replaces each \texttt{u[i]} by \texttt{1.0 - u[i]}.
+\end{tabb}
+\begin{htmlonly}
+  \param{u}{the array in which the numbers will be stored}
+  \param{start}{the first index of \texttt{u} to be used}
+  \param{n}{the number of random numbers to put in \texttt{u}}
+\end{htmlonly}
+\begin{code}
+
+   public void nextArrayOfInt (int i, int j, int[] u, int start, int n) \begin{hide} {
+       st.nextArrayOfInt (i, j, u, start, n);
+       for (int ii = start; ii < start + n; ii++)
+          u[ii] = j - i - u[ii];
+   }\end{hide}
+\end{code} 
+\begin{tabb} Calls \texttt{nextArrayOfInt (i, j, u, start, n)} for the base stream,
+  then replaces each \texttt{u[i]} by \texttt{j - i - u[i]}.
+\end{tabb}
+\begin{htmlonly}
+  \param{i}{the smallest possible integer to put in \texttt{u}}
+  \param{j}{the largest possible integer to put in \texttt{u}}
+  \param{u}{the array in which the numbers will be stored}
+  \param{start}{the first index of \texttt{u} to be used}
+  \param{n}{the number of random numbers to put in \texttt{u}}
+\end{htmlonly}
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

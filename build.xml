@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ssj" default="lib">
+<description>
+   Stochastic simulation in Java
+</description>
+
+<property environment="env"/>
+<property file="ssj.properties"/>
+
+<property name="ssj.version" value="2.5"/>
+<property name="putil" value="umontreal/iro/lecuyer/util"/>
+<property name="pprobdist" value="umontreal/iro/lecuyer/probdist"/>
+<property name="pprobdistmulti" value="umontreal/iro/lecuyer/probdistmulti"/>
+<property name="pgof" value="umontreal/iro/lecuyer/gof"/>
+<property name="prng" value="umontreal/iro/lecuyer/rng"/>
+<property name="phups" value="umontreal/iro/lecuyer/hups"/>
+<property name="prandvar" value="umontreal/iro/lecuyer/randvar"/>
+<property name="prandvarmulti" value="umontreal/iro/lecuyer/randvarmulti"/>
+<property name="pstat" value="umontreal/iro/lecuyer/stat"/>
+<property name="psimevents" value="umontreal/iro/lecuyer/simevents"/>
+<property name="psimprocs" value="umontreal/iro/lecuyer/simprocs"/>
+<property name="pfunctions" value="umontreal/iro/lecuyer/functions"/>
+<property name="pfunctionfit" value="umontreal/iro/lecuyer/functionfit"/>
+<property name="pstochprocess" value="umontreal/iro/lecuyer/stochprocess"/>
+<property name="pcharts" value="umontreal/iro/lecuyer/charts"/>
+<property name="pexamples" value="umontreal/iro/lecuyer/examples"/>
+
+<property name="texjava.htmloutdir" value="doc"/>
+
+<taskdef name="texjava" classname="umontreal.iro.lecuyer.tcode.Texjava"/>
+<taskdef name="pdflatex" classname="umontreal.iro.lecuyer.tcode.PdfLatex"/>
+
+<target name="init">
+   <mkdir dir="build"/>
+   <tstamp/>
+   <condition property="ssj.colt">
+      <available classname="cern.colt.list.DoubleArrayList"/>
+   </condition>
+</target>
+
+<!-- ********************************
+     * JNI INTERFACES               *
+     ******************************** -->
+
+<target name="jni" description="Builds SSJ native methods, only if ssj.buildjnichrono or ssj.buildjniunuran are set">
+   <echo message="Building JNI"/>
+   <condition property="jnilinux">
+      <os family="unix"/>
+   </condition>
+   <condition property="jniwindows">
+      <os family="windows"/>
+   </condition>
+
+   <antcall target="jnilin"/>
+   <antcall target="jniwin"/>
+</target>
+
+<target name="jniwin" if="jniwindows">
+   <antcall target="jnichronowin"/>
+   <antcall target="jniunuranwin"/>
+</target>
+
+<target name="jnichronowin" if="ssj.buildjnichrono">
+   <echo message="Compiling Chrono for Windows"/>
+   <javah class="umontreal.iro.lecuyer.util.GlobalCPUTimeChrono" destdir="source/${putil}"/>
+<!-- Non-cygwin DLL -->
+   <exec executable="gcc" dir="source/${putil}" failonerror="yes">
+      <arg value="-Wall"/>
+<!--      <arg value="-mno-cygwin"/> -->
+      <arg value="-c"/>
+      <arg value="-D_WIN32"/>
+      <arg value="-D_REENTRANT"/>
+      <arg value="-DBUILDING_DLL=1"/>
+      <arg value="-D_DLL=1"/>
+<!--      <arg value="-D__int64='long long'"/> -->
+      <arg value="-O2"/>
+      <arg value="-I${java.home}\..\include"/>
+      <arg value="-I${java.home}\..\include\win32"/>
+      <arg value="-o"/>
+      <arg file="source/${putil}/Chrono.o"/>
+      <arg file="source/${putil}/Chrono.c"/>
+   </exec>
+   <exec executable="gcc" dir="source/${putil}" failonerror="yes">
+      <arg value="-Wl,--add-stdcall-alias"/>
+      <arg value="-mno-cygwin"/>
+      <arg value="-shared"/>
+      <arg value="-static"/>
+      <arg value="-s"/>
+      <arg value="-o"/>
+      <arg file="lib/ssjutil.dll"/>
+      <arg file="source/${putil}/Chrono.o"/>
+   </exec>
+</target>
+
+<target name="jniunuranwin" if="ssj.buildjniunuran">
+   <echo message="Compiling UNURAN for Windows"/>
+   <javah class="umontreal.iro.lecuyer.randvar.RandUnuran" destdir="source/${prandvar}"/>
+<!-- We must build a Cygwin DLL because UNURAN can only be built
+   inside Cygwin due to the automake/autoconf build process.
+  It cannot be built natively under Win32. -->
+   <exec executable="gcc" dir="source/${prandvar}" failonerror="yes">
+      <arg value="-Wall"/>
+      <arg value="-c"/>
+      <arg value="-D_WIN32"/>
+      <arg value="-D_REENTRANT"/>
+      <arg value="-DBUILDING_DLL=1"/>
+      <arg value="-D_DLL=1"/>
+<!--      <arg value="-D__int64='long long'"/> -->
+      <arg value="-O2"/>
+      <arg value="-I${java.home}\..\include"/>
+      <arg value="-I${java.home}\..\include\win32"/>
+      <arg value="-o"/>
+      <arg file="source/${prandvar}/RandUnuran.o"/>
+      <arg file="source/${prandvar}/RandUnuran.c"/>
+   </exec>
+   <exec executable="gcc" dir="source/${prandvar}" failonerror="yes">
+<!--      <arg value="-Wl,- -add-stdcall-alias,-e,__cygwin_noncygwin_dll_entry@12" />  -->
+      <arg value="-Wl,--add-stdcall-alias"/>
+      <arg value="-shared"/>
+      <arg value="-static"/>
+      <arg value="-s"/>
+      <arg value="-o"/>
+      <arg file="lib/randvar.dll"/>
+      <arg file="source/${prandvar}/RandUnuran.o"/>
+      <arg value="-L/usr/local/lib"/>
+      <arg value="-lunuran"/>
+   </exec>
+</target>
+
+<target name="jnilin" if="jnilinux">
+   <antcall target="jnichronolin"/>
+   <antcall target="jniunuranlin"/>
+</target>
+
+<target name="jnichronolin" if="ssj.buildjnichrono" depends="util">
+   <echo message="Compiling Chrono for Linux"/>
+   <javah class="umontreal.iro.lecuyer.util.GlobalCPUTimeChrono" destdir="source/${putil}"/>
+   <exec executable="gcc" dir="source/${putil}" failonerror="yes">
+      <arg value="-Wall"/>
+      <arg value="-shared"/>
+      <arg value="-fPIC"/>
+      <arg value="-D_linux"/>
+      <arg value="-D_REENTRANT"/>
+      <arg value="-O2"/>
+      <arg value="-s"/>
+<!--        <arg value="-static"/> -->
+      <arg value="-I${java.home}/include"/>
+      <arg value="-I${java.home}/include/linux"/>
+      <arg value="-o"/>
+      <arg file="lib/libssjutil.so"/>
+      <arg file="source/${putil}/Chrono.c"/>
+   </exec>
+</target>
+
+<target name="jniunuranlin" if="ssj.buildjniunuran" depends="randvar">
+   <echo message="Compiling UNURAN interface for Linux"/>
+   <javah class="umontreal.iro.lecuyer.randvar.RandUnuran" destdir="source/${prandvar}"/>
+   <exec executable="gcc" dir="source/${prandvar}" failonerror="yes">
+      <arg value="-Wall"/>
+      <arg value="-shared"/>
+      <arg value="-s"/>
+<!--        <arg value="-static"/>  -->
+      <arg value="-fPIC"/>
+      <arg value="-D_linux"/>
+      <arg value="-D_REENTRANT"/>
+      <arg value="-O2"/>
+      <arg value="-I${java.home}/include"/>
+      <arg value="-I${java.home}/include/linux"/>
+      <arg value="-o"/>
+      <arg file="lib/librandvar.so"/>
+      <arg file="source/${prandvar}/RandUnuran.c"/>
+      <arg value="-lunuran"/>
+      <arg value="-lrngstreams"/>
+   </exec>
+</target>
+
+<!-- ********************************
+     * Compilation of subpackages   *
+     ******************************** -->
+
+<target name="utilj">
+   <texjava master="source/${putil}/guideutil.tex">
+      <texfilelist dir="source/${putil}" files="Num.tex,PrintfFormat.tex,TableFormat.tex,RatioFunction.tex,RootFinder.tex,ChronoSingleThread.tex,BitVector.tex,BitMatrix.tex,ArithmeticMod.tex,Misc.tex,JDBCManager.tex,TextDataReader.tex,ClassFinder.tex,Introspection.tex,TimeUnit.tex,NameConflictException.tex,TransformingList.tex,DMatrix.tex,DoubleArrayComparator.tex,Systeme.tex"/>
+      <texfileset dir="source/${putil}" includes="Multi*.tex,*Chrono.tex"/>
+      <texfilelist dir="source/${putil}/io" files="DataField.tex"/>
+      <texfileset dir="source/${putil}/io" includes="*Writer.tex,*Reader.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${putil}/guideutil.tex">
+      <texfilelist dir="source/${putil}" files="overview.tex,io/overview.tex"/>
+   </texjava>
+</target>
+
+<target name="util" depends="init,utilj" description="Compiles the basic utilities">
+   <javac srcdir="source" destdir="build" includes="${putil}/*.java,${putil}/io/*.java" source="1.5" target="1.5" debug="${ssj.debug}">
+      </javac>
+</target>
+
+
+<target name="probdistj">
+   <texjava master="source/${pprobdist}/guideprobdist.tex">
+      <texfilelist dir="source/${pprobdist}" files="DiscreteDistribution.tex,DiscreteDistributionInt.tex,ContinuousDistribution.tex,Distribution.tex,DistributionFactory.tex,InverseDistFromDensity.tex"/>
+      <texfileset dir="source/${pprobdist}" includes="*Dist.tex,*DistQuick.tex,*FromMean.tex,*FromMoments.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pprobdist}/guideprobdist.tex">
+      <texfilelist dir="source/${pprobdist}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="probdist" depends="util,functions,probdistj" description="Compiles the probability distributions">
+   <javac srcdir="source" destdir="build" includes="${pprobdist}/*.java" source="1.5" target="1.5" debug="${ssj.debug}">
+      <classpath>
+         <pathelement location="lib/Blas.jar"/>
+         <pathelement location="lib/optimization.jar"/>
+      </classpath>
+      </javac>
+</target>
+
+<target name="probdistmultij">
+   <texjava master="source/${pprobdistmulti}/guideprobdistmulti.tex">
+      <texfilelist dir="source/${pprobdistmulti}" files="ContinuousDistribution2Dim.tex,ContinuousDistributionMulti.tex,DiscreteDistributionIntMulti.tex"/>
+      <texfileset dir="source/${pprobdistmulti}" includes="*Dist.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pprobdistmulti}/guideprobdistmulti.tex">
+      <texfilelist dir="source/${pprobdistmulti}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="probdistmulti" depends="util,probdist,probdistmultij" description="Compiles the multivariate probability distributions">
+   <javac srcdir="source" destdir="build" includes="${pprobdistmulti}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+<target name="gofcolt" if="ssj.colt">
+   <javac srcdir="source" destdir="build" includes="${pgof}/GofStat.java,${pgof}/GofFormat.java" source="1.5" target="1.5"/>
+</target>
+
+<target name="gofj">
+   <texjava master="source/${pgof}/guidegof.tex">
+      <texfilelist dir="source/${pgof}" files="KernelDensity.tex,FDist.tex,FBar.tex,GofStat.tex,GofFormat.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pgof}/guidegof.tex">
+      <texfilelist dir="source/${pgof}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="gof" depends="probdist,gofj" description="Compiles the goodness of fit tests">
+   <javac srcdir="source" destdir="build" includes="${pgof}/*.java" excludes="${pgof}/GofStat.java,${pgof}/GofFormat.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+   <antcall target="gofcolt"/>
+</target>
+
+<target name="rngj">
+   <texjava master="source/${prng}/guiderng.tex">
+      <texfilelist dir="source/${prng}" files="BasicRandomStreamFactory.tex,LFSR113.tex,LFSR258.tex,F2NL607.tex,GenF2w32.tex,MT19937.tex"/>
+      <texfileset dir="source/${prng}" includes="Rand*.tex,MRG*.tex,*Stream.tex,WELL*.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${prng}/guiderng.tex">
+      <texfilelist dir="source/${prng}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="rng" depends="util,rngj" description="Compiles the uniform random streams">
+   <javac srcdir="source" destdir="build" includes="${prng}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+
+   <condition property="WELL607dat.uptodate">
+     <and>
+       <uptodate srcfile="source/${prng}/WELL607.java" targetfile="build/${prng}/WELL607.dat"/>
+       <uptodate srcfile="source/${prng}/WELL607base.java" targetfile="build/${prng}/WELL607.dat"/>
+     </and>
+   </condition>
+   <condition property="WELL512dat.uptodate">
+       <uptodate srcfile="source/${prng}/WELL512.java" targetfile="build/${prng}/WELL512.dat"/>
+   </condition>
+   <condition property="WELL1024dat.uptodate">
+       <uptodate srcfile="source/${prng}/WELL1024.java" targetfile="build/${prng}/WELL1024.dat"/>
+   </condition>
+   <condition property="GenF2w32dat.uptodate">
+       <uptodate srcfile="source/${prng}/GenF2w32.java" targetfile="build/${prng}/GenF2w32.dat"/>
+   </condition>
+
+   <antcall target="WELL607dat"/>
+   <antcall target="WELL512dat"/>
+   <antcall target="WELL1024dat"/>
+   <antcall target="GenF2w32dat"/>
+</target>
+
+<target name="WELL607dat" depends="rngj" unless="WELL607dat.uptodate">
+   <java classname="umontreal.iro.lecuyer.rng.WELL607">
+       <arg file="build/${prng}/WELL607.dat"/>
+   </java>
+</target>
+
+<target name="WELL512dat" depends="rngj" unless="WELL512dat.uptodate">
+   <java classname="umontreal.iro.lecuyer.rng.WELL512">
+       <arg file="build/${prng}/WELL512.dat"/>
+   </java>
+</target>
+
+<target name="WELL1024dat" depends="rngj" unless="WELL1024dat.uptodate">
+   <java classname="umontreal.iro.lecuyer.rng.WELL1024">
+       <arg file="build/${prng}/WELL1024.dat"/>
+   </java>
+</target>
+
+<target name="GenF2w32dat" depends="rngj" unless="GenF2w32dat.uptodate">
+   <java classname="umontreal.iro.lecuyer.rng.GenF2w32">
+       <arg file="build/${prng}/GenF2w32.dat"/>
+   </java>
+</target>
+
+<target name="hupsj">
+   <texjava master="source/${phups}/guidehups.tex">
+      <texfilelist dir="source/${phups}" files="PointSetIterator.tex,RadicalInverse.tex"/>
+      <texfileset dir="source/${phups}" includes="Digital*.tex,*Randomization.tex,*PointSet.tex,*Base2.tex"/>
+      <texfileset dir="source/${phups}" includes="F2w*.tex,*Sequence.tex,*Lattice.tex,*LFSR.tex,*Shift.tex"/>
+      <texfileset dir="source/${phups}" includes="Random*.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${phups}/guidehups.tex">
+      <texfilelist dir="source/${phups}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="hupscolt" if="ssj.colt">
+   <javac srcdir="source" destdir="build" includes="${phups}/CycleBasedPointSet.java,${phups}/CycleBasedPointSetBase2.java,${phups}/LCGPointSet.java,${phups}/RandShiftedPointSet.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+<target name="hups" depends="rng,hupsj,hupsdata" description="Compiles the highly uniform point sets">
+   <javac srcdir="source" destdir="build" includes="${phups}/*.java" excludes="${phups}/CycleBasedPointSet.java,${phups}/CycleBasedPointSetBase2.java,${phups}/LCGPointSet.java,${phups}/RandShiftedPointSet.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+   <antcall target="hupscolt"/>
+</target>
+
+<target name="hupsdata">
+   <copy todir="build/${phups}/dataSer">
+      <fileset dir="source/${phups}/dataSer">
+         <include name="**/*.ser"/>
+      </fileset>
+   </copy>
+   <copy todir="build/${phups}/dataLFSR">
+      <fileset dir="source/${phups}/dataLFSR">
+         <include name="**/*.dat"/>
+      </fileset>
+   </copy>
+</target>
+
+
+
+<target name="randvarj">
+   <texjava master="source/${prandvar}/guiderandvar.tex">
+      <!--texfilelist dir="source/${prandvar}" files="PositiveTransform.tex,Rand1.tex"/-->
+      <texfileset dir="source/${prandvar}" includes="*Gen.tex,RandomVaria*.tex"/>
+      <texfileset dir="source/${prandvar}" includes="RandUnur*tex,Unuran*.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${prandvar}/guiderandvar.tex">
+      <texfilelist dir="source/${prandvar}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="randvar" depends="probdist,rng,randvarj" description="Compiles the random variate generators">
+   <javac srcdir="source" destdir="build" includes="${prandvar}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+
+<target name="randvarmultij">
+   <texjava master="source/${prandvarmulti}/guiderandvarmulti.tex">
+      <texfileset dir="source/${prandvarmulti}" includes="*Gen.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${prandvarmulti}/guiderandvarmulti.tex">
+      <texfilelist dir="source/${prandvarmulti}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="randvarmulti" depends="rng,probdist,randvar,probdistmulti,randvarmultij" description="Compiles the random multi-variate generators">
+   <javac srcdir="source" destdir="build" includes="${prandvarmulti}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+<target name="statcolt" if="ssj.colt">
+   <javac srcdir="source" destdir="build" includes="${pstat}/TallyStore.java" source="1.5" target="1.5"/>
+</target>
+
+<target name="statj">
+   <texjava master="source/${pstat}/guidestat.tex">
+      <texfileset dir="source/${pstat}" includes="Tally*.tex"/>
+      <texfilelist dir="source/${pstat}" files="ObservationListener.tex,StatProbe.tex"/>
+      <texfilelist dir="source/${pstat}/list" files="ArrayOfObservationListener.tex,ListOfStatProbes.tex,ListOfTallies.tex,ListOfTalliesWithCovariance.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pstat}/guidestat.tex">
+      <texfilelist dir="source/${pstat}" files="overview.tex,list/overview.tex"/>
+   </texjava>
+</target>
+
+<target name="stat" depends="util,statj" description="Compiles the statistics tools">
+   <javac srcdir="source" destdir="build" includes="${pstat}/*.java,${pstat}/list/*.java" excludes="${pstat}/TallyStore.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+   <antcall target="statcolt"/>
+</target>
+
+<target name="simeventsj">
+   <texjava master="source/${psimevents}/guidesimevents.tex">
+      <texfilelist dir="source/${psimevents}" files="Accumulate.tex,ListWithStat.tex,LinkedListStat.tex,Event.tex,ContinuousState.tex,Continuous.tex,Sim.tex,Simulator.tex"/>
+      <texfilelist dir="source/${psimevents}/eventlist" files="EventList.tex,BinaryTree.tex,DoublyLinked.tex,Henriksen.tex,RedblackTree.tex,SplayTree.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${psimevents}/guidesimevents.tex">
+      <texfilelist dir="source/${psimevents}" files="overview.tex,eventlist/overview.tex"/>
+   </texjava>
+</target>
+
+<target name="simevents" depends="stat,simeventsj" description="Compiles the event-driven simulation package">
+   <javac srcdir="source" destdir="build" includes="${psimevents}/*.java,${psimevents}/eventlist/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+<target name="simprocsj">
+   <texjava master="source/${psimprocs}/guidesimprocs.tex">
+      <texfilelist dir="source/${psimprocs}" files="ProcessSimulator.tex,ThreadProcessSimulator.tex,DSOLProcessSimulator.tex,SSJInterpretationOracle.tex,SimProcess.tex,Resource.tex,Bin.tex,Condition.tex,UserRecord.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${psimprocs}/guidesimprocs.tex">
+      <texfilelist dir="source/${psimprocs}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="simprocs" depends="simprocsj,simevents" description="Compiles the process-driven simulation package">
+   <javac srcdir="source" destdir="build" includes="${psimprocs}/*.java" excludes="${psimprocs}/keep/*.java" source="1.5" target="1.5" debug="${ssj.debug}">
+      <classpath>
+         <pathelement location="lib/interpreter-1.6.8.jar"/>
+         <pathelement location="lib/event-1.6.5.jar"/>
+      </classpath>
+   </javac>
+   <copy file="source/interpreter.properties" todir="build"/>
+</target>
+
+<target name="functionsj">
+   <texjava master="source/${pfunctions}/guidefunctions.tex">
+      <texfilelist dir="source/${pfunctions}" files="Polynomial.tex"/>
+            <texfileset dir="source/${pfunctions}" includes="*Function.tex,Math*.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pfunctions}/guidefunctions.tex">
+      <texfilelist dir="source/${pfunctions}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="functions" depends="functionsj" description="Provides tools to use mathematical functions">
+   <javac srcdir="source" destdir="build" includes="${pfunctions}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+<target name="functionfitj">
+   <texjava master="source/${pfunctionfit}/guidefunctionfit.tex">
+      <texfilelist dir="source/${pfunctionfit}" files="LeastSquares.tex,BSpline.tex,PolInterp.tex,SmoothingCubicSpline.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pfunctionfit}/guidefunctionfit.tex">
+      <texfilelist dir="source/${pfunctionfit}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="functionfit" depends="functionfitj" description="Compiles tools to compute function fittings">
+   <javac srcdir="source" destdir="build" includes="${pfunctionfit}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+
+<target name="stochprocessj">
+   <texjava master="source/${pstochprocess}/guidestochprocess.tex">
+      <texfileset dir="source/${pstochprocess}" includes="Geometric*.tex,*Motion*.tex,*Process*.tex"/>
+   </texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pstochprocess}/guidestochprocess.tex">
+      <texfilelist dir="source/${pstochprocess}" files="overview.tex"/>
+   </texjava>
+</target>
+
+<target name="stochprocess" depends="stochprocessj" description="Simulates stochastic processes">
+   <javac srcdir="source" destdir="build" includes="${pstochprocess}/*.java" source="1.5" target="1.5" debug="${ssj.debug}"/>
+</target>
+
+
+<target name="chartsj">
+	<texjava master="source/${pcharts}/guidecharts.tex">
+            <texfilelist dir="source/${pcharts}" files="Axis.tex,PlotFormat.tex"/>
+            <texfileset dir="source/${pcharts}" includes="*Chart.tex,*Collection.tex,*Plot.tex"/>
+	</texjava>
+   <texjava overviewtopackage="yes" htmlonly="yes" master="source/${pcharts}/guidecharts.tex">
+        <texfilelist dir="source/${pcharts}" files="overview.tex"/>
+    </texjava>
+</target>
+
+<target name="charts" depends="chartsj" description="Provides tools to draw charts and plots">
+	<javac srcdir="source" destdir="build" includes="${pcharts}/*.java" source="1.5" target="1.5" debug="${ssj.debug}">
+      <classpath>
+         <pathelement location="lib/jcommon-1.0.13.jar"/>
+         <pathelement location="lib/jfreechart-1.0.10.jar"/>
+      </classpath>
+      </javac>
+</target>
+
+
+
+<!-- ********************************
+     * JAR FILE AND DOCUMENTATION   *
+     ******************************** -->
+
+<target name="lib" depends="util,probdist,probdistmulti,gof,rng,hups,randvar,randvarmulti,stat,simevents,simprocs,charts,functions,functionfit,stochprocess" description="Creates the JAR file">
+   <mkdir dir="lib"/>
+   <jar jarfile="lib/ssj.jar" basedir="build" excludes="">
+      <manifest>
+         <attribute name="Extension-Name" value="SSJ"/>
+         <attribute name="Specification-Title" value="Stochastic Simulation in Java"/>
+         <attribute name="Specification-Version" value="${ssj.version}"/>
+         <attribute name="Specification-Vendor" value="DIRO of the Université de Montréal"/>
+         <attribute name="Implementation-Title" value="SSJ"/>
+         <attribute name="Implementation-Version" value="${ssj.version} ${TODAY}"/>
+         <attribute name="Implementation-Vendor" value="DIRO of the Université de Montréal"/>
+         <attribute name="Class-Path" value="colt.jar optimization.jar Blas.jar tcode.jar jfreechart-1.0.10.jar jcommon-1.0.13.jar interpreter-1.6.8.jar event-1.6.5.jar logger-1.6.4.jar language-1.6.7.jar"/>
+      </manifest>
+   </jar>
+</target>
+
+<target name="doc" depends="pdfdoc,htmldoc" description="Creates the PDF and HTML documentation">
+</target>
+
+<target name="htmldoc" depends="utilj,probdistj,probdistmultij,gofj,rngj,hupsj,randvarj,randvarmultij,statj,simeventsj,simprocsj,functionsj,functionfitj,stochprocessj,chartsj" description="Creates the HTML documentation" if="ssj.htmldoc">
+   <texjava htmlonly="yes">
+      <texfilelist dir="source" files="overview.tex"/>
+   </texjava>
+   <mkdir dir="doc"/>
+   <javadoc destdir="doc/html" public="yes" overview="source/overview.html" windowtitle="Java Libraries for Stochastic Simulation">
+      <packageset dir="source" defaultexcludes="yes">
+         <include name="${putil}/**"/>
+         <include name="${pprobdist}"/>
+         <include name="${pprobdistmulti}"/>
+         <include name="${pgof}"/>
+         <include name="${prng}"/>
+         <include name="${phups}"/>
+         <include name="${prandvar}"/>
+         <include name="${prandvarmulti}"/>
+         <include name="${pstat}/**"/>
+         <include name="${psimevents}/**"/>
+         <include name="${psimprocs}"/>
+         <include name="${pfunctions}"/>
+         <include name="${pfunctionfit}"/>
+         <include name="${pstochprocess}"/>
+         <include name="${pcharts}"/>
+      </packageset>
+      <classpath>
+         <pathelement location="lib/ssj.jar"/>
+         <pathelement location="lib/colt.jar"/>
+         <pathelement location="lib/tcode.jar"/>
+         <pathelement location="lib/optimization.jar"/>
+         <pathelement location="lib/Blas.jar"/>
+         <pathelement location="lib/jfreechart-1.0.10.jar"/>
+         <pathelement location="lib/jcommon-1.0.13.jar"/>
+         <pathelement location="lib/interpreter-1.6.8.jar"/>
+         <pathelement location="lib/event-1.6.5.jar"/>
+         <pathelement location="lib/logger-1.6.4.jar"/>
+         <pathelement location="lib/language-1.6.7.jar"/>
+      </classpath>
+      <doctitle><![CDATA[<b>SSJ : A Java library for a stochastic
+	      simulation <br> API specification </b>]]></doctitle>
+      <header><![CDATA[<b>SSJ </b><br>V. ${ssj.version}.]]></header>
+      <footer><![CDATA[<b>SSJ </b><br>V. ${ssj.version}.]]></footer>
+      <bottom><![CDATA[To submit a bug or ask questions, send an e-mail to
+        <a href="mailto:Pierre L'Ecuyer <lecuyer@IRO.UMontreal.CA>">Pierre L'Ecuyer</a>.]]>
+	</bottom>
+      <link href="http://download.oracle.com/javase/6/docs/api/"/>
+      <link href="http://dsd.lbl.gov/~hoschek/colt/api/"/>
+      <link href="http://www.jfree.org/jfreechart/api/javadoc/"/>
+   </javadoc>
+</target>
+
+<target name="pdfdoc" description="Creates the PDF documentation" if="ssj.pdfdoc">
+   <pdflatex latexfile="source/${putil}/guideutil.tex"/>
+   <pdflatex latexfile="source/${pprobdist}/guideprobdist.tex"/>
+   <pdflatex latexfile="source/${pprobdistmulti}/guideprobdistmulti.tex"/>
+   <pdflatex latexfile="source/${pgof}/guidegof.tex"/>
+   <pdflatex latexfile="source/${prng}/guiderng.tex"/>
+   <pdflatex latexfile="source/${phups}/guidehups.tex"/>
+   <pdflatex latexfile="source/${prandvar}/guiderandvar.tex"/>
+   <pdflatex latexfile="source/${prandvarmulti}/guiderandvarmulti.tex"/>
+   <pdflatex latexfile="source/${pstat}/guidestat.tex"/>
+   <pdflatex latexfile="source/${psimevents}/guidesimevents.tex"/>
+   <pdflatex latexfile="source/${psimprocs}/guidesimprocs.tex"/>
+   <pdflatex latexfile="source/${pfunctions}/guidefunctions.tex"/>
+   <pdflatex latexfile="source/${pfunctionfit}/guidefunctionfit.tex"/>
+   <pdflatex latexfile="source/${pstochprocess}/guidestochprocess.tex"/>
+   <pdflatex latexfile="source/${pcharts}/guidecharts.tex"/>
+   <pdflatex latexfile="source/${pexamples}/examples.tex"/>
+   <pdflatex latexfile="source/overview.tex"/>
+</target>
+
+
+
+<!-- ********************************
+     * DISTRIBUTION                 *
+     ******************************** -->
+
+<target name="dist" depends="lib,jni,doc" description="Creates the SSJ binary distribution">
+   <mkdir dir="doc/pdf"/>
+   <copy todir="doc/pdf">
+      <fileset dir="source" includes="**/*.pdf" excludes="${pexamples}/examples.pdf"/>
+      <mapper type="flatten"/>
+   </copy>
+
+   <filter token="DSTAMP" value="${DSTAMP}"/>
+   <filter token="TODAY" value="${TODAY}"/>
+<!--   <copy file="index.html.in" tofile="dist/index.html" filtering="true"/>
+-->
+   <zip destfile="dist/ssj-${DSTAMP}.zip">
+      <zipfileset dir="lib" prefix="ssj/lib" excludes="Console.jar,finance.jar,jspline.jar"/>
+      <zipfileset dir="bin" prefix="ssj" includes="Ssjrc,Ssj.sh" filemode="755"/>
+      <zipfileset dir="bin" prefix="ssj" includes="Ssj.bat"/>
+      <zipfileset dir="." prefix="ssj" includes="cdssj.bat,README.txt,INSTALL.txt,NEWS"/>
+      <zipfileset dir="doc/html" prefix="ssj/doc/html"/>
+      <zipfileset dir="doc/pdf" prefix="ssj/doc/pdf"/>
+      <zipfileset dir="source/${pexamples}" prefix="ssj/examples" includes="*.java,*.dat,*.pdf"/>
+  </zip>
+</target>
+
+<target name="srcdist" depends="cleanmore" description="Cleans the tree and zip it as a source distribution">
+   <tstamp/>
+   <fail message="Non terminé; voir le zip source dans mon HTML"/>
+   <zip destfile="ssj-src-${DSTAMP}.zip">
+      <zipfileset dir="." prefix="ssj" excludes="dist/cpdist,Ssjrc,Ssj.sh,usessj,usessj.sh"/>
+      <zipfileset dir="." prefix="ssj" includes="Ssjrc,Ssj.sh" filemode="755"/>
+   </zip>
+</target>
+
+
+<!-- ********************************
+     * CLEANUP                      *
+     ******************************** -->
+
+<target name="cleanbuild" description="Cleans the build tree">
+<!-- Problème ici avec les *.dat dans rng. Il faudrait les recopier dans le
+  build/umontreal/iro/lecuyer/rng quand on reconstruit ab initio. -->
+   <delete dir="build" includeEmptyDirs="true"/>
+</target>
+
+<target name="cleandoc" description="Cleans the generated documentation">
+   <delete dir="doc" includeEmptyDirs="true"/>
+   <delete>
+      <fileset dir="source" includes="**/*.pdf"/>
+   </delete>
+</target>
+
+<target name="cleanlib" description="Cleans the generated library files">
+   <delete dir="lib" includeEmptyDirs="true"/>
+</target>
+
+<target name="cleanjava">
+   <delete>
+      <fileset dir="source" includes="${putil}/*.java,${putil}/io/*.java,${pprobdist}/*.java,${pstochprocess}/*.java,${pfunctions}/*.java"/>
+      <fileset dir="source" includes="${pprobdistmulti}/*.java,${pgof}/*.java,${pfunctionfit}/*.java"/>
+      <fileset dir="source" includes="${pcharts}/*.java" excludes="${pcharts}/CustomHistogramDataset.java,${pcharts}/EmpiricalRenderer.java"/>
+       <fileset dir="source" includes="${prng}/*.java" excludes="${prng}/WELL607base.java,${prng}/Rijndael_Algorithm.java,${prng}/Rijndael_Properties.java,${prng}/F2wPoly.java"/>
+      <fileset dir="source" includes="${prandvar}/*.java,${prandvarmulti}/*.java,${pstat}/*.java,${pstat}/list/*.java"/>
+      <fileset dir="source" includes="${psimevents}/*.java,${psimevents}/eventlist/*.java,${psimprocs}/*.java,${phups}/*.java"/>
+   </delete>
+</target>
+
+<target name="clean" description="Cleans auxiliary and backup files">
+   <delete>
+      <fileset dir="source" includes="**/*~ **/*.bck **/*% **/*.bak **/*.aux **/*.log **/*.blg **/*.toc **/*.dvi"/>
+   </delete>
+</target>
+
+<target name="cleanmore" depends="clean,cleanbuild,cleandoc" description="Cleans backup and class files">
+   <delete>
+      <fileset dir="source" includes="**/*.class **/*.html"/>
+   </delete>
+</target>
+
+<target name="cleanall" depends="cleanmore,cleanlib" description="Cleans all generated files">
+   <delete>
+      <fileset dir="source" includes="**/*.bbl"/>
+   </delete>
+</target>
+
+</project>

@@ -1,0 +1,566 @@
+\defclass{F2wStructure}
+
+This class implements methods and fields needed by the classes
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wNetLFSR},
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wNetPolyLCG},
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wCycleBasedLFSR} and
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wCycleBasedPolyLCG}.
+It also stores the parameters of these point sets which will contain
+$2^{rw}$ points (see the meaning of $r$ and $w$ below).
+The parameters can be stored as a polynomial $P(z)$ over
+ $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}[z]$
+$$
+P(z) = z^{r} + \sum_{i=1}^{r} b_i z^{r-i}
+$$
+where $b_i\in \latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$ for $i=1,\ldots,r$.
+ Let $\zeta$ be the root of an irreducible polynomial
+ $Q(z)\in \latex{\mathbb{F}}\html{\mathbf{F}}_2[z]$.  It is well known
+that $\zeta$ is a generator of the finite field
+ $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$.
+The elements of $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$ are
+ represented using the polynomial ordered
+ basis $(1,\zeta,\ldots,\zeta^{w-1})$.
+
+In this class, only the non-zero coefficients of $P(z)$ are stored.
+ It is stored as
+$$
+P(z) = z^{\mathtt{r}} + \sum_{i=0}^{\mathtt{nbcoeff}} {\mathtt{coeff[}}i{\mathtt{]}}
+   z^{{\mathtt{nocoeff[}}i{\mathtt{]}}}
+$$
+where the coefficients in \texttt{coeff[]} represent the non-zero
+ coefficients $b_i$ of $P(z)$ using the polynomial basis.
+The finite field $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$ used is
+ defined by the polynomial
+$$
+Q(z) = z^{w} +  \sum_{i=1}^{w} a_i z^{w-i}
+$$
+where $a_i\in \latex{\mathbb{F}}\html{\mathbf{F}}_{2}$,
+ for $i=1,\ldots,w$. Polynomial $Q$ is
+ stored as the bit vector {\texttt{modQ}} = $(a_w,\ldots,a_1)$.
+
+The class also stores the parameter \texttt{step} that is used by the classes
+\externalclass{umontreal.iro.lecuyer.hups}{F2wNetLFSR},
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wNetPolyLCG},
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wCycleBasedLFSR} and
+ \externalclass{umontreal.iro.lecuyer.hups}{F2wCycleBasedPolyLCG}.
+This parameter is such that the implementation of the recurrence
+ will output a value  at every {\texttt{step}} iterations.
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        F2wStructure
+ * Description:  Tools for point sets and sequences based on field F_{2^w}
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+import java.io.*;
+import java.util.*;
+\end{hide}
+
+public class F2wStructure \begin{hide} {
+
+   private final int ALLONES = 2147483647; // 2^31-1 --> 01111...1
+   int w;
+   int r;
+   int numBits;
+   private int modQ;
+   private int step;
+   private int[] coeff;
+   private int[] nocoeff;
+   private int nbcoeff;
+   int S;
+   private int maskw;
+   private int maskrw;
+   private int maskZrm1;
+   private int mask31;
+   private int t;
+   private int masktrw;
+   private int[] maskv;
+   int state;
+   int output;            // augmented state
+   double normFactor;
+   double EpsilonHalf;
+   final static int MBL = 140; //maximum of bytes in 1 line
+   //92 bytes for a number of coeff = 15
+
+
+   private void init (int w, int r, int modQ, int step,
+      int nbcoeff, int coeff[], int nocoeff[])
+   {
+      normFactor = 1.0 / (1L << 31); // 4.65661287307739258e-10;
+      EpsilonHalf = 0.5*normFactor;
+      numBits = 31;
+      this.step = step;
+      this.w = w;
+      this.r = r;
+      S = 31 - r * w;
+      mask31 = ~(1 << 31);
+      maskw = (1 << w) - 1;
+      maskrw = ((1 << (r * w)) - 1) << S;
+      maskZrm1 = (ALLONES >> (r * w)) ^ (ALLONES >> ((r - 1) * w));
+      this.modQ = modQ;
+      this.nbcoeff = nbcoeff;
+      this.nocoeff = new int[nbcoeff];
+      this.coeff = new int[nbcoeff];
+      for (int j = 0; j < nbcoeff; j++) {
+         this.nocoeff[j] = nocoeff[j];
+         this.coeff[j] = coeff[j];
+      }
+   }
+
+   void initParamLFSR ()
+   {
+      t = (31 - r * w) / w;
+      masktrw = (~0) << (31 - (t + r) * w) & mask31;
+      maskv = new int[r];
+      for (int j = 0; j < r; j++) {
+         maskv[j] = maskw << (S + ((r - 1 - j) * w));
+      }
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+
+   F2wStructure (int w, int r, int modQ, int step, int nbcoeff,
+                 int coeff[], int nocoeff[]) \begin{hide}
+   {
+      init (w, r, modQ, step, nbcoeff, coeff, nocoeff);
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+  Constructs a \texttt{F2wStructure} object that contains  the parameters of a
+  polynomial in $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}[z]$,
+ as well as a stepping parameter.
+\end{tabb}
+\begin{code}
+
+   F2wStructure (String filename, int no)\begin{hide}
+   {
+     // If filename can be found starting from the program's directory,
+     // it will be used; otherwise, the filename in the Jar archive will
+     // be used.
+     BufferedReader input;
+     try {
+       if ((new File (filename)).exists()) {
+          input = new BufferedReader (new FileReader (filename));
+       } else {
+          DataInputStream dataInput;
+          dataInput = new DataInputStream (
+             F2wStructure.class.getClassLoader().getResourceAsStream (
+                 "umontreal/iro/lecuyer/hups/dataF2w/" + filename));
+          input = new BufferedReader (new InputStreamReader (dataInput));
+       }
+       initFromReader (filename, input, no);
+       input.close ();
+
+     } catch (Exception e) {
+       System.out.println ("IO Error: problems finding file " + filename);
+       System.exit (1);
+     }
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Constructs a polynomial in $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}[z]$
+   after reading its parameters from file {\texttt{filename}};
+   the parameters of this polynomial are stored  at line number
+   {\texttt{no}} of {\texttt{filename}}.
+   The files are kept in different
+   directories depending on the criteria used in the searches for the
+   parameters defining the polynomials. The different criteria for the
+   searches and the theory behind it are described in \cite{rPAN04d,rPAN04t}.
+   The existing files and the number of polynomials they contain are
+   given in the following tables.
+   The first table below contains files in subdirectory
+    \texttt{LFSR\_equid\_max}. The name of each
+   file indicates the value of $r$ and $w$ for the polynomials.
+   For example, file \texttt{f2wR2\_W5.dat} in directory
+   \texttt{LFSR\_equid\_max} contains the parameters of 2358
+   polynomials with $r=2$ and $w=5$. For example, to use the 5\textit{-th}
+    polynomial of file \texttt{f2wR2\_W5.dat}, one may call
+   \texttt{F2wStructure("f2wR2\_W5.dat", 5)}.
+   The files of parameters have been stored at the address
+   \url{http://www.iro.umontreal.ca/~simardr/ssj-1/dataF2w/}.
+
+ \end{tabb}
+\begin{code}
+\begin{hide}
+
+   private int multiplyz (int a, int k)
+   {
+      int i;
+      if (k == 0)
+         return a & maskw;
+      else {
+         for (i = 0; i < k; i++) {
+            if ((1 & a) == 1) {
+               a = (a >> 1) ^ modQ;
+            } else
+               a = a >> 1;
+         }
+         return a & maskw;
+      }
+   }\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   int getLog2N ()\begin{hide}
+   {
+      return r * w;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  This method returns the product $rw$.
+ \end{tabb}
+\begin{code}
+
+   int multiply (int a, int b)\begin{hide}
+
+   {
+      int i;
+      int res = 0, verif = 1;
+      for (i = 0; i < w; i++) {
+         if ((b & verif) == verif)
+            res ^= multiplyz (a, w - 1 - i);
+         verif <<= 1;
+      }
+      return res & maskw;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Method that multiplies two elements in
+ $\latex{\mathbb{F}}\html{\mathbf{F}}_{2^w}$.
+ \end{tabb}
+\begin{code} \begin{hide}
+
+   void initF2wLFSR ()     // Initialisation de l'etat d'un LFSR
+   {
+      int v, d = 0;
+      int tempState;
+
+      tempState = state << S;
+      output = tempState;
+      for (int i = 1; i <= t; i++) {
+         d = 0;
+         for (int j = 0; j < nbcoeff; j++) {
+            v = (tempState & maskv[nocoeff[j]]) >>
+                 (S + (r - 1 - nocoeff[j]) * w);
+            d ^= multiply (coeff[j], v);
+         }
+         output |= d << (S - i * w);
+         tempState = (output << (i * w)) & maskrw;
+      }
+   }
+
+
+   void F2wLFSR ()       // Une iteration d'un LFSR
+   {
+      int v, d = 0;
+      int tempState;
+      for (int i = 0; i < step; i++) {
+         tempState = (output << (t * w)) & maskrw;
+         d = 0;
+         for (int j = 0; j < nbcoeff; j++) {
+            v = (tempState & maskv[nocoeff[j]]) >>
+                (S + (r - 1 - nocoeff[j]) * w);
+            d ^= multiply (coeff[j], v);
+         }
+         output = ((output << w) & masktrw) |
+                  (d << (31 - (r + t) * w));
+      }
+      state = (output & maskrw) >> S;
+   }
+
+
+   int F2wPolyLCG ()    // Une iteration d'un PolyLCG
+   {
+      int Zrm1, d;
+      for (int i = 0; i < step; i++) {
+         Zrm1 = (state & maskZrm1) >> S;
+         state = (state >> w) & maskrw;
+         for (int j = 0; j < nbcoeff; j++)
+            state ^=
+               multiply (coeff[j], Zrm1) << (S + (r - 1 - nocoeff[j]) * w);
+      }
+      return state;
+   }\end{hide}
+
+   public static void print (String filename)\begin{hide}
+   {
+     BufferedReader input;
+     try {
+       if ((new File (filename)).exists()) {
+          input = new BufferedReader (new FileReader (filename));
+       } else {
+          DataInputStream dataInput;
+          dataInput = new DataInputStream (
+             F2wStructure.class.getClassLoader().getResourceAsStream (
+                 "umontreal/iro/lecuyer/hups/dataF2w/" + filename));
+          input = new BufferedReader (new InputStreamReader (dataInput));
+       }
+
+     String s;
+     for (int i = 0; i < 4; i++)
+        input.readLine ();
+     while ((s = input.readLine ()) != null)
+        System.out.println (s);
+     input.close ();
+
+     } catch (Exception e) {
+       System.out.println ("IO Error: problems reading file " + filename);
+       System.exit (1);
+     }
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+    Prints the content of file \texttt{filename}. See the constructor
+    above for the conditions on \texttt{filename}.
+ \end{tabb}
+\begin{code}
+
+   public String toString ()\begin{hide}
+   {
+      StringBuffer sb = new StringBuffer ("z^");
+      sb.append (r);
+      for (int j = nbcoeff - 1; j >= 0; j--)
+         sb.append (" + (" + coeff[j] + ") z^" + nocoeff[j]);
+      sb.append ("   modQ = " + modQ + "    w = " + w + "   step = " + step);
+      return sb.toString ();
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+  This method returns a string containing the polynomial $P(z)$ and
+ the stepping parameter.
+\end{tabb}
+
+\begin{code} \begin{hide}
+    private void initFromReader (String filename, BufferedReader input, int no)
+    {
+      int w, r, modQ, step, nbcoeff;
+      int coeff[], nocoeff[];
+      StringTokenizer line;
+      int nl = no + 4;
+
+      try {
+        for (int j = 1; j < nl ; j++)
+          input.readLine ();
+
+        line = new StringTokenizer (input.readLine ());
+        w = Integer.parseInt (line.nextToken ());
+        r = Integer.parseInt (line.nextToken ());
+        modQ = Integer.parseInt (line.nextToken ());
+        step = Integer.parseInt (line.nextToken ());
+        nbcoeff = Integer.parseInt (line.nextToken ());
+        nocoeff = new int[nbcoeff];
+        coeff = new int[nbcoeff];
+        for (int i = 0; i < nbcoeff; i++) {
+          coeff[i] = Integer.parseInt (line.nextToken ());
+          nocoeff[i] = Integer.parseInt (line.nextToken ());
+        }
+        init (w, r, modQ, step, nbcoeff, coeff, nocoeff);
+        input.close ();
+
+      } catch (Exception e) {
+        System.out.println ("Input Error: problems reading file " + filename);
+        System.exit (1);
+      }
+    }
+  }
+  \end{hide}
+\end{code}
+
+\tt
+\begin{minipage}{7cm}
+   \begin {tabular}{|c|c|}
+   \multicolumn{2}{c} {{\rm Directory} LFSR\_equid\_max} \\
+\hline
+  Filename     &  Num of poly.  \\
+\hline
+  f2wR2\_W5.dat  & 2358   \\
+  f2wR2\_W6.dat  & 1618   \\
+  f2wR2\_W7.dat  & 507    \\
+  f2wR2\_W8.dat  & 26     \\
+  f2wR2\_W9.dat  & 3      \\
+  f2wR3\_W4.dat  & 369    \\
+  f2wR3\_W5.dat  & 26     \\
+  f2wR3\_W6.dat  & 1      \\
+  f2wR4\_W3.dat  & 117    \\
+  f2wR4\_W4.dat  & 1      \\
+  f2wR5\_W2.dat  & 165    \\
+  f2wR5\_W3.dat  & 1      \\
+  f2wR6\_W2.dat  & 36     \\
+  f2wR6\_W3.dat  & 1      \\
+  f2wR7\_W2.dat  & 10     \\
+  f2wR8\_W2.dat  & 11     \\
+  f2wR9\_W2.dat  & 1      \\
+\hline
+\end {tabular}
+\end{minipage}
+\hfill
+\begin{minipage}{7cm}
+\begin {tabular}{|c|c|}
+ \multicolumn{2}{c} {{\rm  Directory} LFSR\_equid\_sum} \\
+\hline
+  Filename     &  Num of poly.  \\
+\hline
+ f2wR2\_W5.dat  & 2276     \\
+ f2wR2\_W6.dat  & 1121     \\
+ f2wR2\_W7.dat  & 474      \\
+ f2wR2\_W8.dat  & 37       \\
+ f2wR2\_W9.dat  & 6        \\
+ f2wR3\_W4.dat  & 381      \\
+ f2wR3\_W5.dat  & 65       \\
+ f2wR3\_W6.dat  & 7        \\
+ f2wR4\_W3.dat  & 154      \\
+ f2wR4\_W4.dat  & 2        \\
+ f2wR5\_W2.dat  & 688      \\
+ f2wR5\_W3.dat  & 5        \\
+ f2wR6\_W2.dat  & 70       \\
+ f2wR6\_W3.dat  & 1        \\
+ f2wR7\_W2.dat  & 9        \\
+ f2wR8\_W2.dat  & 3        \\
+ f2wR9\_W2.dat  & 3        \\
+\hline
+\end {tabular}
+\end{minipage}
+\bigskip
+
+\begin{minipage}{7cm}
+\begin {tabular}{|c|c|}
+ \multicolumn{2}{c} {{\rm Directory} LFSR\_mindist\_max} \\
+\hline
+  Filename     &  Num of poly.  \\
+\hline
+ f2wR2\_W5.dat  & 1    \\
+ f2wR2\_W6.dat  & 1    \\
+ f2wR2\_W7.dat  & 2    \\
+ f2wR2\_W8.dat  & 2    \\
+ f2wR2\_W9.dat  & 1    \\
+ f2wR3\_W4.dat  & 2    \\
+ f2wR3\_W5.dat  & 2    \\
+ f2wR3\_W6.dat  & 1    \\
+ f2wR4\_W3.dat  & 1    \\
+ f2wR4\_W4.dat  & 1    \\
+ f2wR5\_W2.dat  & 2    \\
+ f2wR5\_W3.dat  & 1    \\
+ f2wR6\_W2.dat  & 4    \\
+ f2wR6\_W3.dat  & 1    \\
+ f2wR7\_W2.dat  & 1    \\
+ f2wR8\_W2.dat  & 1    \\
+ f2wR9\_W2.dat  & 1    \\
+\hline
+\end {tabular}
+\end{minipage}
+\hfill
+\begin{minipage}{7cm}
+\begin {tabular}{|c|c|}
+\multicolumn{2}{c} {{\rm Directory} LFSR\_mindist\_sum} \\
+\hline
+  Filename     &  Num of poly.  \\
+\hline
+  f2wR2\_W5.dat  & 1   \\
+  f2wR2\_W6.dat  & 1   \\
+  f2wR2\_W7.dat  & 1   \\
+  f2wR2\_W8.dat  & 1   \\
+  f2wR2\_W9.dat  & 1   \\
+  f2wR3\_W4.dat  & 1   \\
+  f2wR3\_W5.dat  & 1   \\
+  f2wR3\_W6.dat  & 1   \\
+  f2wR4\_W3.dat  & 1   \\
+  f2wR4\_W4.dat  & 2   \\
+  f2wR5\_W2.dat  & 2   \\
+  f2wR5\_W3.dat  & 2   \\
+  f2wR6\_W2.dat  & 1   \\
+  f2wR6\_W3.dat  & 1   \\
+  f2wR7\_W2.dat  & 2   \\
+  f2wR8\_W2.dat  & 1   \\
+  f2wR9\_W2.dat  & 2   \\
+\hline
+\end {tabular}
+\end{minipage}
+
+\bigskip
+\begin{minipage}{7cm}
+\begin {tabular}{|c|c|}
+   \multicolumn{2}{c} {{\rm  Directory} LFSR\_tvalue\_max} \\
+\hline
+  Filename     &  Num of poly.  \\
+\hline
+ f2wR2\_W5.dat  & 7     \\
+ f2wR2\_W6.dat  & 1     \\
+ f2wR2\_W7.dat  & 1     \\
+ f2wR2\_W8.dat  & 1     \\
+ f2wR2\_W9.dat  & 1     \\
+ f2wR3\_W4.dat  & 1     \\
+ f2wR3\_W5.dat  & 1     \\
+ f2wR3\_W6.dat  & 1     \\
+ f2wR4\_W3.dat  & 2     \\
+ f2wR4\_W4.dat  & 1     \\
+ f2wR5\_W2.dat  & 14    \\
+ f2wR5\_W3.dat  & 1     \\
+ f2wR6\_W2.dat  & 2     \\
+ f2wR6\_W3.dat  & 1     \\
+ f2wR7\_W2.dat  & 1     \\
+ f2wR8\_W2.dat  & 1     \\
+ f2wR9\_W2.dat  & 1     \\
+\hline
+\end {tabular}
+\end{minipage}
+\hfill
+\begin{minipage}{7cm}
+\begin {tabular}{|c|c|}
+   \multicolumn{2}{c} {{\rm  Directory} LFSR\_tvalue\_sum} \\
+\hline
+  Filename     &  Num of poly.  \\
+\hline
+ f2wR2\_W5.dat  & 15    \\
+ f2wR2\_W6.dat  & 1     \\
+ f2wR2\_W7.dat  & 1     \\
+ f2wR2\_W8.dat  & 2     \\
+ f2wR2\_W9.dat  & 1     \\
+ f2wR3\_W4.dat  & 1     \\
+ f2wR3\_W5.dat  & 1     \\
+ f2wR3\_W6.dat  & 1     \\
+ f2wR4\_W3.dat  & 2     \\
+ f2wR4\_W4.dat  & 1     \\
+ f2wR5\_W2.dat  & 13    \\
+ f2wR5\_W3.dat  & 2     \\
+ f2wR6\_W2.dat  & 12    \\
+ f2wR6\_W3.dat  & 1     \\
+ f2wR7\_W2.dat  & 1     \\
+ f2wR8\_W2.dat  & 1     \\
+ f2wR9\_W2.dat  & 1     \\
+\hline
+\end {tabular}
+\end{minipage}
+\rm

@@ -1,0 +1,1228 @@
+\defclass {GofStat}
+
+% \textbf{THIS CLASS WILL BE REWRITTEN AND SIMPLIFIED IN THE FUTURE.}
+This class provides methods to compute several types of EDF goodness-of-fit
+test statistics and to apply certain transformations to a set of
+observations.  This includes the probability integral transformation
+$U_i = F(X_i)$, as well as the power ratio and iterated spacings
+transformations \cite{tSTE86a}. Here, $U_{(0)}, \dots, U_{(N-1)}$ stand
+for $N$ observations $U_0,\dots,U_{N-1}$ sorted by increasing order, where
+$0\le U_i\le 1$.
+
+Note: This class uses the Colt library.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GofStat
+ * Description:  Goodness-of-fit test statistics
+ * Environment:  Java
+ * Software:     SSJ
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.gof;
+   import cern.colt.list.*;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.probdist.*;
+import java.util.Arrays;\end{hide}
+
+public class GofStat\begin{hide} {
+   private GofStat() {}
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Transforming the observations}
+
+\begin{code}\begin{hide}
+   // Used in discontinuous distributions
+   private static double EPSILOND = 1.0E-15;
+\end{hide}
+
+   public static DoubleArrayList unifTransform (DoubleArrayList data,
+                                         ContinuousDistribution dist)\begin{hide} {
+      double[] v = data.elements();
+      int n = data.size();
+
+      double[] u = new double[n];
+      for (int i = 0; i < n; i++)
+         u[i] = dist.cdf (v[i]);
+      return new DoubleArrayList(u);
+   }\end{hide}
+\end{code}
+\begin{tabb} Applies the transformation $U_i = F (V_i)$ for $i = 0, 1, \ldots, N-1$,
+  where $F$ is a {\em continuous\/} distribution function,
+  and returns the result as an array of length $N$.
+  $V$ represents the $N$ observations contained in \texttt{data},
+  and $U$, the returned transformed observations.
+  If \texttt{data} contains random variables from the distribution function
+  \texttt{dist}, then the result will contain uniform random variables
+  over $[0,1]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to be transformed}
+   \param{dist}{assumed distribution of the observations}
+   \return{the array of transformed observations}
+\end{htmlonly}
+\begin{code}
+
+   public static DoubleArrayList unifTransform (DoubleArrayList data,
+                                        DiscreteDistribution dist)\begin{hide} {
+       double[] v = data.elements();
+       int n = data.size();
+
+       double[] u = new double[n];
+       for (int i = 0; i < n; i++)
+          u[i] = dist.cdf ((int)v[i]);
+       return new DoubleArrayList (u);
+   }\end{hide}
+\end{code}
+\begin{tabb} Applies the transformation $U_i = F (V_i)$ for $i = 0, 1, \ldots, N-1$,
+   where $F$ is a {\em discrete\/} distribution function,
+   and returns the result as an array of length $N$.
+  $V$ represents the $N$ observations contained in \texttt{data},
+  and $U$, the returned transformed observations.
+
+   Note: If $V$ are the values of random variables with
+   distribution function \texttt{dist}, then the result will contain
+   the values of {\em discrete\/} random variables distributed over the
+   set of values taken by \texttt{dist},
+   not uniform random variables over $[0,1]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to be transformed}
+   \param{dist}{assumed distribution of the observations}
+   \return{the array of transformed observations}
+\end{htmlonly}
+\begin{code}
+
+   public static void diff (IntArrayList sortedData, IntArrayList spacings,
+                            int n1, int n2, int a, int b)\begin{hide} {
+      if (n1 < 0 || n2 < 0 || n1 >= n2 || n2 >= sortedData.size())
+         throw new IllegalArgumentException ("n1 and n2 not valid.");
+      int[] u = sortedData.elements();
+      int n = sortedData.size();
+      if (spacings.size() <= (n2 + 2))
+         spacings.setSize (n2 + 2);
+      int[] d = spacings.elements();
+
+      d[n1] = u[n1] - a;
+      for (int i = n1 + 1; i <= n2; i++)
+         d[i] = u[i] - u[i - 1];
+      d[n2+1] = b - u[n2];
+   }\end{hide}
+\end{code}
+ \begin{tabb} Assumes that the real-valued observations $U_0,\dots,U_{N-1}$
+  contained in \texttt{sortedData}
+  are already sorted in increasing order and computes the differences
+  between the successive observations. Let $D$ be the differences
+  returned in \texttt{spacings}.
+  The difference $U_i - U_{i-1}$ is put in $D_i$ for
+  \texttt{n1 < i <= n2}, whereas $U_{n1} - a$ is put into $D_{n1}$
+  and $b - U_{n2}$ is put into $D_{n2+1}$.
+%
+  The number of observations must be greater or equal than \texttt{n2}, we
+  must have
+  \texttt{n1 < n2}, and \texttt{n1} and \texttt{n2} are greater than 0.
+  The size of \texttt{spacings} will be at least $N+1$ after
+  the call returns.
+\hpierre {ATTENTION:  J'ai chang\'e cette proc\'edure et la suivante
+   pour les rendre plus g\'en\'erales et surtout plus {\em semblables}.
+   Un appel \`a l'ancien \texttt{DiffD (U, D, N)} doit se traduire par
+   \texttt{DiffD (U, D, 1, N, 0.0, 1.0)}, tandis qu'un appel
+   \`a l'ancien \texttt{DiffL (U, D, N1, N2, L)} doit se traduire par
+   \texttt{DiffD (U, D, N1, N2, 0, L+U[N1])}. }
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted observations}
+   \param{spacings}{pointer to an array object that will be filled with spacings}
+   \param{n1}{starting index, in \texttt{sortedData}, of the processed observations}
+   \param{n2}{ending index, in \texttt{sortedData} of the processed observations}
+   \param{a}{minimum value of the observations}
+   \param{b}{maximum value of the observations}
+\end{htmlonly}
+\begin{code}
+
+   public static void diff (DoubleArrayList sortedData,
+                            DoubleArrayList spacings,
+                            int n1, int n2, double a, double b)\begin{hide} {
+
+      if (n1 < 0 || n2 < 0 || n1 >= n2 || n2 >= sortedData.size())
+         throw new IllegalArgumentException ("n1 and n2 not valid.");
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+      if (spacings.size() <= (n2 + 2))
+         spacings.setSize (n2 + 2);
+      double[] d = spacings.elements();
+
+      d[n1] = u[n1] - a;
+      for (int i = n1 + 1; i <= n2; i++)
+         d[i] = u[i] - u[i - 1];
+      d[n2+1] = b - u[n2];
+   }\end{hide}
+\end{code}
+\begin{tabb} Same as method
+  \method{diff}{}{\texttt{(IntArrayList,IntArrayList,int,int,int,int)}}{},
+   but for the continuous case.
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted observations}
+   \param{spacings}{pointer to an array object that will be filled with spacings}
+   \param{n1}{starting index of the processed observations in \texttt{sortedData}}
+   \param{n2}{ending index, in \texttt{sortedData} of the processed observations}
+   \param{a}{minimum value of the observations}
+   \param{b}{maximum value of the observations}
+\end{htmlonly}
+\begin{code}
+
+   public static void iterateSpacings (DoubleArrayList data,
+                                       DoubleArrayList spacings)\begin{hide} {
+      if (spacings.size() < (data.size()+1))
+         throw new IllegalArgumentException ("Invalid array sizes.");
+      double[] v = data.elements();
+      spacings.quickSortFromTo (0, data.size());
+      double[] s = spacings.elements();
+      int n = data.size();
+
+      for (int i = 0; i < n; i++)
+         s[n - i] = (i + 1) *  (s[n - i] - s[n - i - 1]);
+      s[0] = (n + 1) * s[0];
+      v[0] = s[0];
+      for (int i = 1; i < n; i++)
+         v[i] = v[i - 1] + s[i];
+   }\end{hide}
+\end{code}
+ \begin{tabb} Applies one iteration of the {\em iterated spacings\/}
+   transformation \cite{rKNU98a,tSTE86a}.
+   Let $U$ be the $N$ observations contained into \texttt{data},
+   and let $S$ be the spacings contained into \texttt{spacings},
+   Assumes that $S[0..N]$ contains the {\em spacings\/}
+   between $N$ real numbers $U_0,\dots,U_{N-1}$ in the interval $[0,1]$.
+   These spacings are defined by
+    $$ S_i = U_{(i)} - U_{(i-1)},  \qquad  1\le i < N, $$
+   where $U_{(0)}=0$, $U_{(N-1)}=1$, and
+   $U_{(0)},\dots,U_{(N-1)}$,  are the $U_i$ sorted in increasing order.
+%  These $U_i$ do not need to be in the array \texttt{V}.
+   These spacings may have been obtained by calling
+   \method{diff}{DoubleArrayList,DoubleArrayList,int,int,double,double}.
+   This method transforms the spacings into new
+   spacings\latex{, by a variant of the  method described
+   in section 11 of \cite {rMAR85a} and also by Stephens \cite{tSTE86a}}:
+%  See also Knuth (1998), 3th edition.
+   it sorts $S_0,\dots,S_N$ to obtain
+   $S_{(0)} \le S_{(1)} \le S_{(2)} \le \cdots \le S_{(N)}$,
+   computes the weighted differences
+  \begin {eqnarray*}
+    S_{0}   &=& (N+1) S_{(0)}, \\
+    S_{1}   &=& N (S_{(1)}-S_{(0)}), \\
+    S_{2}   &=& (N-1) (S_{(2)}-S_{(1)}),\\
+            & \latex{\vdots}\html{...}& \\
+    S_{N}   &=& S_{(N)}-S_{(N-1)},
+  \end {eqnarray*}
+   and computes $V_i = S_0 + S_1 + \cdots + S_i$ for $0\le i < N$.
+   It then returns $S_0,\dots,S_N$ in \texttt{S[0..N]} and
+   $V_1,\dots,V_N$ in \texttt{V[1..N]}.
+
+  Under the assumption that the $U_i$ are i.i.d.\ $U (0,1)$, the new
+  $S_i$ can be considered as a new set of spacings having the same
+  distribution as the original spacings, and the $V_i$ are a new sample
+  of i.i.d.\ $U (0,1)$ random variables, sorted by increasing order.
+
+  This transformation is useful to detect {\em clustering\/} in a data
+  set: A pair of observations that are close to each other is transformed
+  into an observation close to zero.  A data set with unusually clustered
+  observations is thus transformed to a data set with an
+  accumulation of observations near zero, which is easily detected by
+  the Anderson-Darling GOF test.
+ \end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations}
+   \param{spacings}{spacings between the observations, will be filled with the new spacings}
+\end{htmlonly}
+\begin{code}
+
+   public static void powerRatios (DoubleArrayList sortedData)\begin{hide} {
+
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+
+      for (int i = 0; i < (n-1); i++) {
+         if (u[i + 1] == 0.0 || u[i + 1] == -0.0)
+            u[i] = 1.0;
+         else
+            u[i] = Math.pow (u[i] / u[i + 1], (double) i + 1);
+      }
+
+      u[n-1] = Math.pow (u[n-1], (double) n);
+      sortedData.quickSortFromTo (0, sortedData.size() - 1);
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Applies the {\em power ratios\/} transformation $W$\latex{ described
+   in section 8.4 of Stephens \cite{tSTE86a}}.
+   Let $U$ be the $N$ observations contained into \texttt{sortedData}.
+   Assumes that $U$ contains $N$ real numbers
+   $U_{(0)},\dots,U_{(N-1)}$ from the interval $[0,1]$,
+   already sorted in increasing order, and computes the transformations:
+     $$ U'_i = (U_{(i)} / U_{(i+1)})^{i+1}, \qquad  i=0,\dots,N-1,$$
+   with $U_{(N)} = 1$.
+   These $U'_i$ are sorted in increasing order and put back in
+   \texttt{U[1...N]}.
+   If the $U_{(i)}$ are i.i.d.\ $U (0,1)$ sorted by increasing order,
+   then the $U'_i$ are also i.i.d.\ $U (0,1)$.
+
+  This transformation is useful to detect clustering, as explained in
+  \method{iterateSpacings}{DoubleArrayList,DoubleArrayList},
+   except that here a pair of
+  observations close to each other is transformed
+  into an observation close to 1.
+  An accumulation of observations near 1 is also easily detected by
+  the Anderson-Darling GOF test.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{sorted array of real-valued observations in the interval $[0,1]$
+      that will be overwritten with the transformed observations}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Partitions for the chi-square tests}
+
+\begin{code}
+
+   public static class OutcomeCategoriesChi2\begin{hide} {\end{hide}
+\end{code}
+\begin{tabb}
+This class helps managing the partitions of possible outcomes
+into categories for applying chi-square tests.
+It permits one to automatically regroup categories to make sure that
+the expected number of observations in each category is large enough.
+%  namely larger or equal to \texttt{MINEXPECTED}.
+To use this facility, one must first construct an
+\texttt{OutcomeCategoriesChi2} object by passing to the constructor
+the expected number of observations for each original category.
+Then, calling the method \method{regroupCategories}{} will regroup
+categories in a way that the expected number of observations in each
+category reaches a given threshold \texttt{minExp}.
+Experts in statistics recommend that \texttt{minExp} be always larger
+than or equal to 5 for the chi-square test to be valid. Thus,
+\texttt{minExp} = 10 is a safe value to use.
+After the call, \texttt{nbExp} gives the expected numbers in the new
+categories and \texttt{loc[i]} gives the relocation of category $i$,
+for each $i$.  That is, \texttt{loc[i] = j} means that category $i$ has
+been merged with category $j$ because its original expected number was
+too small, and \texttt{nbExp[i]} has been added to \texttt{nbExp[j]}
+and then set to zero.
+In this case, all observations that previously belonged
+to category $i$ are redirected to category $j$.
+% i.e. considered as if they belong to category $j$,
+The variable \texttt{nbCategories} gives the final number of categories,
+\texttt{smin} contains the new index of the lowest category,
+and \texttt{smax} the new index of the highest category.
+\end{tabb}
+\begin{code}
+
+      public int nbCategories;
+\end{code}
+\begin{tabbb} Total number of categories. \end{tabbb}
+\begin{code}
+
+      public int smin;
+\end{code}
+\begin{tabbb}   Minimum index for valid expected numbers
+   in the array \texttt{nbExp}.
+\end{tabbb}
+\begin{code}
+
+      public int smax;
+\end{code}
+\begin{tabbb} Maximum index for valid expected numbers
+   in the array \texttt{nbExp}.
+\end{tabbb}
+\begin{code}
+
+      public double[] nbExp;
+\end{code}
+\begin{tabbb} Expected number of observations for each category. \end{tabbb}
+\begin{code}
+
+      public int[] loc;
+\end{code}
+\begin{tabbb} \texttt{loc[i]} gives the relocation of the category \texttt{i} in
+   the \texttt{nbExp} array. \end{tabbb}
+\begin{code}
+
+      public OutcomeCategoriesChi2 (double[] nbExp)\begin{hide} {
+         this.nbExp = nbExp;
+         smin = 0;
+         smax = nbExp.length - 1;
+         nbCategories = nbExp.length;
+         loc = new int[nbExp.length];
+         for (int i = 0; i < nbExp.length; i++)
+            loc[i] = i;
+      }\end{hide}
+\end{code}
+\begin{tabbb}   Constructs an \texttt{OutcomeCategoriesChi2} object
+  using the array \texttt{nbExp} for the number of expected observations in
+  each category. The \texttt{smin} and \texttt{smax} fields are set to 0 and
+  $(n-1)$ respectively, where $n$ is  the length of array \texttt{nbExp}.
+  The \texttt{loc} field is set such that \texttt{loc[i]=i} for each \texttt{i}.
+  The field \texttt{nbCategories} is set to $n$.
+\end{tabbb}
+\begin{htmlonly}
+   \param{nbExp}{array of expected observations for each category}
+\end{htmlonly}
+\begin{code}
+
+      public OutcomeCategoriesChi2 (double[] nbExp, int smin, int smax)\begin{hide} {
+         this.nbExp = nbExp;
+         this.smin = smin;
+         this.smax = smax;
+         nbCategories = smax - smin + 1;
+         loc = new int[nbExp.length];
+         for (int i = 0; i < smin; i++)
+            loc[i] = smin;
+         for (int i = smin; i < smax; i++)
+            loc[i] = i;
+         for (int i = smax; i < nbExp.length; i++)
+            loc[i] = smax;
+      }\end{hide}
+\end{code}
+\begin{tabbb}  Constructs an \texttt{OutcomeCategoriesChi2} object using the
+  given \texttt{nbExp} expected observations array.  Only the expected
+  numbers from the \texttt{smin} to \texttt{smax} (inclusive) indices will be
+  considered valid. The \texttt{loc} field is set such that \texttt{loc[i]=i}
+  for each \texttt{i} in the interval \texttt{[smin, smax]}. All \texttt{loc[i]}
+  for \texttt{i $\le$ smin} are set to \texttt{smin}, and all \texttt{loc[i]} for
+  \texttt{i $\ge$ smax} are set to \texttt{smax}.
+  The field \texttt{nbCategories} is set to (\texttt{smax - smin + 1}).
+\end{tabbb}
+\begin{htmlonly}
+   \param{nbExp}{array of expected observations for each category}
+   \param{smin}{Minimum index for valid expected number of observations}
+   \param{smax}{Maximum index for valid expected number of observations}
+\end{htmlonly}
+\begin{code}
+
+      public OutcomeCategoriesChi2 (double[] nbExp, int[] loc,
+                                    int smin, int smax, int nbCat)\begin{hide} {
+         this.nbExp = nbExp;
+         this.smin = smin;
+         this.smax = smax;
+         this.nbCategories = nbCat;
+         this.loc = loc;
+      }\end{hide}
+\end{code}
+   \begin{tabbb} Constructs an \texttt{OutcomeCategoriesChi2} object.
+   The field \texttt{nbCategories} is set to  \texttt{nbCat}.
+   \end{tabbb}
+\begin{htmlonly}
+   \param{nbExp}{array of expected observations for each category}
+   \param{smin}{Minimum index for valid expected number of observations}
+   \param{smax}{Maximum index for valid expected number of observations}
+   \param{loc}{array for which \texttt{loc[i]} gives the relocation of the category \texttt{i}}
+\end{htmlonly}
+   \begin{code}
+
+      public void regroupCategories (double minExp)\begin{hide} {
+         int s0 = 0, j;
+         double somme;
+
+         nbCategories = 0;
+         int s = smin;
+         while (s <= smax) {
+            /* Merge categories to ensure that the number expected
+               in each category is >= minExp. */
+            if (nbExp[s] < minExp) {
+               s0 = s;
+               somme = nbExp[s];
+               while (somme < minExp && s < smax) {
+                  nbExp[s] = 0.0;
+                  ++s;
+                  somme += nbExp[s];
+               }
+               nbExp[s] = somme;
+               for (j = s0; j <= s; j++)
+                  loc[j] = s;
+
+            } else
+               loc[s] = s;
+
+            ++nbCategories;
+            ++s;
+         }
+         smin = loc[smin];
+
+         // Special case: the last category, if nbExp < minExp
+         if (nbExp[smax] < minExp) {
+            if (s0 > smin)
+               --s0;
+            nbExp[s0] += nbExp[smax];
+            nbExp[smax] = 0.0;
+            --nbCategories;
+            for (j = s0 + 1; j <= smax; j++)
+               loc[j] = s0;
+            smax = s0;
+         }
+         if (nbCategories <= 1)
+           throw new IllegalStateException ("nbCategories < 2");
+         }\end{hide}
+\end{code}
+ \begin{tabbb}  Regroup categories as explained earlier, so that the expected
+   number of observations in each category is at least \texttt{minExp}.
+   We usually choose \texttt{minExp} = 10.
+ \end{tabbb}
+\begin{htmlonly}
+   \param{minExp}{mininum number of expected observations in each category}
+\end{htmlonly}
+\begin{code}
+
+      public String toString()\begin{hide} {
+         int s, s0;
+         double somme;
+         final double EPSILON = 5.0E-16;
+         StringBuffer sb = new StringBuffer();
+         sb.append ("-----------------------------------------------" +
+                     PrintfFormat.NEWLINE);
+         if (nbExp[smin] < EPSILON)
+            sb.append ("Only expected numbers larger than " +
+                       PrintfFormat.g (6, 1, EPSILON) + "  are printed" +
+                                       PrintfFormat.NEWLINE);
+         sb.append ("Number of categories: " +
+               PrintfFormat.d (4, nbCategories) + PrintfFormat.NEWLINE +
+               "Expected numbers per category:" + PrintfFormat.NEWLINE +
+                PrintfFormat.NEWLINE + "Category s      nbExp[s]" +
+                PrintfFormat.NEWLINE);
+
+         // Do not print values < EPSILON
+         s = smin;
+         while (nbExp[s] < EPSILON)
+            s++;
+         int s1 = s;
+
+         s = smax;
+         while (nbExp[s] < EPSILON)
+            s--;
+         int s2 = s;
+
+         somme = 0.0;
+         for (s = s1 ; s <= s2; s++)
+            if (loc[s] == s) {
+               somme += nbExp[s];
+               sb.append (PrintfFormat.d (4, s) + " " +
+                          PrintfFormat.f (18, 4, nbExp[s]) +
+                          PrintfFormat.NEWLINE);
+            }
+         sb.append (PrintfFormat.NEWLINE + "Total expected number = " +
+                    PrintfFormat.f (18, 2, somme) + PrintfFormat.NEWLINE +
+                    PrintfFormat.NEWLINE +
+                    "The groupings:" + PrintfFormat.NEWLINE +
+                    " Category s      loc[s]" + PrintfFormat.NEWLINE);
+         for (s = smin; s <= smax; s++) {
+            if ((s == smin) && (s > 0))
+               sb.append ("<= ");
+            else if ((s == smax) && (s < loc.length - 1))
+               sb.append (">= ");
+            else
+               sb.append ("   ");
+            sb.append (PrintfFormat.d (4, s) + " " +
+                       PrintfFormat.d (12, loc[s]) + PrintfFormat.NEWLINE);
+         }
+
+         sb.append (PrintfFormat.NEWLINE + PrintfFormat.NEWLINE);
+         return sb.toString();
+      }\end{hide}
+\end{code}
+    \begin{tabbb}  Provides a report on the categories.
+\hpierre{Ceci me semble un peu \'etrange.  On devrait faire abstraction du
+   fait qu'il y a eu regroupement ou pas.  Si pas encore de regroupement,
+   on devrait avoir loc[i]=i et nbCategories = au nombre original de categories.  }
+\hrichard{J'ai compl\`etement r\'e\'ecrit cette fonction.}
+    \end{tabbb}
+\begin{htmlonly}
+   \return{the categories represented as a string}
+\end{htmlonly}
+   \begin{code}
+   \begin{hide}   }\end{hide}
+   \end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Computing EDF test statistics}
+
+\begin{code}
+
+   public static double chi2 (double[] nbExp, int[] count,
+                              int smin, int smax)\begin{hide} {
+      double diff, khi = 0.0;
+
+      for (int s = smin; s <= smax; s++) {
+         if (nbExp[s] <= 0.0) {
+            if (count[s] != 0)
+              throw new IllegalArgumentException (
+                             "nbExp[s] = 0 and count[s] > 0");
+         }
+         else {
+            diff = count[s] - nbExp[s];
+            khi += diff * diff / nbExp[s];
+         }
+      }
+      return khi;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the chi-square statistic for the
+ observations $o_i$ in \texttt{count[smin...smax]}, for which the
+ corresponding expected values $e_i$ are in \texttt{nbExp[smin...smax]}.
+ Assuming that $i$ goes from 1 to $k$, where $k =$ \texttt{smax-smin+1}
+ is the number of categories, the chi-square statistic is defined as
+   \eq
+      X^2 = \sum_{i=1}^k \latex{\frac{(o_i - e_i)^2}{e_i}}\html{(o_i - e_i)^2/e_i}.
+       \latex{\eqlabel{eq:chi-square}}
+   \endeq
+ Under the hypothesis that the $e_i$ are the correct expectations and
+ if these $e_i$ are large enough, $X^2$ follows approximately the
+ chi-square distribution with $k-1$ degrees of freedom.
+ If some of the $e_i$ are too small, one can use
+ \texttt{OutcomeCategoriesChi2} to regroup categories.
+\end{tabb}
+\begin{htmlonly}
+   \param{nbExp}{numbers expected in each category}
+   \param{count}{numbers observed in each category}
+   \param{smin}{index of the first valid data in \texttt{count} and \texttt{nbExp}}
+   \param{smax}{index of the last valid data in \texttt{count} and \texttt{nbExp}}
+   \return{the $X^2$ statistic}
+\end{htmlonly}
+\begin{code}
+
+   public static double chi2 (OutcomeCategoriesChi2 cat, int[] count)\begin{hide} {
+      int[] newcount = new int[1 + cat.smax];
+      for (int s = cat.smin; s <= cat.smax; s++) {
+         newcount[cat.loc[s]] += count[s];
+      }
+
+      double diff, khi = 0.0;
+
+      for (int s = cat.smin; s <= cat.smax; s++) {
+         if (cat.nbExp[s] > 0.0) {
+            diff = newcount[s] - cat.nbExp[s];
+            khi += diff * diff / cat.nbExp[s];
+         }
+      }
+      newcount = null;
+      return khi;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the chi-square statistic for the
+ observations $o_i$ in \texttt{count}, for which the
+ corresponding expected values $e_i$ are in \texttt{cat}.
+ This assumes that \texttt{cat.regroupCategories} has been called before
+ to regroup categories in order to make sure that the expected numbers in each
+ category are large enough for the chi-square test.
+\end{tabb}
+\begin{htmlonly}
+   \param{cat}{numbers expected in each category}
+   \param{count}{numbers observed in each category}
+   \return{the $X^2$ statistic}
+\end{htmlonly}
+\begin{code}
+
+   public static double chi2 (IntArrayList data, DiscreteDistributionInt dist,
+                              int smin, int smax, double minExp, int[] numCat)\begin{hide} {
+      int i;
+      int n = data.size();
+
+      // Find the first non-negligible probability term and fix
+      // the real smin.  The linear search starts from the given smin.
+      i = smin;
+      while (dist.prob (i)*n <= DiscreteDistributionInt.EPSILON)
+         i++;
+      smin = i--;
+
+      // smax > smin is required
+      while (smax <= smin)
+         smax = 2*smax + 1;
+
+      // Allocate and fill the array of expected observations
+      // Each category s corresponds to a value s for which p(s)>0.
+      double[] nbExp = new double[smax+1];
+      do {
+         i++;
+         if (i > smax) {
+            smax *= 2;
+            double[] newNbExp = new double[smax + 1];
+            System.arraycopy (nbExp, smin, newNbExp, smin, nbExp.length - smin);
+            nbExp = newNbExp;
+         }
+         nbExp[i] = dist.prob (i)*n;
+      }
+      while (nbExp[i] > DiscreteDistributionInt.EPSILON);
+      smax = i - 1;
+
+      // Regroup the expected observations intervals
+      // satisfying np(s)>=minExp
+      OutcomeCategoriesChi2 cat = new OutcomeCategoriesChi2
+         (nbExp, smin, smax);
+      cat.regroupCategories (minExp);
+      if (numCat != null)
+         numCat[0] = cat.nbCategories;
+
+      // Count the number of observations in each categories.
+      int[] count = new int[cat.smax+1];
+      for (i = 0; i < count.length; i++)
+         count[i] = 0;
+      for (i = 0; i < n; i++) {
+         int s = data.get (i);
+         while (cat.loc[s] != s)
+            s = cat.loc[s];
+         count[s]++;
+      }
+
+      // Perform the chi-square test
+      return chi2 (cat.nbExp, count, cat.smin, cat.smax);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Computes and returns the chi-square statistic for the
+   observations stored in \texttt{data}, assuming that these observations follow
+   the discrete distribution \texttt{dist}.  For \texttt{dist}, we assume that
+   there is one set $S=\{a, a+1,\dots, b-1, b\}$, where $a<b$ and $a\ge 0$,
+   for which  $p(s)>0$ if $s\in S$ and $p(s)=0$ otherwise.
+
+   Generally, it is not possible to divide the integers in intervals satisfying
+   $nP(a_0\le s< a_1)=nP(a_1\le s< a_2)=\cdots=nP(a_{j-1}\le s< a_j)$
+   for a discrete distribution, where $n$ is the sample size, i.e.,
+   the number of
+   observations stored into \texttt{data}.
+   To perform a general chi-square test, the method starts
+   from \texttt{smin} and finds the first non-negligible
+   probability $p(s)\ge\epsilon$, where
+   $\epsilon=$ \clsexternalmethod{}{DiscreteDistributionInt}{EPSILON}{}.
+   It uses \texttt{smax} to allocate an array storing the
+   number of expected observations ($np(s)$) for each $s\ge$ \texttt{smin}.
+   Starting from $s=$ \texttt{smin}, the $np(s)$ terms are computed and
+   the allocated array grows if required until a negligible probability
+   term is found.
+   This gives the number of expected elements for
+   each category, where an outcome category corresponds here to
+   an interval in which sample observations could lie.
+   The categories are regrouped to have at least
+   \texttt{minExp} observations per category.
+   The method then counts the number of samples in each categories and calls
+   \method{chi2}{double[],int[],int,int} to get the chi-square test
+   statistic.  If \texttt{numCat} is not
+   \texttt{null}, the number of categories after regrouping is returned
+   in \texttt{numCat[0]}. The number of degrees of freedom is equal to
+   \texttt{numCat[0]-1}. We usually choose \texttt{minExp} = 10.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{observations, not necessarily sorted}
+   \param{dist}{assumed probability distribution}
+   \param{smin}{estimated minimum value of $s$ for which $p(s)>0$}
+   \param{smax}{estimated maximum value of $s$ for which $p(s)>0$}
+   \param{minExp}{minimum number of expected observations in each
+    interval}
+   \param{numCat}{one-element array that will be filled with the number of
+    categories after regrouping}
+   \return{the chi-square statistic for a discrete distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double chi2Equal (double nbExp, int[] count,
+                                   int smin, int smax)\begin{hide} {
+
+      double diff, khi = 0.0;
+      for (int s = smin; s <= smax; s++) {
+         diff = count[s] - nbExp;
+         khi += diff * diff;
+      }
+      return khi / nbExp;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Similar to \method{chi2}{double[],int[],int,int},
+   except that the expected
+  number of observations per category is assumed to be the same for
+  all categories, and equal to \texttt{nbExp}.
+\end{tabb}
+\begin{htmlonly}
+   \param{nbExp}{number of expected observations in each category (or interval)}
+   \param{count}{number of counted observations in each category}
+   \param{smin}{index of the first valid data in \texttt{count} and \texttt{nbExp}}
+   \param{smax}{index of the last valid data in \texttt{count} and \texttt{nbExp}}
+   \return{the $X^2$ statistic}
+\end{htmlonly}
+\begin{code}
+
+   public static double chi2Equal (DoubleArrayList data, double minExp)\begin{hide} {
+      int n = data.size();
+      if (n < (int)Math.ceil (minExp))
+         throw new IllegalArgumentException ("Not enough observations");
+      double p = minExp/n;
+      int m = (int)Math.ceil (1.0/p);
+      // to avoid an exception when data[i] = 1/p, reserve one element more
+      int[] count = new int[m + 1];
+      for (int i = 0; i < n; i++) {
+         int j = (int)Math.floor (data.get (i)/p);
+         count[j]++;
+      }
+      // put the elements in count[m] where they belong: in count[m-1]
+      count[m - 1] += count[m];
+      return chi2Equal (minExp, count, 0, m - 1);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Computes the chi-square statistic for a continuous distribution.
+   Here, the equiprobable case can be used.  Assuming that \texttt{data} contains
+   observations coming from the uniform distribution, the $[0,1]$ interval
+   is divided into $1/p$ subintervals, where $p=$ \texttt{minExp}$/n$, $n$
+   being the sample size, i.e., the number of observations stored in
+   \texttt{data}.  For each subinterval, the method counts the number of
+   contained observations and the chi-square statistic is computed
+   using \method{chi2Equal}{double,int[],int,int}.
+   We usually choose \texttt{minExp} = 10.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations in $[0,1)$}
+   \param{minExp}{minimum number of expected observations in each subintervals}
+   \return{the chi-square statistic for a continuous distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double chi2Equal (DoubleArrayList data)\begin{hide} {
+   return chi2Equal (data, 10.0);
+}\end{hide}
+\end{code}
+\begin{tabb} Equivalent to \texttt{chi2Equal (data, 10)}.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations in $[0,1)$}
+   \return{the chi-square statistic for a continuous distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static int scan (DoubleArrayList sortedData, double d)\begin{hide} {
+
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+
+      int m = 1, j = 0, i = -1;
+      double High = 0.0;
+
+      while (j < (n-1) && High < 1.0) {
+         ++i;
+
+         High = u[i] + d;
+         while (j < n && u[j] < High)
+            ++j;
+         // j is now the index of the first obs. to the right of High.
+         if (j - i > m)
+            m = j - i;
+      }
+      return m;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Computes and returns the scan statistic $S_N (d)$,
+  defined in \latex{(\ref{eq:scan})}\html{\clsexternalmethod{}{FBar}{scan}{}}.
+  Let $U$ be the $N$ observations contained into \texttt{sortedData}.
+  The $N$ observations in $U[0..N-1]$ must be real numbers
+  in the interval $[0,1]$, sorted in increasing order.
+  (See \clsexternalmethod{}{FBar}{scan}{} for the distribution function of $S_N (d)$).
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{sorted array of real-valued observations in the interval $[0,1]$}
+   \param{d}{length of the test interval ($\in(0,1)$)}
+   \return{the scan statistic}
+\end{htmlonly}
+\begin{code}
+
+   public static double cramerVonMises (DoubleArrayList sortedData)\begin{hide} {
+      double w, w2;
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+
+      if (n <= 0) {
+         System.err.println ("cramerVonMises:  n <= 0");
+         return 0.0;
+      }
+
+      w2 = 1.0 / (12 * n);
+      for (int i = 0; i < n; i++) {
+         w = u[i] - (i + 0.5) / n;
+         w2 += w * w;
+      }
+      return w2;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Computes and returns the Cram\'er-von Mises statistic $W_N^2$\html{. It is}
+   \latex{(see \cite{tDUR73a,tSTE70a,tSTE86b}),} defined by
+  \begin {equation}
+     W_N^2 = \latex{\frac{1}{ 12N}}\html{1/(12N)} +
+            \sum_{j=0}^{N-1} \left (U_{(j)} - \latex{\frac{(j+0.5) }{ N}}\html{(j+0.5)/N}\right)^2,
+                                                   \latex{\eqlabel {eq:CraMis}}
+  \end {equation}
+ assuming that \texttt{sortedData} contains $U_{(0)},\dots,U_{(N-1)}$
+ sorted in increasing order.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{the Cram\'er-von Mises statistic}
+\end{htmlonly}
+\begin{code}
+
+   public static double watsonG (DoubleArrayList sortedData)\begin{hide} {
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+      double sumZ;
+      double d2;
+      double dp, g;
+      double unSurN = 1.0 / n;
+
+      if (n <= 0) {
+         System.err.println ("watsonG: n <= 0");
+         return 0.0;
+      }
+
+      // degenerate case n = 1
+      if (n == 1)
+         return 0.0;
+
+      // We assume that u is already sorted.
+      dp = sumZ = 0.0;
+      for (int i = 0; i < n; i++) {
+         d2 = (i + 1) * unSurN - u[i];
+         if (d2 > dp)
+            dp = d2;
+         sumZ += u[i];
+      }
+      sumZ = sumZ * unSurN - 0.5;
+      g = Math.sqrt ((double) n) * (dp + sumZ);
+      return g;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Computes and returns the Watson statistic $G_N$\html{. It is}
+  \latex{(see \cite{tWAT76a,tDAR83a}),}  defined by
+ \begin {eqnarray}
+  G_N &=& \sqrt{N} \max_{\latex{\rule{0pt}{7pt}} 0\le j \le N-1}
+    \left\{ (j+1)/N -
+         U_{(j)} + \overline{U}_N - 1/2 \right\}
+                                            \latex{\eqlabel {eq:WatsonG}} \\[6pt]
+    &=& \sqrt{N}\left (D_N^+ + \overline{U}_N  - 1/2\right), \nonumber
+ \end {eqnarray}
+  where $\overline{U}_N$ is the average of the observations $U_{(j)}$,
+  assuming that \texttt{sortedData} contains the sorted $U_{(0)},\dots,U_{(N-1)}$.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{the Watson statistic $G_N$}
+\end{htmlonly}
+\begin{code}
+
+   public static double watsonU (DoubleArrayList sortedData)\begin{hide} {
+      double sumZ, w, w2, u2;
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+
+      if (n <= 0) {
+         System.err.println ("watsonU: n <= 0");
+         return 0.0;
+      }
+
+      // degenerate case n = 1
+      if (n == 1)
+         return 1.0 / 12.0;
+
+      sumZ = 0.0;
+      w2 = 1.0 / (12 * n);
+      for (int i = 0; i < n; i++) {
+         sumZ += u[i];
+         w = u[i] - (i + 0.5) / n;
+         w2 += w * w;
+      }
+      sumZ = sumZ / n - 0.5;
+      u2 = w2 - sumZ * sumZ * n;
+      return u2;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Computes and returns the Watson statistic  $U_N^2$\html{. It is}
+   \latex{(see \cite{tDUR73a,tSTE70a,tSTE86b}),}  defined by
+  \begin {eqnarray}
+    W_N^2 &=& \latex{\frac{1}{ 12N}}\html{1/(12N)} +
+            \sum_{j=0}^{N-1} \left\{U_{(j)} - \latex{\frac{(j + 0.5)}{ N}\right}
+                 \html{(j + 0.5)/N}\}^2, \\
+    U_N^2 &=& W_N^2  - N\left (\overline {U}_N - 1/2\right)^2.
+                                                   \latex{\eqlabel {eq:WatsonU}}
+  \end {eqnarray}
+  where $\overline {U}_N$ is the average of the observations $U_{(j)}$,
+  assuming that \texttt{sortedData} contains  the sorted
+  $U_{(0)},\dots,U_{(N-1)}$.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{the Watson statistic $U_N^2$}
+\end{htmlonly}
+\begin{detailed}
+\begin{code}
+
+
+   public static double EPSILONAD = Num.DBL_EPSILON / 2.0;
+\end{code}
+\begin{tabb}  Used by \method{andersonDarling}{DoubleArrayList}.
+\end{tabb}
+\end{detailed}
+\begin{code}
+
+   public static double andersonDarling (DoubleArrayList sortedData)\begin{hide} {
+      double[] v = sortedData.elements();
+      return andersonDarling (v);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the Anderson-Darling statistic $A_N^2$
+(see method \method{andersonDarling}{double[]}).
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{the Anderson-Darling statistic}
+\end{htmlonly}
+\begin{code}
+
+   public static double andersonDarling (double[] sortedData)\begin{hide} {
+      double u1;
+      double u, a2;
+      int n = sortedData.length;
+
+      if (n <= 0) {
+         System.err.println ("andersonDarling: n <= 0");
+         return 0.0;
+      }
+
+      a2 = 0.0;
+      for (int i = 0; i < n; i++) {
+         u = sortedData[i];
+         u1 = 1.0 - u;
+         if (u < EPSILONAD)
+            u = EPSILONAD;
+         else if (u1 < EPSILONAD)
+            u1 = EPSILONAD;
+         a2 += (2*i + 1)*Math.log (u) + (1 + 2*(n - i - 1))*
+                    Math.log (u1);
+      }
+      a2 = -n - a2 / n;
+      return a2;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the Anderson-Darling statistic $A_N^2$\html{.
+   It is}
+   \latex{(see \cite{tLEW61a,tSTE86b,tAND52a}),}  defined by
+  \begin {eqnarray*}
+    A_N^2 &=& -N -\latex{\frac{1}{ N}}\html{1/N\quad} \sum_{j=0}^{N-1}
+          \left\{ (2j+1)\ln (U_{(j)})
+               + (2N-1-2j) \ln (1-U_{(j)}) \right\},      \eqlabel {eq:Andar}
+  \end {eqnarray*}
+  assuming that \texttt{sortedData} contains $U_{(0)},\dots,U_{(N-1)}$.
+ \begin{detailed}
+  When computing $A_N^2$,
+  all observations $U_i$ are projected to the interval
+  $[\epsilon,\,1-\epsilon]$ for some $\epsilon > 0$, in order to
+  avoid numerical overflow when taking the logarithm of $U_i$ or
+  $1-U_i$.  The variable \texttt{EPSILONAD} gives the value of $\epsilon$.
+  \texttt{Num.DBL\_EPSILON} is usually $2^{-52}$.
+ \hpierre {Autre choix possible: cacher tout cela.
+    Mais il ne semble pas y avoir d'avantage \`a faire cela,
+    tandis que le laisser ici peut permettre aux ``experts'' de faire
+    \'eventuellement des exp\'eriences avec le choix de $\epsilon$. }
+ \end{detailed}
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{the Anderson-Darling statistic}
+\end{htmlonly}
+\begin{code}
+
+
+   public static double[] kolmogorovSmirnov (double[] sortedData)\begin{hide} {
+      DoubleArrayList v = new DoubleArrayList(sortedData);
+      return kolmogorovSmirnov (v);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the Kolmogorov-Smirnov (KS) test statistics
+ $D_N^+$, $D_N^-$, and $D_N$ (see method
+ \method{kolmogorovSmirnov}{DoubleArrayList}).
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{an array containing $D_N^+$, $D_N^-$ and $D__N$, in that order}
+\end{htmlonly}
+\begin{code}
+
+   public static double[] kolmogorovSmirnov (DoubleArrayList sortedData)\begin{hide} {
+      double[] ret = new double[3];
+      int n = sortedData.size();
+
+      if (n <= 0) {
+         ret[0] = ret[1] = ret[2] = 0.0;
+         System.err.println ("kolmogorovSmirnov:   n <= 0");
+         return ret;
+      }
+
+      double[] retjo = kolmogorovSmirnovJumpOne (sortedData, 0.0);
+      ret[0] = retjo[0];
+      ret[1] = retjo[1];
+      if (ret[1] > ret[0])
+         ret[2] = ret[1];
+      else
+         ret[2] = ret[0];
+
+      return ret;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the Kolmogorov-Smirnov (KS) test statistics
+ $D_N^+$, $D_N^-$, and $D_N$\html{. It is}
+ defined by
+ \begin {eqnarray}
+  D_N^+ &=& \max_{0\le j\le N-1} \left ((j+1)/N - U_{(j)}\right),
+                                                    \eqlabel{eq:DNp} \\
+  D_N^- &=& \max_{0\le j\le N-1} \left (U_{(j)} - j/N\right),
+                                                    \eqlabel{eq:DNm} \\
+  D_N   &=& \max\ (D_N^+, D_N^-).                   \eqlabel{eq:DN}
+ \end {eqnarray}
+ and returns an array of length 3 that contains their values at positions
+ 0, 1, and 2, respectively.
+\iffalse
+\begin {eqnarray*}
+  \mbox\texttt{ret[0]}&=&D_N^+\\
+  \mbox\texttt{ret[1]}&=&D_N^-\\
+  \mbox\texttt{ret[2]}&=&D_N
+\end {eqnarray*}
+\fi
+ These statistics compare the empirical distribution of
+ $U_{(1)},\dots,U_{(N)}$, which are assumed to be in \texttt{sortedData},
+ with the uniform distribution over $[0,1]$.
+\hrichard {Pourquoi avoir enlev\'e les calculs des EDF de ce fichier et
+  l'avoir mis dans gofw? On calcule d\'ej\`a toutes les stats EDF
+  explicitement.}
+\hpierre {Simplement pour \'eviter d'introduire \texttt{TestType},
+  \texttt{TestArray}, etc. dans ce module, et pouvoir tout cacher
+  cela ensemble \`a la fin de \texttt{gofw}.  Ces choses sont commodes
+  pour Testu01, mais trop sp\'ecialis\'ees et pas trop int\'eressantes
+  pour la plupart des gens. }
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \return{an array containing $D_N^+$, $D_N^-$ and $D__N$, in that order}
+\end{htmlonly}
+\begin{code}
+
+   public static double[] kolmogorovSmirnovJumpOne (DoubleArrayList sortedData,
+                                                    double a)\begin{hide} {
+      /* Statistics KS+ and KS-. Case with 1 jump at a, near the lower tail of
+         the distribution. */
+
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+      int j, i;
+      double d2, d1, unSurN;
+      double[] ret = new double[2];
+
+      if (n <= 0) {
+         ret[0] = ret[1] = 0.0;
+         System.err.println ("kolmogorovSmirnovJumpOne: n <= 0");
+         return ret;
+      }
+
+      ret[0] = 0.0;
+      ret[1] = 0.0;
+      unSurN = 1.0 / n;
+      j = 0;
+
+      while (j < n && u[j] <= a + EPSILOND) ++j;
+
+      for (i = j - 1; i < n; i++) {
+         if (i >= 0) {
+            d1 = (i + 1) * unSurN - u[i];
+            if (d1 > ret[0])
+               ret[0] = d1;
+         }
+         if (i >= j) {
+            d2 = u[i] - i * unSurN;
+            if (d2 > ret[1])
+               ret[1] = d2;
+         }
+      }
+      return ret;
+   }\end{hide}
+\end{code}
+\begin{tabb} Compute the KS statistics $D_N^+(a)$ and $D_N^-(a)$ defined in
+  the description of the method
+  \clsexternalmethod{}{FDist}{kolmogorovSmirnovPlusJumpOne}{}, assuming that $F$ is the
+  uniform distribution over $[0,1]$ and that
+  $U_{(1)},\dots,U_{(N)}$ are in \texttt{sortedData}.
+  Returns an array of length 2 that contains their values at positions
+  0 and 1, respectively.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted real-valued observations in the interval $[0,1]$}
+   \param{a}{size of the jump}
+   \return{an array containing $D_N^+$ and $D_N^-$, in that order}
+\end{htmlonly}
+\begin{code}
+
+   public static double pDisc (double pL, double pR)\begin{hide} {
+      double p;
+
+      if (pR < pL)
+         p = pR;
+      else if (pL > 0.5)
+         p = 0.5;
+      else
+         p = 1.0 - pL;
+      // Note: si p est tres proche de 1, on perd toute la precision ici!
+      // Note2: je ne pense pas que cela puisse se produire a cause des if (RS)
+      return p;
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}  Computes a variant of the $p$-value $p$ whenever a test statistic
+  has a {\em discrete\/} probability distribution.
+  This $p$-value is defined as follows:
+  \begin{eqnarray*}
+    p_L & = & P[Y \le y] \\
+    p_R & = & P[Y \ge y] \\[6pt]
+%begin{latexonly}
+    p & = & \left\{ \begin{array}{l@{\qquad}l}
+        p_R, & \mbox{if } p_R <  p_L \\[6pt]
+     1 - p_L, & \mbox{if }
+            p_R \ge p_L \mbox{ and }  p_L < 0.5 \\[6pt]
+              0.5  &         \mbox{otherwise.}
+                    \end{array}  \right.
+%end{latexonly}
+  \end{eqnarray*}
+\begin{htmlonly}
+  \[\begin{array}{rll}
+   p =& p_R, &\qquad\mbox{if } p_R < p_L, \\
+   p =& 1 - p_L, &\qquad\mbox{if } p_R \ge p_L \mbox{ and } p_L < 0.5, \\
+   p =& 0.5 &\qquad\mbox{otherwise.}
+ \end{array} \]
+\end{htmlonly}
+  The function takes $p_L$ and $p_R$ as input and returns $p$.
+\end{tabb}
+\begin{htmlonly}
+   \param{pL}{left $p$-value}
+   \param{pR}{right $p$-value}
+   \return{the $p$-value for a test on a discrete distribution}
+\end{htmlonly}

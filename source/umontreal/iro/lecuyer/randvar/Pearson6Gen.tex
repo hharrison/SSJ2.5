@@ -1,0 +1,164 @@
+\defclass{Pearson6Gen}
+
+This class implements random variate generators for 
+the {\em Pearson type VI\/} distribution with shape parameters
+$\alpha_1 > 0$ and $\alpha_2 > 0$, and scale parameter $\beta > 0$.
+The density function of this distribution is
+\begin{htmlonly}
+\eq
+  f(x) = (x / \beta)^{\alpha_{1} - 1} / (\beta \mathcal{B}(\alpha_{1}, \alpha_{2})[1 + x/\beta]^{\alpha_{1} + \alpha_{2}})
+  \qquad \mbox{for } x > 0,
+\endeq
+ and $f(x) = 0$ otherwise,
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  f(x) =\left\{\begin{array}{ll} \displaystyle
+      \frac{\left({x}/{\beta}\right)^{\alpha_{1} - 1}}{\beta \mathcal{B}(\alpha_{1}, \alpha_{2})(1 + {x}/{\beta})^{\alpha_{1} + \alpha_{2}}}
+  & \quad \mbox{for } x > 0, \\[14pt]
+   0 & \quad \mbox{otherwise,}
+   \end{array} \right.
+  \eqlabel{eq:fpearson6}
+\endeq
+\end{latexonly}
+where $\mathcal{B}$ is the beta function.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Pearson6Gen
+ * Description:  random variate generators for the Pearson type VI distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;
+\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class Pearson6Gen extends RandomVariateGen \begin{hide} {
+   protected double alpha1;
+   protected double alpha2;
+   protected double beta;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public Pearson6Gen (RandomStream s, double alpha1, double alpha2,
+                                       double beta) \begin{hide} {
+      super (s, new Pearson6Dist(alpha1, alpha2, beta));
+      setParams (alpha1, alpha2, beta);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a Pearson6 random variate generator with parameters
+  $\alpha_1$ = \texttt{alpha1}, $\alpha_2$ = \texttt{alpha2} and $\beta$ =
+  \texttt{beta}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public Pearson6Gen (RandomStream s, double alpha1, double alpha2) \begin{hide} {
+      this (s, alpha1, alpha2, 1.0);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a Pearson6 random variate generator with parameters
+  $\alpha_1 =$ \texttt{alpha1}, $\alpha_2$ = \texttt{alpha2} and $\beta=1$,
+    using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public Pearson6Gen (RandomStream s, Pearson6Dist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams(dist.getAlpha1(), dist.getAlpha2(), dist.getBeta());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha1,
+                                    double alpha2, double beta)\begin{hide} {
+      return Pearson6Dist.inverseF (alpha1, alpha2, beta, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the Pearson VI distribution
+   with shape parameters $\alpha_1 > 0$ and $\alpha_2 > 0$, and
+   scale parameter $\beta > 0$.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha1()\begin{hide} {
+      return alpha1;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\alpha_1$ parameter of this object.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha2()\begin{hide} {
+      return alpha2;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\alpha_2$ parameter of this object.
+\end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\beta$ parameter of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+   
+   public void setParams (double alpha1, double alpha2, double beta) {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+      this.alpha1 = alpha1;
+      this.alpha2 = alpha2;
+      this.beta = beta;
+   }
+\end{code}
+\begin{tabb}
+   Sets the parameters $\alpha_1$, $\alpha_2$ and $\beta$ of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

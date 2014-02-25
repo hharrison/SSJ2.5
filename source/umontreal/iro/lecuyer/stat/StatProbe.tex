@@ -1,0 +1,426 @@
+\defclass {StatProbe}
+
+The objects of this class are \emph{statistical probes} or 
+\emph{collectors}, which are elementary devices for collecting
+statistics. Each probe collects statistics on a given variable.
+The subclasses \class{Tally}, \class{TallyStore}, and
+\externalclass{umontreal.iro.lecuyer.simevents}{Accumulate} (from package
+\externalclass{umontreal.iro.lecuyer}{simevents})
+implement two kinds of probes, for the case of successive observations
+$X_1,X_2,X_3,\dots$, and for the case of a variable whose value
+evolves in time, respectively.
+
+Each instance of
+\class{StatProbe} contains a list of \class{ObservationListener} that can listen
+to individual observations.  
+When a probe is updated, i.e., receives a new statistical observation,
+it broadcasts this new data to all registered observers.
+The broadcasting of observations to registered observers can be turned
+ON or OFF at any time.  
+It is initially OFF by default and should stay OFF when there are 
+no registered observers, to avoid unnecessary overhead.
+%  and performance degradation.
+% but is turned ON automatically
+% when a \emph{first} \externalclass{java.util}{Observer} object registers.
+% Afterwards, it can be turned ON or OFF at any time.
+
+The data collection by the statistical probe itself can also be turned
+ON or OFF.  By default, it is initially ON.
+We can turn it OFF, for example, if we want to use the statistical probe
+only to pass data to the observers, and do not need it to store
+any information.
+
+In the simplest programs, collection is ON, broadcast is OFF, and the overall
+stats are accessed via the methods 
+\texttt{min}, \texttt{max}, \texttt{sum}, \texttt{average}, ... of the
+collector.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        StatProbe
+ * Description:  statistical probe
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stat;\begin{hide}
+import java.util.List;
+import java.util.ArrayList;
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+public abstract class StatProbe\begin{hide} { 
+
+   private List<ObservationListener> listeners = new ArrayList<ObservationListener>();
+   protected String name;
+   protected double maxValue;
+   protected double minValue;
+   protected double sumValue;
+   protected boolean collect = true;
+   protected boolean broadcast = false;
+   protected boolean showNobs = true;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   abstract public void init();
+\end{code}
+  \begin{tabb}  Initializes the statistical collector.
+ \end{tabb}
+\begin{code}
+
+   public void setName (String name) \begin{hide} {
+      this.name = name; 
+   } \end{hide}
+\end{code}
+  \begin{tabb} Sets the name of this statistical collector to \texttt{name}.
+ \end{tabb}
+\begin{code}
+
+   public String getName()\begin{hide} {
+      return name;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the name associated with this probe,
+   or \texttt{null} if no name was specified upon construction.
+\end{tabb}
+\begin{htmlonly}
+   \return{the name associated to this collector, 
+   or \texttt{null} if not specified}
+\end{htmlonly}
+\begin{code}
+
+   public double min() \begin{hide} { 
+      return minValue; 
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Returns the smallest value taken by the variable 
+   since the last initialization
+   of this probe.
+   This returns \texttt{Double.POSITIVE\_INFINITY}
+   if the probe was not updated since the last initialization.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the smallest value taken by the collector since last initialization}
+\end{htmlonly}
+\begin{code}
+
+   public double max() \begin{hide} { 
+      return maxValue; 
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Returns the largest value taken by the variable 
+   since the last initialization
+   of this probe.
+   This returns \texttt{Double.NEGATIVE\_INFINITY}
+   if the probe was not updated since the last initialization.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the largest value taken by the collector since last initialization}
+\end{htmlonly}
+\begin{code}
+
+   public double sum() \begin{hide} { 
+      return sumValue; 
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Returns the sum cumulated so far for this probe.
+   The meaning of this sum depends on the subclass (e.g., \class{Tally} or
+   \externalclass{umontreal.iro.lecuyer.simevents}{Accumulate}).
+   This returns 0
+   if the probe was not updated since the last initialization.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the sum for this probe}
+\end{htmlonly}
+\begin{code}
+
+   abstract public double average();
+\end{code}
+  \begin{tabb}  Returns the average for this collector.
+   This returns \texttt{Double.NaN}
+   if the probe was not updated since the last initialization.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the average value of the collected observations}
+\end{htmlonly}
+\begin{code}
+
+   abstract public String report();
+\end{code}
+  \begin{tabb}  Returns a string containing a report for this statistical
+   collector. The contents of this report depends on the statistical probe as
+   well as on the parameters set by the user through probe-specific methods.
+ \end{tabb}
+\begin{htmlonly}
+   \return{a report for this probe, represented as a string}
+\end{htmlonly}
+\begin{code}
+
+   abstract public String shortReport();
+\end{code}
+\begin{tabb}   Formats and returns a short, one-line report
+ about this statistical probe.  This line is composed of
+ whitespace-separated fields which must
+ correspond to the column names given by \method{shortReportHeader}{}{()}.
+  This report should not contain any end-of-line character, and does not
+   include the name of the probe.
+   Its contents depends on the statistical probe as well as  on the
+   parameters set by the user through probe-specific methods.
+\end{tabb}
+\begin{htmlonly}
+   \return{the short report for the probe.}
+\end{htmlonly}
+\begin{code}
+
+   abstract public String shortReportHeader();
+\end{code}
+\begin{tabb}   Returns a string containing
+ the name of the values returned in the report
+ strings.  The returned string must depend on the type of probe and on
+the reporting options only.  It must not depend on the observations
+received by the probe.
+This can be used as header when printing
+ several reports. For example,
+\begin{verbatim}
+         System.out.println (probe1.shortReportHeader());
+         System.out.println (probe1.getName() + " " + probe1.shortReport());
+         System.out.println (probe2.getName() + " " + probe2.shortReport());
+         ...
+\end{verbatim}
+  Alternatively, one can use \method{report}{}~\texttt{(String,StatProbe[])}
+  to get a report with aligned probe names.
+\end{tabb}
+\begin{htmlonly}
+   \return{the header string for the short reports.}
+\end{htmlonly}
+\begin{code}
+
+   public static String report (String globalName, StatProbe[] probes)\begin{hide} {
+      int maxn = 0;
+      StatProbe firstProbe = null;
+      for (StatProbe probe : probes) {
+         if (firstProbe == null)
+            firstProbe = probe;
+         String s = probe.getName();
+         if (s != null && s.length() > maxn)
+            maxn = s.length();
+      }
+      if (firstProbe == null)
+         return "";
+      StringBuffer sb = new StringBuffer ("Report for ");
+      sb.append (globalName).append (PrintfFormat.NEWLINE);
+      for (int i = 0; i < maxn; i++)
+         sb.append (' ');
+      sb.append ("   ");
+      sb.append (firstProbe.shortReportHeader()).append (PrintfFormat.NEWLINE);
+      for (StatProbe probe : probes) {
+         sb.append
+            (PrintfFormat.s (-maxn, probe.getName()));
+         sb.append ("   ");
+         sb.append (probe.shortReport()).append (PrintfFormat.NEWLINE);
+      }
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Formats short reports for each statistical probe in the array
+   \texttt{probes} while aligning the probes' names.
+   This method first formats the given global name.
+   It then determines the maximum length $\ell$ of the names of probes in the
+   given array.
+   The first line of the report is composed of $\ell+3$ spaces followed by the
+   string returned by \method{shortReportHeader}{} called on the first probe in
+   \texttt{probes}. Each remaining line corresponds to a statistical probe; it
+   contains the probe's name followed by the contents returned by
+   \method{shortReport}{}. Note that this method assumes that \texttt{probes}
+   contains no \texttt{null} element.
+\end{tabb}
+\begin{htmlonly}
+   \param{globalName}{the global name given to the formatted report.}
+   \param{probes}{the probes to include in the report.}
+   \return{the formatted report.}
+\end{htmlonly}
+\begin{code}
+
+   public static String report (String globalName,
+                                Iterable<? extends StatProbe> probes)\begin{hide} {
+      int maxn = 0;
+      StatProbe firstProbe = null;
+      for (StatProbe probe : probes) {
+         if (firstProbe == null)
+            firstProbe = probe;
+         String s = probe.getName();
+         int sl = s == null ? 4 : s.length();
+         if (sl > maxn)
+            maxn = sl;
+      }
+      if (firstProbe == null)
+         return "";
+      StringBuffer sb = new StringBuffer ("Report for ");
+      sb.append (globalName).append (PrintfFormat.NEWLINE);
+      for (int i = 0; i < maxn; i++)
+         sb.append (' ');
+      sb.append ("   ");
+      sb.append (firstProbe.shortReportHeader()).append (PrintfFormat.NEWLINE);
+      for (StatProbe probe : probes) {
+         sb.append
+            (PrintfFormat.s (-maxn, probe.getName()));
+         sb.append ("   ");
+         sb.append (probe.shortReport()).append (PrintfFormat.NEWLINE);
+      }
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Equivalent to \method{report}{(String,StatProbe[])}, except that
+   \texttt{probes} is an \class{Iterable} object instead of an array.
+   Of course, the iterator returned by \texttt{probes} should enumerate the
+   statistical probes to include in the report in a consistent and sensible order.
+\end{tabb}
+\begin{htmlonly}
+   \param{globalName}{the global name given to the formatted report.}
+   \param{probes}{the probes to include in the report.}
+   \return{the formatted report.}
+\end{htmlonly}
+\begin{code}
+
+   public boolean isBroadcasting()\begin{hide} {
+      return broadcast;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Determines if this statistical probe
+ is broadcasting observations to registered observers.
+ The default is \texttt{false}.
+\end{tabb}
+\begin{htmlonly}
+   \return{the status of broadcasting.}
+\end{htmlonly}
+\begin{code}
+
+   public void setBroadcasting (boolean b)\begin{hide} {
+      broadcast = b;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Instructs the probe to turn its broadcasting ON or OFF.
+  The default value is OFF. 
+
+  Warning: To avoid useless overhead and performance degradation, broadcasting
+  should never be turned ON when there are no registered observers.
+\end{tabb}
+\begin{htmlonly}
+   \param{b}{\texttt{true} to turn broadcasting ON, \texttt{false} to turn it OFF}
+\end{htmlonly}
+\begin{code}
+
+   public boolean isCollecting()\begin{hide} {
+      return collect;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Determines if this statistical probe
+ is collecting values. The default is \texttt{true}.
+\end{tabb}
+\begin{htmlonly}
+   \return{the status of statistical collecting.}
+\end{htmlonly}
+\begin{code}
+
+   public void setCollecting (boolean b)\begin{hide} {
+      collect = b;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Turns ON or OFF the collection of statistical
+  observations.  The default value is ON.
+  When statistical collection is turned OFF, 
+  observations added to the probe are passed to the
+  registered observers if broadcasting is turned ON, but are not
+  counted as observations by the probe itself.
+\end{tabb}
+\begin{htmlonly}
+   \param{b}{\texttt{true} to activate statistical collection, 
+   \texttt{false} to deactivate it}
+\end{htmlonly}
+\begin{code}
+
+   public void addObservationListener (ObservationListener l)\begin{hide} {
+      if (l == null)
+         throw new NullPointerException();
+      if (!listeners.contains (l))
+         listeners.add (l);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Adds the observation listener \texttt{l} to the list of observers of
+    this statistical probe.
+\end{tabb}
+\begin{htmlonly}
+   \param{l}{the new observation listener.}
+   \exception{NullPointerException}{if \texttt{l} is \texttt{null}.}
+\end{htmlonly}
+\begin{code}
+
+   public void removeObservationListener (ObservationListener l)\begin{hide} {
+      listeners.remove (l);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Removes the observation listener \texttt{l} from the list of observers of
+    this statistical probe.
+\end{tabb}
+\begin{htmlonly}
+   \param{l}{the observation listener to be deleted.}
+\end{htmlonly}
+\begin{code}
+
+   public void clearObservationListeners()\begin{hide} {
+      listeners.clear();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Removes all observation listeners from the list of observers of
+    this statistical probe.
+\end{tabb}
+\begin{code}
+
+   public void notifyListeners (double x)\begin{hide} {
+      if (!broadcast)
+         return;
+      // We could also use the enhanced for loop here, but this is less efficient.
+      final int nl = listeners.size();
+      for (int i = 0; i < nl; i++)
+         listeners.get (i).newObservation (this, x);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Notifies the observation \texttt{x} to all registered observers
+   if broadcasting is ON.  Otherwise, does nothing.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public StatProbe clone() throws CloneNotSupportedException {
+      StatProbe s = (StatProbe)super.clone();
+      s.listeners = new ArrayList<ObservationListener>(listeners);
+      return s;
+   }
+} 
+\end{hide}
+\end{code}

@@ -1,0 +1,104 @@
+\defclass {ConstantDist}
+
+Extends the class \class{DiscreteDistribution} for a {\emph{constant}
+discrete distribution taking a single real value with probability 1.
+Its mass function is
+\begin{latexonly}
+\eq
+   p(x) = \left\{\begin{array}{ll}
+     1, &  \qquad \mbox {for } x = c,\\[5pt]
+     0, &  \qquad\mbox {elsewhere. }
+  \end{array}\right. \eqlabel{eq:fcons}
+\endeq
+Its distribution function is
+\eq
+   F(x) = \left\{\begin{array}{ll}
+     0, & \qquad\mbox { for } x < c\\[5pt]
+     1, & \qquad\mbox { for } x \ge c.
+  \end{array}\right. \eqlabel{eq:cdfconst}
+\endeq
+\end{latexonly}
+\begin{htmlonly}
+\eq
+   p(x) = 1,  \qquad \mbox {for } x = c,
+\endeq
+and  $p(x) = 0$ elsewhere.
+\end{htmlonly}%
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ConstantDist
+ * Description:  constant distribution
+ * Environment:  Java
+ * Software:     SSJ
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Éric Buist
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+
+
+public class ConstantDist extends DiscreteDistribution \begin{hide} {
+   private double c;
+\end{hide}\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public ConstantDist (double c)\begin{hide} {
+      super (new double[] { c }, new double[] { 1.0 }, 1);
+      this.c = c;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a new constant distribution with probability 1 at \texttt{c}.
+  \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   @Override
+   public double getMean () {
+      return c;
+   }
+
+   @Override
+   public double getVariance () {
+      return 0;
+   }
+
+   @Override
+   public double getStandardDeviation () {
+      return 0;
+   }
+
+   @Override
+   public double inverseF (double u) {
+      return c;
+   }\end{hide}
+\end{code}\begin{code}\begin{hide}
+}\end{hide}
+\end{code}
+

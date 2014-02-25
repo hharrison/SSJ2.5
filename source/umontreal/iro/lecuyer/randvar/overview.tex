@@ -1,0 +1,177 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+
+This package provides a collection of classes for non-uniform
+random variate generation, primarily from standard distributions.
+
+Each non-uniform random variate generator requires
+at least one \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} object
+(from package \externalclass{umontreal.iro.lecuyer}{rng}), used to
+generate the underlying uniform random numbers.
+%
+
+The generic classes
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} and
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}
+permit one to construct a random variate generator from a random
+stream and an arbitrary distribution
+(see interface \externalclass{umontreal.iro.lecuyer.probdist}{Distribution}).
+To generate random variates by inversion from an arbitrary
+distribution over the real numbers using a given random stream,
+it suffices to construct a
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} object
+with the desired (previously created)
+\externalclass{umontreal.iro.lecuyer.probdist}{Distribution}
+and \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} objects,
+and then call its
+\externalmethod{umontreal.iro.lecuyer.randvar}{RandomVariateGen}{nextDouble}{} method
+as many times as needed.
+For discrete distributions over the integers, one can construct a
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}
+object containing the
+desired \externalclass{umontreal.iro.lecuyer.probdist}{DiscreteDistributionInt}
+and \externalclass{umontreal.iro.lecuyer.rng}{RandomStream},
+and call its
+\externalmethod{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}{nextInt}{}
+method.
+By default, these generators simply call the
+\externalmethod{umontreal.iro.lecuyer.probdist}{ContinuousDistribution}{inverseF}{}
+method from the specified distribution object.
+These two classes suffice as long as we are willing to use inversion.
+Here is a simple example in which we create three parallel streams of
+normal random variates using inversion.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\lstinputlisting[label=lst:normaltest,%
+caption={Using three parallel streams of random normal variates},%
+lineskip=-2pt,%
+emph={genere,main}
+]{exam/normaltest.java}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+To generate random variates by other methods than inversion,
+one can use specialized classes that extend
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen}
+or \externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}.
+Such classes are provided for a variety of standard discrete and
+continuous distributions.
+For example, five different subclasses implement normal random variate generators,
+using five different methods.
+One of them, the class
+\externalclass{umontreal.iro.lecuyer.randvar}{NormalGen},
+extends \externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen}
+directly and provides normal random variate generators based on inversion,
+so it does the same thing as using
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen}
+with the normal distribution.
+% and each of its instances contain a
+% \externalclass{umontreal.iro.lecuyer.probdist}{NormalDist} and a
+% \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} objects.
+The others are subclasses of
+\externalclass{umontreal.iro.lecuyer.randvar}{NormalGen};
+they implement various non-inversion normal variate generation methods.
+To generate random variates with a specific method, it suffices to
+construct an object of the appropriate subclass and then call its
+\texttt{nextDouble} method.
+
+
+
+%
+% Selection methods, with names of the form \texttt{use...Method},
+% permit one to choose which normal variate generation technique is used
+% when invoking
+% \externalmethod{umontreal.iro.lecuyer.randvar}{NormalGen}{nextDouble}{},
+% for each object.
+\hpierre{Apr\`es avoir examin\'e le code, je me rends compte que l'utilisation
+  de \texttt{use...Method} n'est pas la bonne approche, car cela am\`ene
+  plein de \texttt{case} dans l'implantation, ce qui rend le code plus laid, plus
+  compliqu\'e et plus inefficace.  Il serait probablement pr\'ef\'erable
+  d'utiliser des sous-classes \`a la place, du moins pour les m\'ethodes
+  non statiques. Une sous-classe pour chaque type de m\'ethode de g\'en\'eration.}
+
+In most cases, the specialized classes maintain local copies of the
+distribution parameters and use them for variate generation.
+If the parameters of the contained distribution objects are later modified,
+this may lead to inconsistencies: the variate generator object will
+keep using the old values.
+In fact, the constructors of the specialized classes often precompute
+constants and tables based on these parameter values, which would have
+to be recomputed if the parameters are changed.
+On the other hand, the generic classes
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} and
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}
+call directly the \texttt{inverseF} method of the contained
+distribution object, so they will always use the new parameter values
+whenever the parameters in the distribution object are changed.
+%
+\hpierre{We must make the \texttt{nextInt()} and \texttt{nextDouble()}
+  methods as quick as possible.  For example, it is better to avoid
+  calling methods to access the parameters of the distribution object.
+  We can store local copies of the parameters instead.}
+\hpierre{We must decide exactly what we do with this and
+  explain it clearly in the guide.  If we leave it like this, it must be made
+  clear in the documentation of each subclass and method, which parameter
+  values are used.}%
+ %
+\hpierre{It seems to me that in the future, only the constructors of
+ \externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} and
+ \externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}
+ should require a distribution object.  In the subclasses, we should
+ directly pass the required parameters and there would not necessarily
+ be a distribution object created.  We should examine the implications
+ of such a change.}
+
+
+With some variate generation methods (e.g., the \emph{rejection}
+method), the number of uniforms required to get a single non-uniform
+variate varies from one call to the next.
+In that case, an auxiliary stream is often used to preserve
+the synchronization between random variates when implementing
+variance-reduction methods \cite{sLAW00a}.
+The main random number stream is called a fixed number of times
+per non-uniform variate generation.  If more uniform random numbers
+are needed, they are obtained from the auxiliary stream.
+For these types of generators, two
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} objects
+should be passed to the constructor.
+Otherwise, by default, the same stream will be used for all uniforms.
+
+
+\emph{Static} methods in the specialized classes allow the generation
+of random variates from specific distributions without constructing a
+\externalclass{umontreal.iro.lecuyer.randvar}{RandomVariateGen} object.
+
+This package also provides an interface to the
+\emph{UNURAN} (Universal Non-Uniform RANdom  number generators) package,
+a rich library of C functions designed and
+implemented by the ARVAG (Automatic Random VAriate Generation)
+project group in Vienna \cite{iLEY02a}.
+% (for more information see http://statistik.wu-wien.ac.at/unuran/).
+This interface can be used to access distributions or
+generation methods not available directly in SSJ.
+To get a UNURAN generator, it suffices to instantiate one
+of the UNURAN interface classes:
+\externalclass{umontreal.iro.lecuyer.randvar}{UnuranDiscreteInt}
+for discrete random variates,
+\externalclass{umontreal.iro.lecuyer.randvar}{UnuranContinuous}
+for continuous ones (in one dimension), and
+\externalclass{umontreal.iro.lecuyer.randvar}{UnuranEmpirical}
+for quasi-empirical distributions based on experimental data.
+The type of distribution and its parameters are specified to
+UNURAN via its String API (see the UNURAN documentation).
+Only univariate distributions are supported because
+the UNURAN String API does not support the multivariate ones yet.
+
+In the UNURAN interface classes,
+\externalmethod{umontreal.iro.lecuyer.randvar}{RandomVariateGen}{nextDouble}{} and
+\externalmethod{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}{nextInt}{}
+can be invoked as usual to generate variates,
+but these methods are slowed down significantly by the overhead
+in the interactions between code on the native side and on the Java side.
+When several random variates are needed, it is much more efficient to
+generate them in a single call, via the methods
+\externalmethod{umontreal.iro.lecuyer.randvar}{RandomVariateGen}{nextArrayOfDouble}{} and
+\externalmethod{umontreal.iro.lecuyer.randvar}{RandomVariateGenInt}{nextArrayOfInt}{}.

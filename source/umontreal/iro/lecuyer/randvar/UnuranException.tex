@@ -1,0 +1,60 @@
+\defclass{UnuranException}
+
+This type of unchecked exception is thrown when an error occurs
+\emph{inside} the UNURAN package.  
+Usually, such an exception will come from the native side.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        UnuranException
+ * Description:  unchecked exception for errors inside the UNURAN package
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;
+
+public class UnuranException extends RuntimeException\begin{hide} {\end{hide}
+\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+   public UnuranException()\begin{hide} {
+      super();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new generic UNURAN exception.
+\end{tabb}
+\begin{code}
+
+   public UnuranException (String message)\begin{hide} {
+      super (message);
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}   Constructs a UNURAN exception with the error
+   message \texttt{message}
+\end{tabb}
+\begin{htmlonly}
+   \param{message}{error message describing the problem that occurred}
+\end{htmlonly}

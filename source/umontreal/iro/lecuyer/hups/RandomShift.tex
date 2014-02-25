@@ -1,0 +1,122 @@
+\defclass{RandomShift}
+
+This class implements a
+\externalclass{umontreal.iro.lecuyer.hups}{PointSetRandomization}.
+The \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} is
+stored internally. The method \method{randomize}{PointSet} simply
+calls
+\externalmethod{umontreal.iro.lecuyer.hups}{PointSet}{addRandomShift}{RandomStream}\texttt{(stream)}.
+
+This class can be used as a base class to implement a specific
+randomization by overriding method \method{randomize}{PointSet}.
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandomShift
+ * Description:  Applies a random shift on a point set
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;
+\begin{hide}
+ import umontreal.iro.lecuyer.rng.RandomStream;
+
+\end{hide}
+public class RandomShift implements PointSetRandomization\begin{hide} {
+   protected RandomStream stream;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+\begin{code}
+
+   public RandomShift() \begin{hide} {
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+   Empty constructor.
+\end{tabb}
+\begin{code}
+
+   public RandomShift (RandomStream stream) \begin{hide} {
+       this.stream = stream;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+   Sets the internal
+  \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} to  \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{stream to use in the randomization}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+\begin{code}
+
+   public void randomize (PointSet p) \begin{hide} {
+      p.addRandomShift(stream);
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   This method calls
+   \externalmethod{umontreal.iro.lecuyer.hups}{PointSet}
+   {addRandomShift}{RandomStream}~\texttt{(stream)}.
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{Point set to randomize}
+\end{htmlonly}
+\begin{code}
+
+   public void setStream (RandomStream stream) \begin{hide} {
+      this.stream = stream;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Sets the internal
+   \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} to
+   \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{stream to use in the randomization}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStream getStream() \begin{hide} {
+      return stream;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Returns the internal
+   \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}.
+\end{tabb}
+\begin{htmlonly}
+   \return{stream used in the randomization}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

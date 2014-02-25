@@ -1,0 +1,178 @@
+\defclass{PolInterp}
+
+Represents a polynomial that interpolates through a set of points. More
+specifically, let $(x_0,y_0), \ldots, (x_n, y_n)$ be a set of points and
+$p(x)$ the constructed polynomial of degree $n$. Then, for $i=0,\ldots,n$,
+$p(x_i)=y_i$.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        PolInterp
+ * Description:  polynomial that interpolates through a set of points
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.functionfit;\begin{hide}
+
+import java.io.Serializable;
+import umontreal.iro.lecuyer.functions.Polynomial;
+
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import cern.colt.matrix.DoubleMatrix2D;
+import cern.colt.matrix.impl.DenseDoubleMatrix2D;
+import cern.colt.matrix.linalg.Algebra;
+\end{hide}
+
+public class PolInterp extends Polynomial implements Serializable\begin{hide} {
+   private static final long serialVersionUID = -710451931485296501L;
+   private static final Algebra alg = new Algebra ();
+   private double[] x;
+   private double[] y;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public PolInterp (double[] x, double[] y)\begin{hide} {
+      super (getCoefficients (x, y));
+      this.x = x.clone ();
+      this.y = y.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new polynomial interpolating through the given points
+ \texttt{(x[0], y[0]), ..., (x[n], y[n])}. This constructs a polynomial of
+ degree \texttt{n} from \texttt{n+1} points.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $x$ coordinates of the points.}
+   \param{y}{the $y$ coordinates of the points.}
+   \exception{NullPointerException}{if \texttt{x} or \texttt{y} are \texttt{null}.}
+   \exception{IllegalArgumentException}{if the lengths of \texttt{x} and \texttt{y} are different,
+               or if less than two points are specified.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double[] getCoefficients (double[] x, double[] y)\begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException (
+               "x and y must have the same length");
+      if (x.length <= 1)
+         throw new IllegalArgumentException ("At least two points are needed");
+      final DoubleMatrix2D u = new DenseDoubleMatrix2D (x.length, x.length);
+      for (int i = 0; i < x.length; i++) {
+         double v = 1;
+         for (int j = 0; j < x.length; j++) {
+            u.setQuick (i, j, v);
+            v *= x[i];
+         }
+      }
+      final DoubleMatrix2D yMat = new DenseDoubleMatrix2D (x.length, 1);
+      yMat.viewColumn (0).assign (y);
+      final DoubleMatrix2D bMat = alg.solve (u, yMat);
+      return bMat.viewColumn (0).toArray ();
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the coefficients the polynomial interpolating
+ through the given points \texttt{(x[0], y[0]), ..., (x[n], y[n])}. 
+ This polynomial has degree \texttt{n} and there are \texttt{n+1} coefficients.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $x$ coordinates of the points.}
+   \param{y}{the $y$ coordinates of the points.}
+   \return{the coefficients the interpolating polynomial.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getX()\begin{hide} {
+      return x.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $x$ coordinates of the interpolated points.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $x$ coordinates of the interpolated points.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getY()\begin{hide} {
+      return y.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $y$ coordinates of the interpolated points.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $y$ coordinates of the interpolated points.}
+\end{htmlonly}
+\begin{code}
+
+   public static String toString (double[] x, double[] y)\begin{hide} {
+      final StringBuilder sb = new StringBuilder ("Points: ");
+      for (int i = 0; i < x.length; i++) {
+         if (i > 0)
+            sb.append (", ");
+         final String xstr = PrintfFormat.format (8, 3, 3, x[i]);
+         final String ystr = PrintfFormat.format (8, 3, 3, y[i]);
+         sb.append ('(').append (xstr).append (", ").append (ystr).append (')');
+      }
+      return sb.toString ();
+   }
+
+   @Override
+\end{hide}
+\end{code}
+\begin{tabb}   Makes a string representation of a set of points.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $x$ coordinates of the points.}
+   \param{y}{the $y$ coordinates of the points.}
+   \return{the string representing the points.}
+\end{htmlonly}
+\begin{code}
+
+   public String toString()\begin{hide} {
+      return toString (x, y);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Calls \method{toString}~\texttt{(double[], double[])} with the
+ associated  points.
+\end{tabb}
+\begin{htmlonly}
+   \return{a string containing the points.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public PolInterp clone() {
+      final PolInterp p = (PolInterp) super.clone ();
+      p.x = x.clone ();
+      p.y = y.clone ();
+      return p;
+   }
+}\end{hide}
+\end{code}

@@ -1,0 +1,65 @@
+\defclass{Randomization}
+
+Each type of \emph{randomization} that can be applied to a general 
+point set should be defined in a class that implements this interface.
+
+\pierre{Specific subclasses have yet to be defined and implemented.
+        It is still unclear if we need this in addition to container
+        classes that also apply general types of randomizations.}
+\hrichard{Nous n'avons jamais utilis\'e cette vieille interface. R\'ecemment,
+Adam a cr\'e\'e la nouvelle interface \texttt{PointSetRandomization}.}
+\richard{See the new interface \texttt{PointSetRandomization}.}
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Interface:    Randomization
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+\end{hide}
+
+@Deprecated
+public interface Randomization \begin{hide} {
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public void apply (RandomStream stream)\begin{hide} ;
+     // public double randCoordintate(int i, int j);
+}\end{hide}
+\end{code}
+\begin{tabb}  Applies this randomization to the point set using 
+   stream \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{random number stream used to generate needed uniforms}
+\end{htmlonly}

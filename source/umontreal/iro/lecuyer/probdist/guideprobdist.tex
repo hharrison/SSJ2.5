@@ -1,0 +1,130 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{alltt}
+\usepackage{html}
+% \usepackage{tcode}
+\usepackage{ssj}
+
+\mytwoheads\dateheadtrue
+\detailedfalse
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+
+\title{probdist}{Probability Distributions}
+
+This package provides tools to compute densities, mass functions,
+distribution functions and their inverses, and reliability functions,
+for various continuous and discrete probability distributions.
+It also offers facilities for estimating the parameters of some
+distributions from a data set.
+
+\vfill
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+
+\include{overview}
+
+%% General
+\include{general}
+\include{Distribution}
+\include{DiscreteDistributionInt}
+\include{ContinuousDistribution}
+\include{DistributionFactory}
+\include{InverseDistFromDensity}
+
+%% Discrete distributions over the integers
+\include{discrete}
+\include{BernoulliDist}
+\include{BinomialDist}
+\include{GeometricDist}
+\include{HypergeometricDist}
+\include{LogarithmicDist}
+\include{NegativeBinomialDist}
+\include{PascalDist}
+\include{PoissonDist}
+\include{UniformIntDist}
+\include{ConstantIntDist}
+
+%% Discrete distributions over the real numbers
+\include{discretereal}
+\include{DiscreteDistribution}
+\include{ConstantDist}
+\include{EmpiricalDist}
+
+%% Continuous distributions
+\include{continuous}
+\include{BetaDist}
+\include{BetaSymmetricalDist}
+\include{CauchyDist}
+\include{ChiDist}
+\include{ChiSquareDist}
+\include{ChiSquareDistQuick}
+\include{ChiSquareNoncentralDist}
+\include{ErlangDist}
+\include{ExponentialDist}
+\include{ExponentialDistFromMean}
+\include{ExtremeValueDist}
+\include{FatigueLifeDist}
+\include{FisherFDist}
+\include{FoldedNormalDist}
+\include{FrechetDist}
+\include{GammaDist}
+\include{GammaDistFromMoments}
+\include{GumbelDist}
+\include{HalfNormalDist}
+\include{HyperbolicSecantDist}
+\include{HypoExponentialDist}
+\include{HypoExponentialDistQuick}
+\include{InverseGammaDist}
+\include{InverseGaussianDist}
+\include{JohnsonSBDist}
+\include{JohnsonSUDist}
+\include{LaplaceDist}
+\include{LogisticDist}
+\include{LoglogisticDist}
+\include{LognormalDist}
+\include{LognormalDistFromMoments}
+\include{NakagamiDist}
+\include{NormalDist}
+\include{NormalDistQuick}
+\include{NormalInverseGaussianDist}
+\include{ParetoDist}
+\include{Pearson5Dist}
+\include{Pearson6Dist}
+\include{PiecewiseLinearEmpiricalDist}
+\include{PowerDist}
+\include{RayleighDist}
+\include{StudentDist}
+\include{StudentDistQuick}
+\include{TriangularDist}
+\include{UniformDist}
+\include{WeibullDist}
+
+\include{TruncatedDist}
+
+%% Empirical distribution functions
+\include{edf}
+\include{AndersonDarlingDist}
+\include{AndersonDarlingDistQuick}
+\include{CramerVonMisesDist}
+\include{KolmogorovSmirnovPlusDist}
+\include{KolmogorovSmirnovDist}
+\include{KolmogorovSmirnovDistQuick}
+\include{WatsonGDist}
+\include{WatsonUDist}
+
+\bibliographystyle{plain}
+\bibliography{stat,random,simul,math,ift,prob}
+
+\end{document}

@@ -1,0 +1,372 @@
+\defclass {EmpiricalChart}
+
+% Extends \externalclass{umontreal.iro.lecuyer}{Chart}.
+This class provides additional tools to create and manage empirical
+plots. Empirical plots are used to plot empirical distributions. The
+\class{EmpiricalChart} class is the simplest way to produce empirical
+  plots only. Each \class{EmpiricalChart} object is linked with an
+\externalclass{umontreal.iro.lecuyer.charts}{EmpiricalSeriesCollection}
+data set.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        EmpiricalChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   umontreal.iro.lecuyer.stat.TallyStore;
+
+import   org.jfree.chart.ChartPanel;
+import   org.jfree.chart.ChartFactory;
+import   org.jfree.chart.axis.NumberAxis;
+import   org.jfree.chart.plot.XYPlot;
+import   org.jfree.chart.plot.PlotOrientation;
+import   org.jfree.data.xy.XYSeriesCollection;
+import   org.jfree.data.xy.XYSeries;
+
+import   cern.colt.list.DoubleArrayList;
+
+import   java.util.ListIterator;
+import   java.util.Locale;
+import   java.util.Formatter;
+import   javax.swing.JFrame;\end{hide}
+
+public class EmpiricalChart extends XYChart \begin{hide} {
+
+   protected void init (String title, String XLabel, String YLabel) {
+      // create the chart...
+      chart = ChartFactory.createXYLineChart(
+         title,                    // chart title
+         XLabel,                   // x axis label
+         YLabel,                   // y axis label
+         dataset.getSeriesCollection(), // data
+         PlotOrientation.VERTICAL,
+         true,                     // include legend
+         true,                     // tool tips
+         false                     // urls
+      );
+      ((XYPlot)chart.getPlot()).setRenderer(dataset.getRenderer());
+      // Initialize axis variables
+      XAxis = new Axis((NumberAxis)((XYPlot) chart.getPlot()).getDomainAxis(),
+                Axis.ORIENTATION_HORIZONTAL);
+      YAxis = new Axis((NumberAxis)((XYPlot) chart.getPlot()).getRangeAxis(),
+                Axis.ORIENTATION_VERTICAL);
+      fixZeroPoint();
+   }
+
+
+   private void fixZeroPoint() {
+      // reset the first point (x0, 0) with x0 at the beginning of x-axis
+      double xmin = Math.min (XAxis.getAxis().getRange().getLowerBound(),
+                                                   XAxis.getTwinAxisPosition());
+      XYSeriesCollection col = (XYSeriesCollection)dataset.getSeriesCollection();
+      for (int i = 0; i < col.getSeriesCount(); i++) {
+         XYSeries ser = col.getSeries (i);
+         ser.remove(0);   // remove temporary 0-point
+         ser.add(xmin, 0); // replace
+      }
+   }\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+
+\begin{code}
+   public EmpiricalChart() \begin{hide} {
+      super();
+      dataset = new EmpiricalSeriesCollection();
+      init (null, null, null);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{EmpiricalChart} instance with an empty data set.
+\end{tabb}
+\begin{code}
+
+   public EmpiricalChart (String title, String XLabel, String YLabel,
+                          double[]... data) \begin{hide} {
+      super();
+      dataset = new EmpiricalSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{EmpiricalChart} instance with data \texttt{data}.
+   \texttt{title} is a title, \texttt{XLabel} is a short description of
+   the $x$-axis and \texttt{YLabel} a short description of the $y$-axis.
+   The input vectors \texttt{data} represents a collection of observation sets.
+   Each vector of \texttt{data} represents a $x$-coordinates set.
+   Therefore \texttt{data}$[i], i = 0,\ldots,n-1$, is used to draw the $i$-th plot.
+   The values of each observation set \texttt{data}$[i]$ \emph{must be sorted}
+   in increasing order.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public EmpiricalChart (String title, String XLabel, String YLabel,
+                          double[] data, int numPoints) \begin{hide} {
+      super();
+      dataset = new EmpiricalSeriesCollection(data, numPoints);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{EmpiricalChart} instance with a set of points
+   \texttt{data}. \texttt{title} is a title, \texttt{XLabel} is a short
+   description of the $x$-axis and \texttt{YLabel} a short description of the
+   $y$-axis. Vector \texttt{data} represents a $x$-coordinates set. The values
+   of this observation set \emph{must be sorted} in increasing order. Only
+   \emph{the first} \texttt{numPoints} of \texttt{data} will
+   be considered to plot.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+   \param{numPoints}{number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public EmpiricalChart (String title, String XLabel, String YLabel,
+                          DoubleArrayList... data) \begin{hide} {
+      super();
+      dataset = new EmpiricalSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Similar to the above constructor, but with \texttt{DoubleArrayList}.
+   A \externalclass{cern.colt.list}{DoubleArrayList} from the Colt library is
+   used to store data. The values of each observation set \texttt{data}$[i]$
+   \emph{must be sorted} in increasing order.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public EmpiricalChart (String title, String XLabel, String YLabel,
+                          TallyStore... tallies) \begin{hide} {
+      super();
+      dataset = new EmpiricalSeriesCollection(tallies);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{EmpiricalChart} instance with data arrays
+   contained in each
+   \externalclass{umontreal.iro.lecuyer.stat}{TallyStore} object. The input
+   parameter \texttt{tallies} represents a collection of observation sets.
+   Therefore, the $i$-th \texttt{tallies} is used to draw
+     the $i$-th plot.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{tallies}{series of observation sets.}
+\end{htmlonly}
+\begin{code}
+
+   public EmpiricalChart (String title, String XLabel, String YLabel,
+                          XYSeriesCollection data) \begin{hide} {
+      super();
+      dataset = new EmpiricalSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{EmpiricalChart} instance with data \texttt{data}.
+   The input parameter \texttt{data} represents a set of plotting data.
+   \texttt{XYSeriesCollection} is a \texttt{JFreeChart}-like container class
+    used to store and manage observation sets.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series collection.}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public EmpiricalSeriesCollection getSeriesCollection() \begin{hide} {
+      return (EmpiricalSeriesCollection)dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's dataset.
+\end{tabb}
+\begin{htmlonly}
+   \return{the chart's dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setSeriesCollection (EmpiricalSeriesCollection dataset) \begin{hide} {
+      this.dataset = dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Links a new dataset to the current chart.
+\end{tabb}
+\begin{htmlonly}
+   \param{dataset}{new dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setTicksSynchro (int s) \begin{hide} {
+      XYSeriesCollection seriesCollection = (XYSeriesCollection)this.dataset.getSeriesCollection();
+      double[] values = new double[seriesCollection.getItemCount(s)];
+
+      for(int i = 0; i < seriesCollection.getItemCount(s); i++)
+         values[i] = seriesCollection.getXValue(s, i);
+
+      XAxis.setLabels(values);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Synchronizes $x$-axis ticks to the $s$-th series $x$-values.
+\end{tabb}
+\begin{htmlonly}
+   \param{s}{series used to define ticks.}
+\end{htmlonly}
+\begin{code}
+
+   public JFrame view (int width, int height) \begin{hide} {
+      JFrame myFrame;
+      if(chart.getTitle() != null)
+         myFrame = new JFrame("EmpiricalChart from SSJ : " + chart.getTitle().getText());
+      else
+         myFrame = new JFrame("EmpiricalChart from SSJ");
+      ChartPanel chartPanel = new ChartPanel(chart);
+      chartPanel.setPreferredSize(new java.awt.Dimension(width, height));
+      myFrame.setContentPane(chartPanel);
+      myFrame.pack();
+      myFrame.setDefaultCloseOperation (JFrame.DISPOSE_ON_CLOSE);
+      myFrame.setLocationRelativeTo (null);
+      myFrame.setVisible(true);
+      return myFrame;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Displays chart on the screen using Swing.
+   This method creates an application containing a chart panel displaying
+   the chart.  The created frame is positioned on-screen, and displayed before
+   it is returned. The \texttt{width} and the \texttt{height}
+   of the chart are measured in pixels.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{frame width in pixels.}
+   \param{height}{frame height in pixels.}
+   \return{frame containing the chart.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{\LaTeX-specific method}
+
+\begin{code}
+
+   public String toLatex (double width, double height) \begin{hide} {
+      double xunit, yunit;
+      double[] save = new double[4];
+
+      if(dataset.getSeriesCollection().getSeriesCount() == 0)
+         throw new IllegalArgumentException("Empty chart");
+
+      //Calcul des parametres d'echelle et de decalage
+      double XScale = computeXScale(XAxis.getTwinAxisPosition());
+      double YScale = computeYScale(YAxis.getTwinAxisPosition());
+
+      xunit = width / ((Math.max(XAxis.getAxis().getRange().getUpperBound(), XAxis.getTwinAxisPosition()) * XScale) - (Math.min(XAxis.getAxis().getRange().getLowerBound(), XAxis.getTwinAxisPosition()) * XScale));
+      //taille d'une unite en x et en cm dans l'objet "tikzpicture"
+      yunit = height / ((Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition()) * YScale) - (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition()) * YScale));
+      //taille d'une unite en y et en cm dans l'objet "tikzpicture"
+
+      Formatter formatter = new Formatter(Locale.US);
+
+      /*Entete du document*/
+      if (latexDocFlag) {
+         formatter.format("\\documentclass[12pt]{article}%n%n");
+         formatter.format("\\usepackage{tikz}%n\\usetikzlibrary{plotmarks}%n\\begin{document}%n%n");
+      }
+      if(chart.getTitle() != null)
+         formatter.format("%% PGF/TikZ picture from SSJ : %s%n", chart.getTitle().getText());
+      else
+         formatter.format("%% PGF/TikZ picture from SSJ %n");
+      formatter.format("%% XScale = %s,  YScale = %s,  XShift = %s,  YShift = %s%n", XScale, YScale, XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition());
+      formatter.format("%% Therefore, thisFileXValue = (originalSeriesXValue+XShift)*XScale%n");
+      formatter.format("%%        and thisFileYValue = (originalSeriesYValue+YShift)*YScale%n%n");
+      if (chart.getTitle() != null)
+         formatter.format("\\begin{figure}%n");
+      formatter.format("\\begin{center}%n");
+      formatter.format("\\begin{tikzpicture}[x=%scm, y=%scm]%n", xunit, yunit);
+      formatter.format("\\footnotesize%n");
+      if (grid)
+         formatter.format("\\draw[color=lightgray] (%s, %s) grid[xstep = %s, ystep=%s] (%s, %s);%n",
+            (Math.min(XAxis.getAxis().getRange().getLowerBound(), XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale,
+            xstepGrid*XScale, ystepGrid*YScale,
+            (Math.max(XAxis.getAxis().getRange().getUpperBound(), XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale);
+      setTick0Flags();
+      formatter.format("%s", XAxis.toLatex(XScale));
+      formatter.format("%s", YAxis.toLatex(YScale));
+
+      formatter.format("%s", dataset.toLatex(XScale, YScale, XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition(),
+                                                            XAxis.getAxis().getLowerBound(), XAxis.getAxis().getUpperBound(),
+                                                            YAxis.getAxis().getLowerBound(), YAxis.getAxis().getUpperBound()));
+
+      formatter.format("\\end{tikzpicture}%n");
+      formatter.format("\\end{center}%n");
+      if (chart.getTitle() != null) {
+         formatter.format("\\caption{");
+         formatter.format(chart.getTitle().getText());
+         formatter.format("}%n\\end{figure}%n");
+      }
+      if (latexDocFlag)
+         formatter.format("\\end{document}%n");
+      return formatter.toString();
+   }\end{hide}
+\end{code}
+
+\begin{code}
+\begin{hide}
+}\end{hide}
+\end{code}

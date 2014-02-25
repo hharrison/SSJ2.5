@@ -1,0 +1,232 @@
+ \defclass {InverseFromDensityGen}
+
+Implements a method for generating random variates by numerical inversion of
+an \emph{arbitrary continuous} distribution when only the probability density
+is known \cite{rDER10a}.  The cumulative probabilities (cdf) are pre-computed by
+ numerical quadrature  of the
+density using Gauss-Lobatto integration over suitably small intervals to
+satisfy the required precision, and these values are kept in tables. Then the
+ algorithm uses polynomial interpolation  over the tabulated values to get
+  the inverse cdf. The user can select the
+  desired precision and the degree of the interpolating polynomials.
+
+The algorithm may fail for some distributions for which the density
+ becomes infinite at a point (for ex. the Gamma and the Beta distributions
+ with $\alpha < 1$)  if one requires too high a precision
+(a  too small \texttt{eps}, for ex. $\epsilon \sim 10^{-15}$).
+However, it should work also for continuous densities with finite discontinuities.
+
+
+While the setup time is relatively slow, the generation of random variables
+is extremely fast and practically independent of the required precision
+and of the specific distribution. The following table shows the time needed
+(in seconds) to generate $10^8$ random numbers using inversion
+from a given class, then the numerical inversion with Gauss-Lobatto integration
+implemented here, and finally the speed ratios between the two methods.
+The speed ratio is  the speed of the latter over the former.
+Thus for the beta distribution with parameters (5, 500), generating random
+variables with the Gauss-Lobatto integration implemented in this class is
+more than 1700
+times faster than using inversion from the \texttt{BetaDist} class.
+These tests were made on a machine with processor AMD Athlon 4000, running
+Red Hat Linux, with clock speed at 2403 MHz.
+% \hrichard {The set-up time is not  included in these ratios.}
+
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+ Distribution  & Inversion  & Gauss-Lobatto &  speed ratio  \\
+\hline
+\texttt{NormalDist(10.5, 5)} & \phantom{1521}9.19 & 8.89 &  \phantom{16222}1.03  \\
+\texttt{ExponentialDist(5)}  & \phantom{152}17.72 &8.82 & \phantom{1622}2.0 \\
+\texttt{CauchyDist(10.5, 5)} & \phantom{152}18.30 & 8.81 & \phantom{1622}2.1     \\
+\texttt{BetaSymmetricalDist(10.5)}   & \phantom{15}242.80 & 8.85 &  \phantom{162}27.4  \\
+\texttt{GammaDist(55)} &  \phantom{15}899.50 &8.89 & \phantom{1}101  \\
+\texttt{ChiSquareNoncentralDist(10.5, 5)} &\phantom{1}5326.90 &8.85 &  \phantom{1}602  \\
+\texttt{BetaDist(5, 500)} & 15469.10 &8.86 &  1746  \\
+\hline
+\end{tabular}
+\end{center}
+
+The following table gives the time (in sec.) needed to
+create an object (setup time) and to generate one random variable for
+this class compared to the same for the inversion method specific to each class,
+and the ratios of the times (init + one random variable) of the two methods.
+For inversion, we initialized $10^8$ times; for this class, we
+initialized $10^4$ times.
+
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+ Distribution  &Inversion & Gauss-Lobatto &  time ratio  \\
+   & $10^8$ init   &  $10^4$ init & for 1 init \\
+\hline
+\texttt{NormalDist(10.5, 5)} &\phantom{00}5.30 &\phantom{0}38.29 &  26426  \\
+\texttt{ExponentialDist(5)}   &\phantom{00}3.98 &\phantom{0}27.05 & 12466 \\
+\texttt{CauchyDist(10.5, 5)}  &\phantom{00}5.05 &\phantom{0}58.39 & 25007   \\
+\texttt{BetaSymmetricalDist(10.5)}  &\phantom{0}90.66 &  \phantom{0}68.33 & \phantom{0}2049 \\
+\texttt{GammaDist(55)}       &\phantom{0}13.15 & \phantom{0}58.34  & \phantom{00}639  \\
+\texttt{ChiSquareNoncentralDist(10.5, 5)} &190.48 & 248.98& \phantom{00}451  \\
+\texttt{BetaDist(5, 500)}    &\phantom{0}63.60 & 116.57  & \phantom{000}75  \\
+\hline
+\end{tabular}
+\end{center}
+
+If only a few random variables are needed, then using this class
+is not efficient because of the slow set-up. But if one wants to generate
+large samples from the same distribution with fixed parameters, then
+this class will be very efficient. The following table gives the number of
+random variables generated beyond which, using this class will be
+worthwhile.
+
+\begin{center}
+\begin{tabular}{|l|c|}
+\hline
+ Distribution  &  number of generated variables  \\
+\hline
+\texttt{NormalDist(10.5, 5)} &  41665  \\
+\texttt{ExponentialDist(5)}   & 15266 \\
+\texttt{CauchyDist(10.5, 5)}  & 31907   \\
+\texttt{BetaSymmetricalDist(10.5)}    & 2814 \\
+\texttt{GammaDist(55)}         &  649  \\
+\texttt{ChiSquareNoncentralDist(10.5, 5)} &  467 \\
+\texttt{BetaDist(5, 500)}      & 75  \\
+\hline
+\end{tabular}
+\end{center}
+
+Thus, for example, if one needs to generate less than 15266 exponential
+random variables, then using the \texttt{InverseFromDensityGen} class
+is not wortwhile: it will be faster to use inversion from the
+\texttt{ExponentialGen} class.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        InverseFromDensityGen
+ * Description:  generator of random variates by numerical inversion of
+                 an arbitrary continuous distribution when only the 
+                 probability density is known
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since        June 2008
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;
+   import umontreal.iro.lecuyer.functions.MathFunction;
+   import umontreal.iro.lecuyer.rng.RandomStream;
+   import umontreal.iro.lecuyer.probdist.ContinuousDistribution;\begin{hide}
+   import umontreal.iro.lecuyer.probdist.InverseDistFromDensity;
+\end{hide}
+
+
+public class InverseFromDensityGen extends RandomVariateGen \begin{hide} {
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public InverseFromDensityGen (RandomStream stream,
+                                 ContinuousDistribution dis,
+                                 double xc, double eps, int order) \begin{hide} {
+      super (stream, null);
+      dist = new InverseDistFromDensity (dis, xc, eps, order);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the \emph{continuous} distribution
+\texttt{dis}, using stream \texttt{stream}. \texttt{dis} must have a well-defined
+density method; its other methods are unused. For a non-standard distribution
+\texttt{dis}, the user may wish to set the left and the right boundaries
+between which the density is non-zero by calling methods
+\externalmethod{umontreal.iro.lecuyer.probdist}{ContinuousDistribution}{setXinf}{}
+and
+\externalmethod{umontreal.iro.lecuyer.probdist}{ContinuousDistribution}{setXsup}{}
+of \texttt{dis}, for better efficiency.
+Argument \texttt{xc} can be the mean,
+the mode or any other $x$ for which the density is relatively large.
+The $u$-resolution \texttt{eps} is the desired absolute error in the CDF,
+and \texttt{order} is the degree of the
+Newton interpolating polynomial over each interval.
+An \texttt{order} of 3 or 5, and an \texttt{eps} of $10^{-6}$ to $10^{-12}$
+are usually good choices.
+ Restrictions: $3 \le \texttt{order} \le 12$.
+\end{tabb}
+\begin{code}
+
+   public InverseFromDensityGen (RandomStream stream, MathFunction dens,
+                                 double xc, double eps, int order,
+                                 double xleft, double xright) \begin{hide} {
+      super (stream, null);
+      dist = new InverseDistFromDensity (dens, xc, eps, order, xleft, xright);
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new generator from the \emph{continuous} probability density
+\texttt{dens}. The left and the right boundaries of the density are
+\texttt{xleft} and \texttt{xright} (the density is 0 outside the
+interval \texttt{[xleft, xright]}).
+See the description of the other constructor.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public double nextDouble() \begin{hide} {
+      return dist.inverseF (stream.nextDouble());
+   }\end{hide}
+\end{code}
+ \begin{tabb} Generates a new random variate.
+ \end{tabb}
+\begin{code}
+
+   public double getXc()\begin{hide} {
+      return ((InverseDistFromDensity)dist).getXc();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{xc} given in the constructor.
+\end{tabb}
+\begin{code}
+
+   public double getEpsilon()\begin{hide} {
+      return ((InverseDistFromDensity)dist).getEpsilon();
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $u$-resolution \texttt{eps}.
+\end{tabb}
+\begin{code}
+
+   public int getOrder()\begin{hide} {
+      return ((InverseDistFromDensity)dist).getOrder();
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the order of the interpolating polynomial.
+\end{tabb}
+\begin{hide}
+\begin{code}
+}\end{code}
+\end{hide}

@@ -1,0 +1,171 @@
+%%
+%%  ssj.sty
+%%
+%%  Used for SSJ documentation.
+%%  Pierre L'Ecuyer et al.
+%%  May 2003
+%%
+
+\RequirePackage{amsfonts}
+\RequirePackage{amsbsy}
+\RequirePackage{lmac}
+\RequirePackage{alltt}
+\RequirePackage{html}
+\RequirePackage{tcode}
+
+\textwidth=6.5 true in\textheight=9.0 true in
+\tolerance=500 \parskip=.08in plus .1in minus .06in
+\mytwoheads
+
+\newif\ifnotes\notestrue
+% \notesfalse             %%  Uncomment this line to hide footnotes.  <----
+%
+\def\boxnote#1#2{\ifnotes\fbox{\footnote{\ }}\ \footnotetext{ From #1: #2}\fi}
+\def\pierre#1{\boxnote{Pierre}{#1}}
+\def\hpierre#1{}
+\def\richard#1{\boxnote{Richard}{#1}}
+\def\hrichard#1{}
+\def\eric#1{\boxnote{\'Eric}{#1}}
+\def\heric#1{}
+\def\adam#1{\boxnote{Adam}{#1}}
+\def\hadam#1{}
+
+% \def\citep{\@ifnextchar [{\@tempswatrue\@citexp}{\@tempswafalse\@citexp[]}}
+
+\def\g   {{\;\leftarrow\;}}
+% \def\tbu {\tilde{\mbox{\boldmath $u$}}}
+\catcode`\^^Z 10
+
+
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bg}{\mathbf{g}}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bv}{\mathbf{v}}
+
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bM}{\mathbf{M}}
+\newcommand{\bP}{\mathbf{P}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\bV}{\mathbf{V}}
+
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bR}{\mathbf{R}}
+\newcommand{\bS}{\mathbf{S}}
+\newcommand{\bZ}{\mathbf{Z}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bmu}{\boldmu}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\bSigma}{\boldSigma}
+
+\newcommand{\cS}{{\cal S}}
+
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\renewcommand{\FF}{\mathbb{F}}
+
+\newcommand{\Ki}{K_{\mathrm{I}}}
+\newcommand{\Ko}{K_{\mathrm{O}}}
+\newcommand{\Nf}[1][\relax]{N_{\mathrm{f}\ifx\relax#1\else, #1\fi}}
+\newcommand{\Nb}[1][\relax]{N_{\mathrm{b}\ifx\relax#1\else, #1\fi}}
+\newcommand{\Ni}[1][\relax]{N_{\mathrm{i}\ifx\relax#1\else, #1\fi}}
+\newcommand{\Ng}[1][\relax]{N_{\mathrm{g}\ifx\relax#1\else, #1\fi}}
+\newcommand{\Ntb}[1][\relax]{N_{\mathrm{b}\ifx\relax#1\else, #1\fi}^{\mathrm{t}}}
+\newcommand{\Ntf}[1][\relax]{N_{\mathrm{f}\ifx\relax#1\else, #1\fi}^{\mathrm{t}}}
+\newcommand{\Ndf}[1][\relax]{N_{\mathrm{f}\ifx\relax#1\else, #1\fi}^{\mathrm{d}}}
+
+% \newcommand{\bsigma}{\mbox{\boldmath $\sigma$}}
+\newcommand{\bsigma}{\boldsymbol{\sigma}}
+
+\newcommand{\barboldmu}{\bar{\boldsymbol{\mu}}}
+\newcommand{\barboldnu}{\bar{\boldsymbol{\nu}}}
+\newcommand{\barboldX}{\bar{\mathbf{X}}}
+\newcommand{\boldmu}{\boldsymbol{\mu}}
+\newcommand{\boldnu}{\boldsymbol{\nu}}
+\newcommand{\boldbeta}{\boldsymbol{\beta}}
+\newcommand{\boldbetaf}{\boldsymbol{\beta}_{\mathrm{f}}}
+\newcommand{\betaf}[1][\relax]{\beta_{\mathrm{f}\ifx\relax#1\else, #1\fi}}
+\newcommand{\boldSigma}{\boldsymbol{\Sigma}}
+\newcommand{\boldLambda}{\boldsymbol{\Lambda}}
+\newcommand{\boldC}{\mathbf{C}}
+\newcommand{\boldX}{\mathbf{X}}
+\newcommand{\boldx}{\mathbf{x}}
+\newcommand{\boldY}{\mathbf{Y}}
+\newcommand{\boldV}{\mathbf{V}}
+\newcommand{\boldS}{\mathbf{S}}
+\newcommand{\boldf}{\mathbf{f}}
+
+\newcommand{\rTG}{r_{\mathrm{TG}}}
+\newcommand{\rGT}{r_{\mathrm{GT}}}
+
+\newcommand{\Xb}[1][\relax]{X_{\mathrm{b}\ifx\relax#1\else, #1\fi}}
+\newcommand{\barXb}[1][\relax]{\bar X_{\mathrm{b}\ifx\relax#1\else, #1\fi}}
+\newcommand{\XbK}[2][\relax]{X_{\mathrm{b}, #2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\XbP}[2][\relax]{X_{\mathrm{b}, \cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\Xg}[1][\relax]{X_{\mathrm{g}\ifx\relax#1\else, #1\fi}}
+\newcommand{\barXg}[1][\relax]{\bar X_{\mathrm{g}\ifx\relax#1\else, #1\fi}}
+\newcommand{\XgK}[2][\relax]{X_{\mathrm{g}, #2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\XgP}[2][\relax]{X_{\mathrm{g}, \cdot, #2\ifx\relax#1\else, #1\fi}}
+
+\newcommand{\Yb}[1][\relax]{Y_{\mathrm{b}\ifx\relax#1\else, #1\fi}}
+\newcommand{\barYb}[1][\relax]{\bar Y_{\mathrm{b}\ifx\relax#1\else, #1\fi}}
+\newcommand{\YbK}[2][\relax]{Y_{\mathrm{b}, #2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\YbP}[2][\relax]{Y_{\mathrm{b}, \cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\Yg}[1][\relax]{Y_{\mathrm{g}\ifx\relax#1\else, #1\fi}}
+\newcommand{\barYg}[1][\relax]{\bar Y_{\mathrm{g}\ifx\relax#1\else, #1\fi}}
+\newcommand{\YgK}[2]{Y_{\mathrm{g}, #2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\YgP}[2]{Y_{\mathrm{g}, \cdot, #2\ifx\relax#1\else, #1\fi}}
+
+% \newcommand{\Var}{\mathrm{Var}}
+% \newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\sK}[2][\relax]{s_{#2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\sP}[2][\relax]{s_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\lK}[2][\relax]{l_{#2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\lP}[2][\relax]{l_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+
+\newcommand{\XK}[2][\relax]{X_{#2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\XP}[2][\relax]{X_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\YK}[2][\relax]{Y_{#2,\cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\YP}[2][\relax]{Y_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\BK}[2][\relax]{B_{#2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\BP}[2][\relax]{B_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\AK}[2][\relax]{A_{#2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\AP}[2][\relax]{A_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+
+\newcommand{\WK}[2][\relax]{W_{#2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\WP}[2][\relax]{W_{\cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\WX}[1][\relax]{W_{\mathrm{X}\ifx\relax#1\else, #1\fi}}
+\newcommand{\WXK}[2][\relax]{W_{\mathrm{X}, #2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\WXP}[2][\relax]{W_{\mathrm{X}, \cdot, #2\ifx\relax#1\else, #1\fi}}
+\newcommand{\WY}[1][\relax]{W_{\mathrm{Y}\ifx\relax#1\else, #1\fi}}
+\newcommand{\WYK}[2][\relax]{W_{\mathrm{Y}, #2, \cdot\ifx\relax#1\else, #1\fi}}
+\newcommand{\WYP}[2][\relax]{W_{\mathrm{Y}, \cdot, #2\ifx\relax#1\else, #1\fi}}
+
+\newcommand{\XC}[1][\relax]{X_{\mathrm{C}\ifx\relax#1\else, #1\fi}}
+\newcommand{\boldXC}[1][\relax]{\mathbf{X}_{\mathrm{C}\ifx\relax#1\else, #1\fi}}
+\newcommand{\rmc}{\mathrm{c}}
+\newcommand{\rmC}{\mathrm{C}}
+\newcommand{\rmCX}{\mathrm{CX}}
+\newcommand{\rmX}{\mathrm{X}}
+\newcommand{\tr}{\mathsf{t}}
+
+\newcommand{\wTG}{w_{\mathrm{TG}}}
+\newcommand{\wGT}{w_{\mathrm{GT}}}
+
+\def\title#1#2{
+\null\vfill
+\begin {center}
+{\Large\bf SSJ User's Guide } \\[20pt]
+% {\Large\bf A Java Library for Stochastic Simulation }\\[15pt]
+% \centerline{\hbox to 3cm{\hrulefill}}\\[10pt]
+{\Large Package \ \tt #1} \\[15pt]
+{\Large #2} \\[20pt]
+% \centerline{\hbox to 3cm{\hrulefill}}\\[20pt]
+ Version: \today \\
+\vfill\vfill
+\end {center}
+}

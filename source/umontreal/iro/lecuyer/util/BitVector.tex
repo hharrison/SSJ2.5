@@ -1,0 +1,644 @@
+\defmodule {BitVector}
+
+This class implements vectors of bits and the operations needed to use
+them. The vectors can be of arbitrary length. The operations provided are
+all the binary operations available to the \texttt{int} and \texttt{long}
+primitive types in Java.
+
+All bit operations are present in two forms: a normal form and a \texttt{self}
+form. The normal form returns a newly created object containing the result,
+while the \texttt{self} form puts the result in the calling object (\texttt{this}).
+The return value of the \texttt{self} form is the calling object itself. This is
+done to allow easier manipulation of the results, making it possible to 
+chain operations.
+
+%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+\begin{code}\begin{hide}
+/*
+ * Class:        BitVector
+ * Description:  implements vectors of bits and their operations
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util; \begin{hide}
+
+import java.io.Serializable;
+\end{hide}
+
+
+public class BitVector implements Serializable, Cloneable \begin{hide} {
+
+   static final long serialVersionUID = -3448233092524725148L;
+
+   private int[] v;       //the bits data
+   private int length;    //number of data bits (in bits, not in bytes)
+
+   private final static int all_1 = -1;  //integer with all bits set to 1
+   private final static int one_1 = 1;   //integer with only his last bit set to 1
+   /*
+     Note sur le format interne du vecteur de bits :
+     On fait toujours en sorte que les bits redondants (ceux qui apparaissent
+     quand length % 32 != 0) soient mis a 0. Ceci permet de faire des 
+     operations entre des vecteurs de longeurs differentes en posant que
+     les bits manquants sur le plus petit des deux vecteurs ont la valeur 0.
+   */
+ \end{hide}
+\end{code}
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+   public BitVector (int length) \begin{hide} {
+      this.length = length;
+      v = new int[(length + 31) / 32];
+      for(int i = 0; i < v.length; i++)
+         v[i] = 0;
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{BitVector} of length \texttt{length} with 
+  all its bits set to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{length}{the length of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector (int[] vect, int length) \begin{hide} {
+      if (((length + 31)/ 32) != vect.length)
+         throw new IllegalArgumentException
+         ("The int[] length must be equal to the (length + 31) / 32");
+
+      this.length = length;
+      v = new int[vect.length];
+      for(int i = 0; i < vect.length; i++)
+         v[i] = vect[i];
+
+      //the extra bits must be set at zero
+      v[v.length - 1] &= (all_1 >>> (31 - (length - 1) % 32));
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{BitVector} of length \texttt{length} using
+  the data in \texttt{vect}. Component \texttt{vect[0]} makes the 32 lowest order
+  bits, 
+  with \texttt{vect[1]} being the 32 next lowest order bits, and so on.
+  The normal bit order is then used to fill the 32 bits (the first bit 
+  is the lowest order bit and the last bit is largest order bit). 
+  Note that the sign bit is used as the largest order bit.
+\end{tabb}
+\begin{htmlonly}
+  \param{vect}{the bits data}
+  \param{length}{the length of the vector}
+  \exception{IllegalArgumentException}{when the length of \texttt{vect} is
+    not compatible with the \texttt{length} provided}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector (int[] vect) \begin{hide} {
+      this(vect, vect.length * 32);
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new \texttt{BitVector} using the data in \texttt{vect}.
+  The length of the \texttt{BitVector} is always equals to 32 times the 
+  length of \texttt{vect}.
+\end{tabb}
+\begin{htmlonly}
+  \param{vect}{the bits data}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector (BitVector that) \begin{hide} {
+      this.length = that.length;
+      this.v = new int[that.v.length];
+      for(int i = 0; i < that.v.length; i++)
+         this.v[i] = that.v[i];
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a copy of the \texttt{BitVector that}.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the \texttt{BitVector} to copy}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+   public Object clone() \begin{hide} {
+      try{
+         BitVector c = (BitVector)super.clone();
+         c.v = (int[])v.clone();
+         return c;
+      }catch(CloneNotSupportedException e) {
+         IllegalStateException ne = new IllegalStateException();
+         ne.initCause(e);
+         throw ne;
+      }      
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a copy of the \texttt{BitVector}.
+\end{tabb}
+\begin{htmlonly}
+  \return{a deep copy of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public boolean equals (BitVector that) \begin{hide} {
+      if(this.length != that.length)
+         return false;
+      for(int i = 0; i < this.v.length; i++)
+         if(this.v[i] != that.v[i])
+            return false;
+      return true;
+   } \end{hide}
+\end{code}
+\begin{tabb} Verifies if two \texttt{BitVector}'s have the same length and
+  the same data.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the other \texttt{BitVector} to compare to}
+  \return{if the two \texttt{BitVector}'s are identiqual}
+\end{htmlonly}
+\begin{code}
+
+   public int size() \begin{hide} {
+      return length;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the length of the \texttt{BitVector}.
+\end{tabb}
+\begin{htmlonly}
+  \return{the length of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public void enlarge (int size, boolean filling) \begin{hide} {
+      if(size < 0)
+         throw new NegativeArraySizeException
+         ("The BitVector must have a non-negative size");
+      if(filling && (length % 32) != 0)
+         v[v.length - 1] ^= all_1 << (length % 32);
+      if((size + 31) / 32 != v.length) {
+         int[] new_v = new int[(size + 31) / 32];
+         int i;
+         for(i = 0; i < new_v.length && i < v.length; i++)
+            new_v[i] = v[i];
+         for(; i < new_v.length; i++)
+            new_v[i] = filling ? all_1 : 0;
+         v = new_v;
+      }
+      length = size;
+
+      //the extra bits must be set at zero
+      v[v.length - 1] &= (all_1 >>> (31 - (length - 1) % 32));
+   } \end{hide}
+\end{code}
+\begin{tabb} Resizes the \texttt{BitVector} so that its length is equal
+  to \texttt{size}. If the \texttt{BitVector} is enlarged, then the newly 
+  added bits are given the value 1 if \texttt{filling} is set to 
+  \texttt{true} and 0 otherwise.
+\end{tabb}
+\begin{htmlonly}
+  \param{size}{the new size of the \texttt{BitVector}}
+  \param{filling}{the state of the new bits}
+\end{htmlonly}
+\begin{code}
+
+   public void enlarge (int size) \begin{hide} {
+      enlarge(size, false);
+   } \end{hide}
+\end{code}
+\begin{tabb} Resizes the \texttt{BitVector} so that its length is equal
+  to \texttt{size}. Any new bit added is set to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{size}{the new size of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public boolean getBool (int pos) \begin{hide} {
+      if(pos < 0 || pos >= length)
+         throw new ArrayIndexOutOfBoundsException(pos);
+      return (v[pos >>> 5] & (one_1 << (pos & 31))) != 0;
+   } \end{hide}
+\end{code}
+\begin{tabb} Gives the value of the bit in position \texttt{pos}. If the
+  value is 1, returns \texttt{true}; otherwise, returns \texttt{false}.
+\end{tabb}
+\begin{htmlonly}
+  \param{pos}{the position of the checked bit}
+  \return{the value of the bit as a boolean}
+  \exception{ArrayIndexOutOfBoundsException}{if \texttt{pos} is outside
+    the range of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public void setBool (int pos, boolean value) \begin{hide} {
+      if(pos > length || pos < 0)
+         throw new ArrayIndexOutOfBoundsException(pos);
+      if(value)
+         v[pos / 32] |= (one_1 << (pos % 32));
+      else
+         v[pos / 32] &= (one_1 << (pos % 32)) ^ all_1;
+   } \end{hide}
+\end{code}
+\begin{tabb} Sets the value of the bit in position \texttt{pos}. If \texttt{value}
+  is equal to \texttt{true}, sets it to 1; otherwise, sets it to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{pos}{the position of the bit to modify}
+  \param{value}{the new value of the bit as a boolean}
+  \exception{ArrayIndexOutOfBoundsException}{if \texttt{pos} is outside
+    the range of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public int getInt (int pos) \begin{hide} {
+      if(pos >= v.length || pos < 0)
+         throw new ArrayIndexOutOfBoundsException(pos);
+      return v[pos];
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns an \texttt{int} containing all the bits in the interval
+  $[\mathtt{pos} \times 32, \mathtt{pos} \times 32 + 31]$.
+\end{tabb}
+\begin{htmlonly}
+  \param{pos}{the selected position}
+  \return{the int at the specified position}
+  \exception{ArrayIndexOutOfBoundsException}{if \texttt{pos} is outside
+    the range of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public String toString() \begin{hide} {
+      StringBuffer sb = new StringBuffer();
+
+      for(int i = length - 1; i > 0; i--)
+         sb.append(getBool(i) ? "1" : "0").append(i%8 == 0 ? " " : "");
+      sb.append(getBool(0) ? "1" : "0");
+
+      return sb.toString();
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns a string containing all the bits of the \texttt{BitVector},
+  starting with the highest order bit and finishing with the lowest order bit.
+  The bits are grouped by groups of 8 bits for ease of reading.
+\end{tabb}
+\begin{htmlonly}
+  \return{all the bits of the \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector not() \begin{hide} {
+      BitVector bv = new BitVector(length);
+      for(int i = 0; i < v.length; i++)
+         bv.v[i] = v[i] ^ all_1;
+
+      //the extra bits must be set at zero
+      bv.v[v.length - 1] &= (all_1 >>> (31 - (length - 1) % 32));
+
+      return bv;
+   } \end{hide} 
+\end{code}
+\begin{tabb} Returns a \texttt{BitVector} which is the result of the \texttt{not}
+  operator on the current \texttt{BitVector}. The \texttt{not} operator is 
+  equivalent to the \verb!~! operator in Java and thus swap all bits (bits 
+  previously set to 0 become 1 and bits previously set to 1 become 0).
+\end{tabb}
+\begin{htmlonly}
+  \return{the effect of the \texttt{not} operator}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector selfNot() \begin{hide} {
+      for(int i = 0; i < v.length; i++)
+         v[i] = v[i] ^ all_1;
+
+      //the extra bits must be set at zero
+      v[v.length - 1] &= (all_1 >>> (31 - (length - 1) % 32));
+
+      return this;
+   } \end{hide}
+\end{code}
+\begin{tabb} Applies the \texttt{not} operator on the current \texttt{BitVector}
+  and returns it.
+%%  This gives the same result as \texttt{not()}, but the result is stored 
+%%   in \texttt{this}.
+\end{tabb}
+\begin{htmlonly}
+  \return{the \texttt{BitVector} itself}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector xor (BitVector that) \begin{hide} {
+      //we always consider that this is longer than that
+      if(that.length > this.length)
+         return that.xor(this);
+
+      BitVector bv = new BitVector(this.length);
+
+      int max = this.v.length;
+      int min = that.v.length;
+
+      for(int i = 0; i < min; i++)
+         bv.v[i] = this.v[i] ^ that.v[i];
+      for(int i = min; i < max; i++)
+         bv.v[i] = this.v[i];
+
+      return bv;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns a \texttt{BitVector} which is the result of the \texttt{xor}
+  operator applied on \texttt{this} and \texttt{that}. The \texttt{xor} operator is
+  equivalent to the \verb!^! operator in Java. All bits which were set to 0 in
+  one of the vector and to 1 in the other vector are set to 1. The others
+  are set to 0. This is equivalent to the addition in modulo 2 arithmetic.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand to the \texttt{xor} operator}
+  \return{the result of the \texttt{xor} operation}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector selfXor (BitVector that) \begin{hide} {
+      //we assume that this is large enough to contain that
+      if(this.length < that.length)
+         this.enlarge(that.length);
+
+      int min = that.v.length;
+
+      for(int i = 0; i < min; i++)
+         this.v[i] ^= that.v[i];
+
+      return this;
+   } \end{hide}
+\end{code}
+\begin{tabb} Applies the \texttt{xor} operator on \texttt{this} with \texttt{that}.
+  Stores the result in \texttt{this} and returns it.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand to the \texttt{xor} operator}
+  \return{\texttt{this}}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector and (BitVector that) \begin{hide} {
+      //we always consider this as longer than that
+      if(that.length > this.length)
+         return that.and(this);
+
+      BitVector bv = new BitVector(this.length);
+
+      int max = this.v.length;
+      int min = that.v.length;
+
+      for(int i = 0; i < min; i++)
+         bv.v[i] = this.v[i] & that.v[i];
+      if(that.length % 32 != 0)
+         bv.v[min - 1] |= this.v[min - 1] & (all_1 << (that.length % 32));
+      for(int i = min; i < max; i++)
+         bv.v[i] = 0;
+
+      return bv;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns a \texttt{BitVector} which is the result of the \texttt{and}
+  operator with both the \texttt{this} and \texttt{that} \texttt{BitVector}'s. The
+  \texttt{and} operator is equivalent to the \verb!&! operator in Java. Only
+  bits which are set to 1 in both \texttt{this} and \texttt{that} are set to 1
+  in the result, all the others are set to 0.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand to the \texttt{and} operator}
+  \return{the result of the \texttt{and} operation}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector selfAnd (BitVector that) \begin{hide} {
+      //we assume that this is large enough to contain that
+      if(this.length < that.length)
+         this.enlarge(that.length, true);
+
+      int min = that.v.length;
+
+      for(int i = 0; i < min - 1; i++)
+         this.v[i] &= that.v[i];
+      this.v[min - 1] &= (that.v[min - 1] | (all_1 << (that.length % 32)));
+
+      return this;
+   } \end{hide}
+\end{code}
+\begin{tabb} Applies the \texttt{and} operator on \texttt{this} with \texttt{that}.
+  Stores the result  in \texttt{this} and returns it.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand to the \texttt{and} operator}
+  \return{\texttt{this}}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector or (BitVector that) \begin{hide} {
+      //we always consider this is longer than that
+      if(that.length > this.length)
+         return that.or(this);
+
+      BitVector bv = new BitVector(this.length);
+
+      int max = this.v.length;
+      int min = that.v.length;
+
+      for(int i = 0; i < min; i++)
+         bv.v[i] = this.v[i] | that.v[i];
+      for(int i = min; i < max; i++)
+         bv.v[i] = 0;
+
+      return bv;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns a \texttt{BitVector} which is the result of the \texttt{or}
+  operator with both the \texttt{this} and \texttt{that} \texttt{BitVector}'s. The 
+  \texttt{or} operator is equivalent to the \texttt{|} operator in Java. Only
+  bits which are set to 0 in both \texttt{this} and \texttt{that} are set to to 0
+  in the result, all the others are set to 1.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand to the \texttt{or} operator}
+  \return{the result of the \texttt{or} operation}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector selfOr (BitVector that) \begin{hide} {
+      //we assume that this is large enough to contain that
+      if(this.length < that.length)
+         this.enlarge(that.length);
+
+      int min = that.v.length;
+
+      for(int i = 0; i < min; i++)
+         this.v[i] |= that.v[i];
+
+      return this;
+   } \end{hide}
+\end{code}
+\begin{tabb} Applies the \texttt{or} operator on \texttt{this} with \texttt{that}.
+  Stores the result  in \texttt{this} and returns it.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the second operand to the \texttt{or} operator}
+  \return{\texttt{this}}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector shift (int j) \begin{hide} {
+      BitVector bv = new BitVector(length);
+
+      if(j == 0)
+         return bv;
+      else if(j > 0) {
+         int a = j / 32;
+         int b = j % 32;
+         int c = 32 - b;
+
+         int i;
+         for(i = 0; i+a < v.length; i++)
+            bv.v[i] = v[i+a] >>> b;
+         // la retenue
+         for(i = 0; i+a+1 < v.length; i++)
+            bv.v[i] ^= v[i+a+1] << c;
+      } else // if(j < 0)
+      {
+         j = -j;
+         int a = j / 32;
+         int b = j % 32;
+         int c = 32 - b;
+
+         int i;
+         for(i = a; i < v.length; i++)
+            bv.v[i] ^= v[i-a] << b;
+         // la retenue
+         for(i = a+1; i < v.length; i++)
+            bv.v[i] ^= v[i-a-1] >>> c;
+      }
+
+      return bv;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns a \texttt{BitVector} equal to the original with
+  all the bits shifted \texttt{j} positions to the right if \texttt{j} is
+  positive, and shifted \texttt{j} positions  to the left if \texttt{j} is negative.
+  The new bits that appears to the left or to the right are set to 0.
+  If \texttt{j} is positive, this operation is equivalent to the \texttt{>>>}
+  operator in Java, otherwise, it is equivalent to the \texttt{<<} operator.
+\end{tabb}
+\begin{htmlonly}
+  \param{j}{the size of the shift}
+  \return{the shifted \texttt{BitVector}}
+\end{htmlonly}
+\begin{code}
+
+   public BitVector selfShift (int j) \begin{hide} {
+      if(j == 0)
+         return this;
+      else if(j > length || j < -length) {
+         for(int i = 0; i < v.length; i++)
+            v[i] = 0;
+      } else if(j > 0) {
+         int a = j / 32;
+         int b = j % 32;
+         int c = 32 - b;
+
+         int i;
+         for(i = 0; i+a+1 < v.length; i++) {
+            v[i] = v[i+a] >>> b;
+            // la retenue
+            v[i] ^= v[i+a+1] << c;
+         }
+         v[i] = v[i+a] >>> b;
+         for(i += 1; i < v.length; i++)
+            v[i] = 0;
+      } else // if(j < 0)
+      {
+         j = -j;
+         int a = j / 32;
+         int b = j % 32;
+         int c = 32 - b;
+
+         int i;
+         for(i = v.length - 1; i > a; i--) {
+            v[i] = v[i-a] << b;
+            // la retenue
+            v[i] ^= v[i-a-1] >>> c;
+         }
+         v[i] = v[i-a] << b;
+         for(i -= 1; i >= 0; i--)
+            v[i] = 0;
+      }
+
+      return this;
+   } \end{hide}
+\end{code}
+\begin{tabb} Shift all the bits of the current \texttt{BitVector} \texttt{j}
+  positions to the right if \texttt{j} is positive, and  \texttt{j} positions 
+  to the left if \texttt{j} is negative.
+ The new bits that appears to the left or to the rigth are set to 0.
+ Returns \texttt{this}.
+\end{tabb}
+\begin{htmlonly}
+  \param{j}{the size of the shift}
+  \return{\texttt{this}}
+\end{htmlonly}
+\begin{code}
+
+   public boolean scalarProduct (BitVector that) \begin{hide} {
+      //we must take that is not longer than this
+      if(that.v.length > this.v.length)
+         return that.scalarProduct(this);
+
+      boolean result = false;
+      int prod;
+
+      for(int i = 0; i < that.v.length; i++) {
+         prod = this.v[i] & that.v[i];
+         while(prod != 0) {
+            // a chaque iteration, on enleve le 1 le plus a droite
+            prod &= prod - 1;
+            result = !result;
+         }
+      }
+
+      return result;
+   } \end{hide}
+\end{code}
+\begin{tabb} Returns the scalar product of two \texttt{BitVector}'s modulo 2.
+  It returns \texttt{true} if there is an odd number of bits with a value of 1 
+  in the result of the \texttt{and} operator applied on \texttt{this} and
+  \texttt{that}, and returns \texttt{false} otherwise.
+\end{tabb}
+\begin{htmlonly}
+  \param{that}{the other \texttt{BitVector} with which to do the scalar product}
+  \return{the scalar product}
+\end{htmlonly}
+
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

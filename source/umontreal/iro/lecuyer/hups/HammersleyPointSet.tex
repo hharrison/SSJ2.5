@@ -1,0 +1,155 @@
+\defclass{HammersleyPointSet}
+
+This class implements \emph{Hammersley point sets}, 
+which are defined as follows.
+Let $2 = b_1 < b_2 < \cdots$ denote the sequence of all prime 
+numbers by increasing order.
+The Hammersley point set with $n$ points in $s$ dimensions contains
+the points
+\eq
+ \mathbf{u}_i = (i/n,\psi_{b_1}(i),\psi_{b_2}(i),\dots, \psi_{b_{s-1}}(i)),
+                                         \eqlabel{eq:Hammersley-point2}
+\endeq
+for $i=0,\dots,n-1$, where $\psi_b$ is the radical inverse function
+in base $b$, defined in \class{RadicalInverse}.
+This class is not a subclass of \class{DigitalNet}, because the basis
+is not the same for all coordinates.
+We do obtain a net in a generalized sense if 
+$n = b_1^{k_1} = b_2^{k_2} = \cdots = b_{s-1}^{k_{s-1}}$
+for some integers $k_1,\dots,k_{s-1}$.
+
+The points of a Hammersley point set can be ``scrambled'' by applying a 
+permutation to the digits of $i$ before computing each coordinate\latex{
+via (\ref{eq:Hammersley-point})}.  If 
+\[
+  i = a_0 + a_1 b_j + \dots + a_{k_j-1} b_j^{k_j-1},
+\]
+and $\pi_j$ is a permutation of the digits $\{0,\dots,b_j-1\}$, then
+\[
+ \psi_{b_j}(i) = \sum_{r=0}^{k_j-1} a_r b_j^{-r-1} 
+\]
+is replaced \latex{in (\ref{eq:Hammersley-point})} by
+\[
+ u_{i,j}= \sum_{r=0}^{k_j-1} \pi_j[a_r] b_j^{-r-1}.
+\]
+The permutations $\pi_j$ can be deterministic or random.
+One (deterministic) possibility implemented here is to use
+the Faure permutation of $\{0,\dots,b_j\}$ for $\pi_j$, for each 
+coordinate $j > 0$.
+
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HammersleyPointSet
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;
+
+
+public class HammersleyPointSet extends PointSet\begin{hide} {
+   private int[] base;           // Vector of prime bases.
+   private int[][] permutation;  // Digits permutation, for each dimension.
+   private boolean permuted;     // Permute digits?
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructor}
+
+\begin{code}
+
+   public HammersleyPointSet (int n, int dim) \begin{hide} {
+      if (n < 0 || dim < 1)
+         throw new IllegalArgumentException
+            ("Hammersley point sets must have positive dimension and n >= 0");
+      numPoints = n;
+      this.dim  = dim;
+      if (dim > 1)
+         base = RadicalInverse.getPrimes (dim - 1);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Constructs a new Hammersley point set with \texttt{n} points in \texttt{dim}
+   dimensions.
+ \end{tabb}
+\begin{htmlonly}
+   \param{n}{number of points}
+   \param{dim}{dimension of the point set}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public void addFaurePermutations()\begin{hide} {
+      if (dim > 1) {
+         permutation = new int[dim][];
+         for (int i = 0; i < dim - 1; i++) {
+            permutation[i] = new int[base[i]];
+            RadicalInverse.getFaurePermutation (base[i], permutation[i]);
+         }
+      }
+      permuted = true;
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Permutes the digits using Faure permutations for all coordinates.
+  After the method is called, the coordinates $u_{i,j}$ are generated via
+\[
+  u_{i,j} = \sum_{r=0}^{k-1} \pi_j[a_r] b_j^{-r-1},
+\]
+ for $j=1,\dots,s-1$ and $u_{i,0}=i/n$,
+ where $\pi_j$ is the Faure permutation of $\{0,\dots,b_j-1\}$.
+ \end{tabb}
+\begin{code}
+
+   public void ErasePermutations()\begin{hide} {
+      permuted = false;
+      permutation = null;
+   }
+\end{hide}
+\end{code}
+ \begin{tabb}
+  Erases the Faure permutations: from now on, the digits will not be
+  Faure permuted.
+ \end{tabb}
+\begin{code}
+\begin{hide}
+
+   public double getCoordinate (int i, int j) {
+      if (j == 0)
+         return (double) i / (double) numPoints;
+      if (permuted)
+         return RadicalInverse.permutedRadicalInverse 
+                   (base[j - 1], permutation[j - 1], i);
+      else 
+         return RadicalInverse.radicalInverse (base[j - 1], i);
+   }
+}
+\end{hide}
+\end{code}

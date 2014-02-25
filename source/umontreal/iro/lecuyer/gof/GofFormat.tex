@@ -1,0 +1,1194 @@
+\defclass {GofFormat}
+
+% \textbf{THIS CLASS WILL BE REWRITTEN AND SIMPLIFIED IN THE FUTURE.}
+This class contains methods used to format results of GOF
+test statistics, or to apply a series of tests
+simultaneously and format the results.
+It is in fact a translation from C to Java of a set of functions that
+were specially written for the implementation of TestU01, a software
+package for testing uniform random number generators \cite{iLEC01t}.
+
+Strictly speaking, applying several tests simultaneously makes the
+$p$-values ``invalid'' in the sense that the probability of having
+{\em at least one\/} $p$-value less than 0.01, say, is larger than 0.01.
+One must therefore be careful with the interpretation of these
+$p$-values (one could use, e.g., the Bonferroni inequality \cite{sLAW00a}).
+Applying simultaneous tests is convenient in some situations, such as in
+screening experiments for detecting statistical deficiencies
+in random number generators.  In that context, rejection of the null
+hypothesis typically occurs with extremely small $p$-values (e.g., less
+than $10^{-15}$), and the interpretation is quite obvious in this case.
+
+The class also provides tools to plot an empirical or
+theoretical distribution function, by creating a data file that
+contains a graphic plot in a format compatible with the software
+specified by the environment variable \method{graphSoft}{}.
+  NOTE: see also the more recent package
+  \externalclass{umontreal.iro.lecuyer}{charts}.
+
+Note: This class uses the Colt library.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GofFormat
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.gof;
+   import cern.colt.list.*;
+\begin{hide}
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import umontreal.iro.lecuyer.probdist.*;
+import java.io.PrintWriter;\end{hide}
+
+public class GofFormat\begin{hide} {
+   private GofFormat() {} \end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Plotting distribution functions}
+
+\begin{code}
+
+   public static final int GNUPLOT\begin{hide} = 0; \end{hide}
+\end{code}
+ \begin{tabb}  Data file format used for plotting functions with Gnuplot.
+ \end{tabb}
+\begin{code}
+
+   public static final int MATHEMATICA\begin{hide} = 1; \end{hide}
+\end{code}
+ \begin{tabb}  Data file format used for creating graphics with Mathematica.
+ \end{tabb}
+\begin{code}
+
+   public static int graphSoft = GNUPLOT;
+\end{code}
+ \begin{tabb} Environment variable that selects the type of software to be
+   used for plotting the graphs of functions.
+   The data files produced by \method{graphFunc}{} and
+   \method{graphDistUnif}{} will be in a format suitable
+   for this selected software.
+   The default value is \texttt{GNUPLOT}.
+   To display a graphic in file \texttt{f} using \texttt{gnuplot}, for example,
+   one can use the command ``\texttt{plot f with steps, x with lines}''
+   in \texttt{gnuplot}.
+\begin{htmlonly}
+  \texttt{graphSoft} can take the values \method{GNUPLOT}{} or \method{MATHEMATICA}{}.
+\end{htmlonly}
+ \end{tabb}
+\begin{code}
+\begin{hide}
+   private static String formatMath2 (double x, double y)    {
+      // Writes the pair (x, y) in file f, in a format understood
+      // by Mathematica
+      StringBuffer sb = new StringBuffer();
+      String S;
+
+      sb.append ("   { ");
+      if ((x != 0.0) && (x < 0.1 || x > 1.0)) {
+         S = PrintfFormat.E (16, 7, x);
+         int exppos = S.indexOf ('E');
+         if (exppos != -1)
+            S = S.substring (0, exppos) + "*10^(" +
+                             S.substring (exppos+1) + ")";
+      }
+      else
+         S = PrintfFormat.g (16, 8, x);
+
+      sb.append (S + ",     ");
+
+      if (y != 0.0 && (y < 0.1 || y > 1.0)) {
+         S = PrintfFormat.E (16, 7, y);
+         int exppos = S.indexOf ('E');
+         if (exppos != -1)
+            S = S.substring (0, exppos) + "*10^(" +
+                             S.substring (exppos+1) + ")";
+      }
+      else
+        S = PrintfFormat.g (16, 8, y);
+
+      sb.append (S + " }");
+      return sb.toString();
+   }
+
+
+   private static String graphFunc (ContinuousDistribution dist, double a,
+                                    double b, int m, int mono, String desc) {
+// Renommer drawCDF en fixant mono = 1 et éliminant mono.
+      int i;
+      double yprec, y, x, h;
+      StringBuffer sb = new StringBuffer();
+      String openComment = "";
+      String closeComment = "";
+      String openGraph = "";
+      String closeGraph = "";
+      if (mono != 1 && mono != -1)
+         throw new IllegalArgumentException ("mono must be 1 or -1");
+      switch (graphSoft) {
+      case GNUPLOT:
+        openComment = "# ";
+        closeComment = "";
+        openGraph = "";
+        closeGraph = PrintfFormat.NEWLINE;
+        break;
+      case MATHEMATICA:
+        openComment = "(* ";
+        closeComment = " *)";
+        openGraph = "points = { " + PrintfFormat.NEWLINE;
+        closeGraph = "}" + PrintfFormat.NEWLINE;
+        break;
+      }
+
+      sb.append (openComment + "----------------------------------" +
+                   closeComment  + PrintfFormat.NEWLINE);
+      sb.append (openComment + PrintfFormat.s (-70, desc)
+                 + closeComment  + PrintfFormat.NEWLINE +
+                   PrintfFormat.NEWLINE);
+
+      sb.append (openGraph);
+      h = (b - a) / m;
+      if (mono == 1)
+         yprec = -Double.MAX_VALUE;
+      else if (mono == -1)
+         yprec = Double.MAX_VALUE;
+      else
+         yprec = 0.0;
+
+      for (i = 0; i <= m; i++) {
+         x = a + i*h;
+         y = mono == 1 ? dist.cdf (x) : dist.barF (x);
+         switch (graphSoft) {
+         case MATHEMATICA:
+            sb.append (formatMath2 (x, y));
+            if (i < m)
+               sb.append (',');
+            break;
+         default: // Default and GNUPLOT
+            sb.append (PrintfFormat.g (20, 14, x) +  "      " +
+                       PrintfFormat.g (20, 14, y));
+         }
+
+         switch (mono) {
+         case 1:
+            if (y < yprec)
+               sb.append ("    " + openComment +
+                    "  DECREASING" + closeComment);
+            break;
+         case -1:
+            if (y > yprec)
+               sb.append ("    " + openComment +
+                    "  INCREASING" + closeComment);
+            break;
+         default:
+            break;
+         }
+         sb.append (PrintfFormat.NEWLINE);
+         yprec = y;
+      }
+      sb.append (closeGraph);
+      return sb.toString();
+   }\end{hide}
+\end{code}
+%  \begin{tabb}
+%   Use \method{drawCdf}{} instead.
+%   Formats data to plot the graph of the distribution function $F$ (or $\bar F$)
+%   over the interval $[a,b]$, and returns the result as a \class{String}.
+%   \texttt{dist.cdf(x)} (or \texttt{dist.barF(x)}) returns the value of $F$
+%   (or $\bar F$) at $x$,
+%   and that $F$ is either non-decreasing or non-increasing.
+%   If \texttt{mono} = 1, the method will verify that $F$ is non-decreasing;
+%   if \texttt{mono} = $-1$, it will verify that $\bar{F}$ is non-increasing.
+%   (This is useful to verify if $F$ is effectively a sensible
+%   approximation to a distribution function or its complementary
+%   in the given interval.)
+%   The \class{String} \texttt{desc} gives a short caption for the graphic plot.
+%   The method computes the $m+1$ points $(x_i,\, F (x_i))$,
+%   where $x_i = a + i (b-a)/m$ for $i=0,1,\ldots,m$, and formats these points
+%   into a \texttt{String} in a format suitable for the
+%   software specified by \method{graphSoft}{}.
+%  \end{tabb}
+% \begin{htmlonly}
+%    \param{dist}{continuous distribution function to plot}
+%    \param{a}{lower bound of the interval to plot}
+%    \param{b}{upper bound of the interval to plot}
+%    \param{m}{number of points in the plot minus one}
+%    \param{mono}{1 for plotting a distribution function, -1 if for a complementary
+%        distribution function}
+%    \param{desc}{short caption describing the plot}
+%    \return{a string representation of the plot data}
+% \end{htmlonly}
+\begin{code}
+
+   public static String drawCdf (ContinuousDistribution dist, double a,
+                                 double b, int m, String desc)\begin{hide} {
+      return graphFunc (dist, a, b, m, 1, desc);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Formats data to plot the graph of the distribution function $F$ over the
+  interval $[a,b]$, and returns the result as a \class{String}.
+  The method \texttt{dist.cdf(x)} returns the value of $F$ at $x$.
+% Checks that $F$ is non-decreasing.
+%   If \texttt{mono} = 1, the method will verify that $F$ is non-decreasing;
+%   (This is useful to verify if $F$ is effectively a sensible
+%   approximation to a distribution function in the given interval.)
+  The \class{String} \texttt{desc} gives a short caption for the graphic plot.
+  The method computes the $m+1$ points $(x_i,\, F (x_i))$,
+  where $x_i = a + i (b-a)/m$ for $i=0,1,\ldots,m$, and formats these points
+  into a \texttt{String} in a format suitable for the
+  software specified by \method{graphSoft}{}.
+  NOTE: see also the more recent class
+  \externalclass{umontreal.iro.lecuyer.charts}{ContinuousDistChart}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{dist}{continuous distribution function to plot}
+   \param{a}{lower bound of the interval to plot}
+   \param{b}{upper bound of the interval to plot}
+   \param{m}{number of points in the plot minus one}
+   \param{desc}{short caption describing the plot}
+   \return{a string representation of the plot data}
+\end{htmlonly}
+\begin{code}
+
+   public static String drawDensity (ContinuousDistribution dist, double a,
+                                     double b, int m, String desc)\begin{hide} {
+      int i;
+      double y, x, h;
+      StringBuffer sb = new StringBuffer();
+      String openComment = "";
+      String closeComment = "";
+      String openGraph = "";
+      String closeGraph = "";
+
+      switch (graphSoft) {
+      case GNUPLOT:
+        openComment = "# ";
+        closeComment = "";
+        openGraph = "";
+        closeGraph = PrintfFormat.NEWLINE;
+        break;
+      case MATHEMATICA:
+        openComment = "(* ";
+        closeComment = " *)";
+        openGraph = "points = { " + PrintfFormat.NEWLINE;
+        closeGraph = "}" + PrintfFormat.NEWLINE;
+        break;
+      }
+
+      sb.append (openComment + "----------------------------------" +
+                   closeComment  + PrintfFormat.NEWLINE);
+      sb.append (openComment + PrintfFormat.s (-70, desc)
+                    + closeComment  + PrintfFormat.NEWLINE +
+                      PrintfFormat.NEWLINE);
+
+      sb.append (openGraph);
+      h = (b - a) / m;
+
+      for (i = 0; i <= m; i++) {
+         x = a + i*h;
+         y = dist.density (x);
+
+         switch (graphSoft) {
+         case MATHEMATICA:
+            sb.append (formatMath2 (x, y));
+            if (i < m)
+               sb.append (',');
+            break;
+         default: // Default and GNUPLOT
+            sb.append (PrintfFormat.g (16, 8, x) +  "      " +
+                       PrintfFormat.g (16, 8, y));
+         }
+         sb.append (PrintfFormat.NEWLINE);
+      }
+      sb.append (closeGraph);
+      return sb.toString();
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Formats data to plot the graph of the density $f(x)$ over the interval $[a,b]$,
+  and returns the result as a \class{String}. The method
+  \texttt{dist.density(x)} returns the value of $f(x)$ at $x$.
+  The \class{String} \texttt{desc} gives a short caption for the graphic
+  plot. The method computes the $m+1$ points $(x_i,\, f(x_i))$,
+  where $x_i = a + i (b-a)/m$ for $i=0,1,\ldots,m$, and formats these points
+  into a \texttt{String} in a format suitable for the
+  software specified by \method{graphSoft}{}.
+  NOTE: see also the more recent class
+  \externalclass{umontreal.iro.lecuyer.charts}{ContinuousDistChart}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{dist}{continuous density function to plot}
+   \param{a}{lower bound of the interval to plot}
+   \param{b}{upper bound of the interval to plot}
+   \param{m}{number of points in the plot minus one}
+   \param{desc}{short caption describing the plot}
+   \return{a string representation of the plot data}
+\end{htmlonly}
+\begin{code}
+
+   public static String graphDistUnif (DoubleArrayList data, String desc)\begin{hide} {
+      double[] u = data.elements();
+      int n = data.size();
+      int i;
+      double unSurN = 1.0/n;
+      StringBuffer sb = new StringBuffer();
+
+      switch (graphSoft) {
+      case GNUPLOT:
+         sb.append ("#----------------------------------" +
+                     PrintfFormat.NEWLINE);
+         sb.append ("# " + PrintfFormat.s (-70, desc) +
+                     PrintfFormat.NEWLINE + PrintfFormat.NEWLINE);
+         sb.append (PrintfFormat.g (16, 8, 0.0) + "  " +
+                    PrintfFormat.g (16, 8, 0.0) + PrintfFormat.NEWLINE);
+         for (i = 0; i < n; i++)
+            sb.append (PrintfFormat.g (16, 8, u[i]) + "  " +
+                       PrintfFormat.g (16, 8, (i + 1)*unSurN) +
+                       PrintfFormat.NEWLINE);
+
+         sb.append (PrintfFormat.g (16, 8, 1.0) + "  " +
+                    PrintfFormat.g (16, 8, 1.0) + PrintfFormat.NEWLINE +
+                    PrintfFormat.NEWLINE);
+         break;
+      case MATHEMATICA:
+         sb.append ("(*----------------------------------*)" +
+                     PrintfFormat.NEWLINE);
+         sb.append ("(* " + PrintfFormat.s (-70, desc)  +
+                     PrintfFormat.NEWLINE + " *)" +
+                     PrintfFormat.NEWLINE + PrintfFormat.NEWLINE +
+                     "points = { " + PrintfFormat.NEWLINE);
+
+         sb.append (formatMath2 (0.0, 0.0) + "," + PrintfFormat.NEWLINE);
+         for (i = 0; i < n; i++)
+            sb.append (formatMath2 (u[i], (i + 1)*unSurN) + "," +
+                       PrintfFormat.NEWLINE);
+         sb.append (formatMath2 (1.0, 1.0) + PrintfFormat.NEWLINE);
+         break;
+      default:
+         throw new IllegalArgumentException ("graphSoft unknown");
+      }
+      return sb.toString();
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Formats data to plot the empirical distribution of
+  $U_{(1)},\dots,U_{(N)}$, which are assumed to be in \texttt{data[0...N-1]},
+  and to compare it with the uniform distribution. The $U_{(i)}$ must be sorted.
+  The two endpoints $(0, 0)$ and $(1, 1)$ are always included in the plot.
+  The string \texttt{desc} gives a short caption for the graphic plot.
+  The data is printed in a format suitable for the
+  software specified by \method{graphSoft}{}.
+   NOTE: see also the more recent class
+  \externalclass{umontreal.iro.lecuyer.charts}{EmpiricalChart}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to plot}
+   \param{desc}{short caption describing the plot}
+   \return{a string representation of the plot data}
+\end{htmlonly}
+\begin{code}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Computing and printing $p$-values for EDF test statistics}
+
+\begin{code}
+
+   public static double EPSILONP = 1.0E-15;
+\end{code}
+ \begin{tabb}  Environment variable used in \method{formatp0}{} to determine
+   which $p$-values are too close to 0 or 1 to be printed explicitly.
+   If \texttt{EPSILONP} $= \epsilon$, then any $p$-value
+   (or significance level) less than $\epsilon$ or larger than
+   $1-\epsilon$ is {\em not\/} written explicitly;
+   the program simply writes ``\texttt{eps}'' or ``\texttt{1-eps}''.
+   The default value is $10^{-15}$.
+ \hpierre{Nouveau.  Utilis\'e seulement dans \texttt{formatp0}.}
+ \end{tabb}
+\begin{code}
+
+   public static double SUSPECTP = 0.01;
+\end{code}
+ \begin{tabb}  Environment variable used in \method{formatp1}{} to determine
+   which $p$-values should be marked as suspect when printing test results.
+   If \texttt{SUSPECTP} $= \alpha$, then any $p$-value
+   (or significance level) less than $\alpha$ or larger than
+   $1-\alpha$ is considered suspect and is
+   ``singled out'' by \texttt{formatp1}.
+   The default value is 0.01.
+ \hpierre{Utilis\'e seulement dans \texttt{formatp1}, mais
+   on ne veut pas la mettre en parametre car utilise souvent et ne
+   change presque jamais. }
+ \end{tabb}
+\begin{code}
+
+   public static String formatp0 (double p)\begin{hide} {
+      // Formats the significance level of a test, without a descriptor
+      if ((p >= 0.01) && (p <= 0.99))
+         return PrintfFormat.format (8, 2, 1, p);
+      else if (p < EPSILONP)
+         return "   eps  ";
+      else if (p < 0.01)
+         return PrintfFormat.format (8, 2, 2, p);
+      else if (p >= 1.0 - EPSILONP)
+         return " 1 - eps ";
+      else
+         return " 1 - " + PrintfFormat.g (8, 2, 1.0 - p);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the significance level (or $p$-value) $p$ of a test,
+   in the format ``$1-p$'' if $p$ is close to 1, and $p$ otherwise.
+   Uses the environment variable  \method{EPSILONP}{} and replaces $p$
+   by $\epsilon$ when it is too small.
+ \hrichard {Pourquoi ne pas la cacher dans \tt gofw.c?}
+ \hpierre {Quelqu'un pourrait vouloir utiliser un autre format que
+   celui de \texttt{formatp1}. }
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{the $p$-value or significance level to be formated}
+   \return{the string representation of the $p$-value}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatp1 (double p)\begin{hide} {
+      // Prints the significance level of a test, with a descriptor.
+      StringBuffer sb = new StringBuffer();
+      sb.append ("Significance level of test            :" + formatp0 (p));
+      if (p < SUSPECTP || p > 1.0 - SUSPECTP)
+         sb.append ("    *****");
+
+      sb.append (PrintfFormat.NEWLINE + PrintfFormat.NEWLINE);
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the string ``\texttt{Significance level of test : }'',
+  then calls \method{formatp0}{} to print $p$, and adds
+  the marker ``\texttt{****}'' if $p$ is considered suspect
+  (uses the environment variable \texttt{RSUSPECTP} for this).
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{the $p$-value or significance level to be formated}
+   \return{the string representation of the significance level of test}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatp2 (double x, double p)\begin{hide} {
+      // Prints the statistic x and its significance level p.
+      return PrintfFormat.format (8, 2, 1, x) + PrintfFormat.NEWLINE +
+             formatp1 (p);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns \texttt{x} on a single line, then go to the next line
+   and calls \method{formatp1}{}.
+  \hpierre {Peut \^etre \`a cacher?}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{value of the statistic for which the significance level is formated}
+   \param{p}{the $p$-value or significance level to be formated}
+   \return{the string representation of the significance level of test}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatp3 (String testName, double x, double p)\begin{hide} {
+      final String SLT = "Significance level of test";
+      int l = Math.max (SLT.length(), testName.length());
+      PrintfFormat pf = new PrintfFormat();
+      pf.append (-l, testName).append (" : ").append (8, 2, 1, x).append
+               (PrintfFormat.NEWLINE);
+      pf.append (-l, SLT).append (" : ").append (formatp0 (p));
+      if (p < SUSPECTP || p > 1.0 - SUSPECTP)
+         pf.append ("    *****");
+      pf.append (PrintfFormat.NEWLINE + PrintfFormat.NEWLINE);
+      return pf.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Formats the test statistic \texttt{x} for a test named \texttt{testName}
+   with $p$-value \texttt{p}.  The first line of the returned string contains
+   the name of the test and the statistic whereas the second line contains
+   its significance level.  The formated values of \texttt{x} and \texttt{p} are
+   aligned.
+\end{tabb}
+\begin{htmlonly}
+   \param{testName}{name of the test that was performed}
+   \param{x}{value of the test statistic}
+   \param{p}{significance level (or $p$-value) of the test}
+   \return{the string representation of the test result}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatChi2 (int k, int d, double chi2)\begin{hide} {
+      StringBuffer sb = new StringBuffer();
+      sb.append ("Chi2 statistic                        : " +
+                  PrintfFormat.format (8, 2, 1, chi2));
+      sb.append (PrintfFormat.NEWLINE +
+                 "p-value                               : " +
+                 formatp0 (GofStat.pDisc
+                          (ChiSquareDist.cdf (k - 1, d, chi2),
+                           ChiSquareDist.barF (k - 1, d, chi2))));
+      sb.append (PrintfFormat.NEWLINE + PrintfFormat.NEWLINE);
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Computes the $p$-value of the chi-square statistic
+  \texttt{chi2} for a test with \texttt{k} intervals.  Uses $d$ decimal digits
+  of precision in the calculations. The result of the
+  test is returned as a string.  The $p$-value is computed using
+  \externalmethod{}{GofStat}{pDisc}{}.
+\end{tabb}
+\begin{htmlonly}
+   \param{k}{number of subintervals for the chi-square test}
+   \param{chi2}{chi-square statistic}
+   \return{the string representation of the test result and $p$-value}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatKS (int n, double dp,
+                                  double dm, double d)\begin{hide} {
+      // Prints the results of a Kolmogorov-Smirnov test
+      return "Kolmogorov-Smirnov+ statistic = D+    :" +
+             formatp2 (dp, KolmogorovSmirnovPlusDist.barF (n, dp)) +
+             "Kolmogorov-Smirnov- statistic = D-    :" +
+             formatp2 (dm, KolmogorovSmirnovPlusDist.barF (n, dm)) +
+             "Kolmogorov-Smirnov statistic = D      :" +
+             formatp2 (d, KolmogorovSmirnovDistQuick.barF (n, d)) +
+                       PrintfFormat.NEWLINE + PrintfFormat.NEWLINE;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the $p$-values of the three Kolmogorov-Smirnov statistics
+  $D_N^+$, $D_N^-$, and $D_N$, whose values are in \texttt{dp, dm, d},
+  respectively, assuming a sample of size \texttt{n}.
+  Then formats these statistics and their $p$-values
+  using \method{formatp2}{} for each one.
+ \hrichard {Devrait \^etre \'elimin\'e. Cas particulier de EDF avec les
+     autres CM, AD, Wat, .... Pourquoi traitement de faveur.}
+ \hpierre {Je pr\'ef\`ere laisser ceci pour les gens qui ne veulent pas
+   prendre le temps de comprendre l'id\'ee des ``active tests'', que
+   j'ai d'ailleurs repouss\'es compl\`etement \`a la fin.
+   Les tests de KS sont de loin les plus utilis\'es par les gens
+   pour les lois continues.}
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{sample size}
+   \param{dp}{value of the $D_N^+$ statistic}
+   \param{dm}{value of the $D_N^-$ statistic}
+   \param{d}{value of the $D_N$ statistic}
+   \return{the string representation of the Kolmogorov-Smirnov statistics and their
+     significance levels}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatKS (DoubleArrayList data,
+                                  ContinuousDistribution dist)\begin{hide} {
+
+      double[] v = data.elements();
+      int n = data.size();
+
+      DoubleArrayList dataUnif = GofStat.unifTransform (data, dist);
+      dataUnif.quickSortFromTo (0, dataUnif.size() - 1);
+      double[] ret = GofStat.kolmogorovSmirnov (dataUnif);
+      return formatKS (n, ret[0], ret[1], ret[2]);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the KS test statistics to compare the
+ empirical distribution of the observations in \texttt{data}
+ with the theoretical distribution \texttt{dist} and
+ formats the results.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to be tested}
+   \param{dist}{assumed distribution of the observations}
+   \return{the string representation of the Kolmogorov-Smirnov statistics and their
+     significance levels}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatKSJumpOne (int n, double a, double dp)\begin{hide} {
+      double d = 1.0 - FDist.kolmogorovSmirnovPlusJumpOne (n, a, dp);
+
+      return PrintfFormat.NEWLINE +
+             "Kolmogorov-Smirnov+ statistic = D+    : " +
+             PrintfFormat.g (8, 2, dp) + PrintfFormat.NEWLINE +
+             formatp1 (d) + PrintfFormat.NEWLINE;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Similar to \method{formatKS}{int,double,double,double},
+   but for the KS statistic $D_N^+(a)$\latex{ defined in (\ref{eq:KSPlusJumpOne})}.
+   Writes a header,
+  computes the $p$-value and calls \method{formatp2}{}.
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{sample size}
+   \param{a}{size of the jump}
+   \param{dp}{value of $D_N^+(a)$}
+   \return{the string representation of the Kolmogorov-Smirnov statistic and its significance level}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatKSJumpOne (DoubleArrayList data,
+                                         ContinuousDistribution dist,
+                                         double a)\begin{hide} {
+
+      double[] v = data.elements();
+      int n = data.size();
+      DoubleArrayList dataUnif = GofStat.unifTransform (data, dist);
+      dataUnif.quickSortFromTo (0, dataUnif.size() - 1);
+      double[] ret =  GofStat.kolmogorovSmirnovJumpOne (dataUnif, a);
+      return formatKSJumpOne (n, a, ret[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb} Similar to \method{formatKS}{DoubleArrayList,ContinuousDistribution},
+  but for $D_N^+(a)$\latex{  defined in (\ref{eq:KSPlusJumpOne})}.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to be tested}
+   \param{dist}{assumed distribution of the data}
+   \param{a}{size of the jump}
+   \return{string representation of the Kolmogorov-Smirnov statistic and its significance level}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Applying several tests at once and printing results}
+
+Higher-level tools for applying several EDF goodness-of-fit tests
+simultaneously are offered here.
+The environment variable \texttt{activeTests} specifies which
+tests in this list are to be performed when asking for several
+simultaneous tests via the functions \texttt{activeTests},
+\texttt{formatActiveTests}, etc.
+
+\begin{code}
+
+   public  static final int KSP = 0;
+\end{code}
+\begin{tabb} Kolmogorov-Smirnov+ test \end{tabb}
+\begin{code}
+
+   public static final int KSM = 1;
+\end{code}
+\begin{tabb}   Kolmogorov-Smirnov$-$ test \end{tabb}
+\begin{code}
+
+   public static final int KS = 2;
+\end{code}
+\begin{tabb}   Kolmogorov-Smirnov test  \end{tabb}
+\begin{code}
+
+   public static final int AD = 3;
+\end{code}
+\begin{tabb}   Anderson-Darling test  \end{tabb}
+\begin{code}
+
+   public static final int CM = 4;
+\end{code}
+\begin{tabb}   Cram\'er-von Mises test  \end{tabb}
+\begin{code}
+
+   public static final int WG = 5;
+\end{code}
+\begin{tabb}   Watson G test  \end{tabb}
+\begin{code}
+
+   public static final int WU = 6;
+\end{code}
+\begin{tabb}   Watson U test   \end{tabb}
+\begin{code}
+
+   public static final int MEAN = 7;
+\end{code}
+\begin{tabb}   Mean  \end{tabb}
+\begin{code}
+
+   public static final int COR = 8;
+\end{code}
+\begin{tabb}   Correlation  \end{tabb}
+\begin{code}
+
+   public static final int NTESTTYPES = 9;
+\end{code}
+\begin{tabb}   Total number of test types  \end{tabb}
+
+\iffalse
+ \begin{tabb}  Types of EDF tests supported by the present modules.
+  Here, \texttt{MEAN} and \texttt{COR} usually
+  represent tests based on the mean of the observations and on the
+  correlation between pairs of successive observations.
+ \hpierre {Est-ce utile que garder ces deux-l\`a dans ce type enum?}
+ \hrichard {N\'ecessaire si l'on veut que les tableaux sVal, pVal,
+  r\'eservent aussi une place pour ces 2. Sinon, il faudrait introduire
+  au moins 4 nouvelles variables globales pour chaque module.}
+%  {\bf Remark:} if \texttt{testType} is modified in any way, then the
+%  variable \texttt{TESTNAMES} must be updated correspondingly.
+ \end{tabb}
+\fi
+\begin{code}
+
+   public static final String[] TESTNAMES\begin{hide} = {
+    "KolmogorovSmirnovPlus", "KolmogorovSmirnovMinus",
+    "KolmogorovSmirnov", "Anderson-Darling",
+    "CramerVon-Mises", "Watson G", "Watson U",
+    "Mean", "Correlation"
+   };\end{hide}
+\end{code}
+ \begin{tabb}  Name of each \texttt{testType} test.
+  Could be used for printing the test results, for example.
+%  {\bf Remark:} If the type \texttt{testType}
+%  is modified in any way, then \texttt{TESTNAMES} must be updated
+%  correspondingly.
+ \hpierre{Il me semble que cette liste des noms devrait \^etre juste \`a
+   cot\'e de la liste \texttt{testType}.  Est-ce OK comme ceci? }
+ \hrichard {On ne peut pas initialiser les variables extern dans *.h.}
+ \end{tabb}
+\begin{code}
+
+   public static boolean[] activeTests\begin{hide} = null;
+   private static void initActiveTests() {
+      activeTests = new boolean[NTESTTYPES];
+      for (int i = 0; i < activeTests.length; i++)
+        activeTests[i] = false;
+      activeTests[KSP] = activeTests[KSM] = true;
+      activeTests[AD] = activeTests[MEAN] = activeTests[COR] = true;
+   }
+   static {
+      initActiveTests();
+   }\end{hide}
+\end{code}
+ \begin{tabb} The set of EDF tests that are to be performed when calling
+  the methods \method{activeTests}{}, \method{formatActiveTests}{}, etc.
+  By default, this set contains \texttt{KSP}, \texttt{KSM},
+  and \texttt{AD}.  %, but it can be changed.
+  Note: \texttt{MEAN} and \texttt{COR} are {\em always excluded\/}
+  from this set of active tests.
+\begin{htmlonly}
+% These constants are not regrouped under an identifying label in Javadoc
+   The valid indices for this array are \method{KSP}{}, \method{KSM}{},
+      \method{KS}{}, \method{AD}{}, \method{CM}{}, \method{WG}{},
+      \method{WU}{}, \method{MEAN}{}, and \method{COR}{}.
+\end{htmlonly}
+ \end{tabb}
+\begin{code}
+
+   public static void tests (DoubleArrayList sortedData, double[] sVal)\begin{hide} {
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+      int i;
+      double a2 = 0.0, w2, dm = 0.0, dp = 0.0, w;
+      double u1, ui, d2, d1;
+      double sumZ;
+      double unSurN;
+
+      if (n <= 0)
+        throw new IllegalArgumentException ("n <= 0");
+      if (sVal.length != NTESTTYPES)
+        throw new IllegalArgumentException ("sVal must " +
+                              "be of size NTESTTYPES.");
+
+      // We assume that u is already sorted.
+      if (n == 1) {
+         sVal[KSP] = 1.0 - u[0];
+         sVal[MEAN] = u[0];
+         return;
+      }
+      unSurN = 1.0 / n;
+      w2 = unSurN / 12.0;
+      sumZ = 0.0;
+      for (i = 0; i < n; i++) {
+         // Statistics KS
+         d1 = u[i] - i*unSurN;
+         d2 = (i + 1)*unSurN - u[i];
+         if (d1 > dm)
+            dm = d1;
+         if (d2 > dp)
+            dp = d2;
+         // Watson U and G
+         sumZ += u[i];
+         w = u[i] - (i + 0.5)*unSurN;
+         w2 += w*w;
+         // Anderson-Darling
+         ui = u[i];
+         u1 = 1.0 - ui;
+         if (ui < GofStat.EPSILONAD)
+            ui = GofStat.EPSILONAD;
+         else if (u1 < GofStat.EPSILONAD)
+            u1 = GofStat.EPSILONAD;
+         a2 += (2*i + 1) * Math.log (ui) + (1 + 2*(n - i - 1))*Math.log (u1);
+      }
+      if (dm > dp)
+         sVal[KS] = dm;
+      else
+         sVal[KS] = dp;
+      sVal[KSM] = dm;
+      sVal[KSP] = dp;
+      sumZ = sumZ * unSurN - 0.5;
+      sVal[CM] = w2;
+      sVal[WG] = Math.sqrt ((double) n) * (dp + sumZ);
+      sVal[WU] = w2 - sumZ * sumZ * n;
+      sVal[AD] = -n - a2 * unSurN;
+      sVal[MEAN] = sumZ + 0.5;  // Nouveau ...
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes all EDF test statistics\latex{ enumerated above
+ (except \texttt{COR})}
+  to compare the empirical
+  distribution of  $U_{(0)},\dots,U_{(N-1)}$ with the uniform distribution,
+  assuming that these sorted observations are in \texttt{sortedData}.
+  If $N > 1$, returns \texttt{sVal} with the values of the KS
+  statistics $D_N^+$, $D_N^-$ and $D_N$, of the Cram\'er-von Mises
+  statistic $W_N^2$, Watson's $G_N$ and $U_N^2$, Anderson-Darling's
+  $A_N^2$, and the average of the $U_i$'s, respectively.
+  If $N = 1$, only puts $1 - {}$\texttt{sortedData.get (0)} in \texttt{sVal[KSP]}.
+  Calling this method is more efficient than computing these statistics
+  separately by calling the corresponding methods in \class{GofStat}.
+ \hrichard{\'Eliminer, garder seulement Active. On devrait \'eliminer
+  les fonctions qui ont une version active, et enlever le mot Active dans
+  leur nom. Les actives sont d\'etermin\'ees
+  par une variable d'environnement; donc toujours sous-entendu actives.
+  Les non-actives ne sont jamais utilis\'ees.}
+ \hpierre {On ne peut pas les \'eliminer car les \texttt{Active...} appellent
+  celles-ci pour calculer toutes les stats d'un seul coup.
+  Si on trouve qu'elles genent, on peut les cacher, mais je ne crois pas.
+  Devrait peut-etre aller dans gofs, mais je l'ai mis
+  ici pour eviter de definir \texttt{testArray}  dans GofStat. }
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted observations}
+   \param{sVal}{array that will be filled with the results of the tests}
+\end{htmlonly}
+\begin{code}
+
+   public static void tests (DoubleArrayList data,
+                             ContinuousDistribution dist, double[] sVal)\begin{hide} {
+
+      double[] v = data.elements();
+      int n = data.size();
+
+      if (n <= 0)
+        throw new IllegalArgumentException ("n <= 0");
+
+      DoubleArrayList sortedData = GofStat.unifTransform (data, dist);
+      sortedData.quickSortFromTo (0, sortedData.size()-1);
+      tests (sortedData, sVal);
+      if (n == 1)
+         sVal[MEAN] = v[0];     // On veut v[0], pas u[0].
+   }\end{hide}
+\end{code}
+\begin{tabb} The observations $V$ are in \texttt{data},
+  not necessarily sorted, and their empirical
+  distribution is compared with the continuous distribution \texttt{dist}.
+ \hpierre{ Note: if $N > 1$, the value returned in \texttt{sVal[MEAN]}
+    is the average of the \texttt{U[i] = dist.cdf (V[i])}, not
+    the average of the \texttt{V[i]}. }
+% The EDF tests (p-values) are valid only if \texttt{F} is continuous.
+ If $N = 1$, only puts \texttt{data.get (0)} in \texttt{sVal[MEAN]},
+ and $1 - {}$\texttt{dist.cdf (data.get (0))} in \texttt{sVal[KSP]}.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to test}
+   \param{dist}{assumed distribution of the observations}
+   \param{sVal}{array that will be filled with the results of the tests}
+\end{htmlonly}
+\begin{code}
+
+   public static void activeTests (DoubleArrayList sortedData,
+                                   double[] sVal, double[] pVal)\begin{hide} {
+
+      double[] u = sortedData.elements();
+      int n = sortedData.size();
+
+      if (n <= 0)
+        throw new IllegalArgumentException ("n <= 0");
+
+      if (sVal.length != NTESTTYPES || pVal.length != NTESTTYPES)
+        throw new IllegalArgumentException ("sVal and pVal must " +
+              "be of length NTESTTYPES.");
+
+      if (n == 1) {
+         sVal[KSP] = 1.0 - u[0];
+         pVal[KSP] = 1.0 - u[0];
+         pVal[MEAN] = pVal[KSP];
+         return;
+      }
+      // We assume that u is already sorted.
+      tests (sortedData, sVal);
+
+      if (activeTests.length != NTESTTYPES) {
+        initActiveTests();
+        System.err.println ("activeTests was invalid, it was reinitialized.");
+      }
+
+      if (activeTests[KSP])
+         pVal[KSP] = KolmogorovSmirnovPlusDist.barF (n, sVal[KSP]);
+
+      if (activeTests[KSM])
+         pVal[KSM] = KolmogorovSmirnovPlusDist.barF (n, sVal[KSM]);
+
+      if (activeTests[KS])
+         pVal[KS] = KolmogorovSmirnovDistQuick.barF (n, sVal[KS]);
+
+      if (activeTests[AD])
+         pVal[AD] = AndersonDarlingDistQuick.barF (n, sVal[AD]);
+
+      if (activeTests[CM])
+         pVal[CM] = CramerVonMisesDist.barF (n, sVal[CM]);
+
+      if (activeTests[WG])
+         pVal[WG] = WatsonGDist.barF (n, sVal[WG]);
+
+      if (activeTests[WU])
+         pVal[WU] = WatsonUDist.barF (n, sVal[WU]);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the EDF test statistics by calling
+  \method{tests}{DoubleArrayList,double[]}, then computes the $p$-values of those
+  that currently belong to \texttt{activeTests},
+%   \{\texttt{KSP, KSM, KS0, CM,
+%  WG, WU, AD}\}.
+  and return these quantities in \texttt{sVal} and \texttt{pVal}, respectively.
+  Assumes that $U_{(0)},\dots,U_{(N-1)}$ are in \texttt{sortedData}
+  and that we want to compare their empirical distribution
+  with the uniform distribution.
+  If $N = 1$, only puts $1 - {}$\texttt{sortedData.get (0)} in
+  \texttt{sVal[KSP], pVal[KSP]}, and \texttt{pVal[MEAN]}.
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array of sorted observations}
+   \param{sVal}{array that will be filled with the results of the tests}
+   \param{pVal}{array that will be filled with the $p$-values}
+\end{htmlonly}
+\begin{code}
+
+   public static void activeTests (DoubleArrayList data,
+                                   ContinuousDistribution dist,
+                                   double[] sVal, double[] pVal)\begin{hide} {
+      double[] v = data.elements();
+      int n = data.size();
+
+      if (n <= 0)
+        throw new IllegalArgumentException ("n <= 0");
+
+      DoubleArrayList sortedData = GofStat.unifTransform (data, dist);
+      sortedData.quickSortFromTo (0, sortedData.size() - 1);
+
+      activeTests (sortedData, sVal, pVal);
+      if (n == 1)
+         sVal[MEAN] = v[0];
+   }\end{hide}
+\end{code}
+\begin{tabb} The observations are in \texttt{data},
+ not necessarily sorted, and we want to compare their empirical
+ distribution with the distribution \texttt{dist}.
+ If $N = 1$, only puts \texttt{data.get(0)} in \texttt{sVal[MEAN]},
+ and $1 - {}$\texttt{dist.cdf (data.get (0))} in \texttt{sVal[KSP], pVal[KSP]},
+ and \texttt{pVal[MEAN]}.
+ \hrichard {Utilis\'e dans tous les tests de testu01.}
+ \end{tabb}
+\begin{htmlonly}
+   \param{data}{array of observations to test}
+   \param{dist}{assumed distribution of the observations}
+   \param{sVal}{array that will be filled with the results of the tests}
+   \param{pVal}{array that will be filled with the $p$-values}
+\end{htmlonly}
+\begin{code}
+
+   public static String formatActiveTests (int n, double[] sVal,
+                                           double[] pVal)\begin{hide} {
+
+      if (activeTests.length != NTESTTYPES) {
+        initActiveTests();
+        System.err.println ("activeTests was invalid, it was reinitialized.");
+      }
+      if (sVal.length != NTESTTYPES || pVal.length != NTESTTYPES)
+        throw new IllegalArgumentException ("The length of " +
+           "sVal and pVal must be NTESTTYPES.");
+      if (n == 1)
+         return formatp1 (pVal[KSP]);;
+
+      StringBuffer sb = new StringBuffer (PrintfFormat.NEWLINE);
+      if (activeTests[KSP])
+         sb.append ("Kolmogorov-Smirnov+ statistic = D+    :" +
+           formatp2 (sVal[KSP], pVal[KSP]));
+      if (activeTests[KSM])
+         sb.append ("Kolmogorov-Smirnov- statistic = D-    :" +
+           formatp2 (sVal[KSM], pVal[KSM]));
+      if (activeTests[KS])
+         sb.append ("Kolmogorov-Smirnov statistic  = D     :" +
+           formatp2 (sVal[KS], pVal[KS]));
+      if (activeTests[AD])
+         sb.append ("Anderson-Darling statistic = A2       :" +
+           formatp2 (sVal[AD], pVal[AD]));
+      if (activeTests[CM])
+         sb.append ("Cramer-von Mises statistic = W2       :" +
+           formatp2 (sVal[CM], pVal[CM]));
+      if (activeTests[WG])
+         sb.append ("Watson statistic = G                  :" +
+           formatp2 (sVal[WG], pVal[WG]));
+      if (activeTests[WU])
+         sb.append ("Watson statistic = U2                 :" +
+           formatp2 (sVal[WU], pVal[WU]));
+      sb.append (PrintfFormat.NEWLINE);
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb} Gets the $p$-values of the {\em active\/} EDF test statistics,
+  which are in \texttt{activeTests}.  It is assumed that the values
+  of these statistics and their $p$-values are {\em already computed},
+  in \texttt{sVal} and \texttt{pVal}, and that the sample size is \texttt{n}.
+  These statistics and $p$-values are formated
+  using \method{formatp2}{} for each one.
+  If \texttt{n=1}, prints only \texttt{pVal[KSP]} using \method{formatp1}{}.
+ \hrichard{Utilis\'e souvent dans testu01. ..Test1 jamais utilis\'e.}
+ \hpierre{Je pr\'ef\`ere conserver ...Tests quand meme.}
+% \{\texttt{StatCalc.KSP, StatCalc.KSM, StatCalc.KS,
+%  StatCalc.watsonG, StatCalc.watsonU, Statcalc.cramerVonMises,
+%  StatCalc.andDar}\} and \texttt{StatCalc.testActives}
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{sample size}
+   \param{sVal}{array containing the results of the tests}
+   \param{pVal}{array containing the $p$-values}
+   \return{the results formated as a string}
+\end{htmlonly}
+\begin{code}
+
+   public static String iterSpacingsTests (DoubleArrayList sortedData, int k,
+                                           boolean printval, boolean graph,
+                                           PrintWriter f)\begin{hide} {
+
+      int n = sortedData.size();
+
+      DoubleArrayList sortedDataCopy = (DoubleArrayList)sortedData.clone();
+      DoubleArrayList diffArrayList = new DoubleArrayList(sortedData.size()+2);
+
+      int j;
+      int i;
+      double[] sVal = new double[NTESTTYPES], pVal = new double[NTESTTYPES];
+
+      StringBuffer sb = new StringBuffer (PrintfFormat.NEWLINE);
+
+      for (j = 1; j <= k; j++) {
+         sb.append ("-----------------------------------" +
+                     PrintfFormat.NEWLINE +
+                     "EDF Tests after \"iterateSpacings\", level : " +
+                     PrintfFormat.d (2, j) + PrintfFormat.NEWLINE);
+
+         GofStat.diff (sortedDataCopy, diffArrayList, 0, n - 1, 0.0, 1.0);
+         GofStat.iterateSpacings (sortedDataCopy, diffArrayList);
+         sortedDataCopy.quickSortFromTo (0, sortedDataCopy.size() - 1);
+         activeTests (sortedDataCopy, sVal, pVal);
+
+         sb.append (formatActiveTests (n, sVal, pVal));
+         String desc = "Values of Uniforms after iterateSpacings, level " +
+             PrintfFormat.d (2, j);
+         if (printval) {
+          sb.append (desc + PrintfFormat.NEWLINE +
+                     "------------------------" + PrintfFormat.NEWLINE);
+          sb.append (sortedDataCopy + PrintfFormat.NEWLINE);
+         }
+         if (graph && f != null)
+          f.print (graphDistUnif (sortedDataCopy, desc));
+         else if (graph && f == null)
+          sb.append (graphDistUnif (sortedDataCopy, desc));
+       }
+       return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb} Repeats the following \texttt{k} times:
+  Applies the \clsexternalmethod{}{GofStat}{iterateSpacings}{}
+  transformation to the
+  $U_{(0)},\dots,U_{(N-1)}$, assuming that these observations are in
+  \texttt{sortedData}, then computes the EDF test statistics and calls
+  \method{activeTests}{DoubleArrayList,double[],double[]} after each transformation.
+  The function returns the {\em original\/} array \texttt{sortedData} (the
+  transformations are applied on a copy of \texttt{sortedData}).
+%  If \texttt{statsDetail = true}, prints all the values.
+%  If \texttt{graphicsDetail = true}, prints  to \texttt{PrintWriter f}
+%  the values appropriate for drawing graphics.
+  If \texttt{printval = true}, stores all the values into the returned
+  \class{String} after each iteration.
+  If \texttt{graph = true}, calls \method{graphDistUnif}{} after each iteration
+  to print to stream \texttt{f} the data for plotting the distribution
+  function of the $U_i$.
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array containing the sorted observations}
+   \param{k}{number of times the tests are applied}
+   \param{printval}{if \texttt{true}, stores all the values of the observations at each iteration}
+   \param{graph}{if \texttt{true}, the distribution of the $U_i$ will be plotted after each
+     iteration}
+   \param{f}{stream where the plots are written to}
+   \return{a string representation of the test results}
+\end{htmlonly}
+\begin{code}
+
+   public static String iterPowRatioTests (DoubleArrayList sortedData, int k,
+                                           boolean printval, boolean graph,
+                                           PrintWriter f)\begin{hide} {
+
+      int n = sortedData.size();
+      DoubleArrayList sortedDataCopy = (DoubleArrayList)sortedData.clone();
+
+      int i;
+      int j;
+      double[] sVal = new double[NTESTTYPES], pVal = new double[NTESTTYPES];
+
+      StringBuffer sb = new StringBuffer (PrintfFormat.NEWLINE);
+
+      for (i = 1; i <= k; i++) {
+         GofStat.powerRatios (sortedDataCopy);
+         sb.append ("-----------------------------------" +
+                    PrintfFormat.NEWLINE +
+                    "EDF Tests after \"powerRatios\", level : " +
+                    PrintfFormat.d (2, i) + PrintfFormat.NEWLINE);
+
+         sortedDataCopy.quickSortFromTo (0, sortedDataCopy.size() - 1);
+
+         activeTests (sortedDataCopy, sVal, pVal);
+         sb.append (formatActiveTests (n, sVal, pVal));
+         String desc = "Values of Uniforms after PowerRatios, level " +
+             PrintfFormat.d (2, i);
+         if (printval) {
+           sb.append (desc + PrintfFormat.NEWLINE +
+                      "--------------------------" + PrintfFormat.NEWLINE);
+           sb.append (sortedDataCopy + PrintfFormat.NEWLINE);
+         }
+         if (graph && f != null)
+            f.print (graphDistUnif (sortedDataCopy, desc));
+         else if (graph && f == null)
+            sb.append (graphDistUnif (sortedDataCopy, desc));
+      }
+      return sb.toString();
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}  Similar to \method{iterSpacingsTests}{}, but with the
+  \clsexternalmethod{}{GofStat}{powerRatios}{} transformation.
+\end{tabb}
+\begin{htmlonly}
+   \param{sortedData}{array containing the sorted observations}
+   \param{k}{number of times the tests are applied}
+   \param{printval}{if \texttt{true}, stores all the values of the observations at each iteration}
+   \param{graph}{if \texttt{true}, the distribution of the $U_i$ will be plotted after each
+     iteration}
+   \param{f}{stream where the plots are written to}
+   \return{a string representation of the test results}
+\end{htmlonly}

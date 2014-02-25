@@ -1,0 +1,337 @@
+\defclass {ChiDist}
+
+Extends the class \class{ContinuousDistribution} for the {\em chi\/}
+  distribution \cite[page 417]{tJOH95a} with shape parameter
+ $\latex{\nu}\html{v} > 0$,  where the number of degrees of freedom
+ $\latex{\nu}\html{v}$ is a positive integer.
+The density function is given by
+\begin{htmlonly}
+\eq
+f (x) = e^{-x^2/2} x^{v - 1} / (2^{(v/2) - 1}\Gamma (v/2))\mbox{ for }x > 0,
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq f (x) = \frac {e^{-x^2 /2} x^{\nu-1}}{2^{(\nu /2)-1}\Gamma (\nu /2)},
+              \qquad\mbox { for } x > 0,
+              \eqlabel{eq:Fchi}
+\endeq
+\end{latexonly}
+where $\Gamma (x)$ is the gamma function defined in
+\latex{(\ref{eq:Gamma})}\html{\class{GammaDist}}.
+The distribution function is
+\eq F (x) = \latex{\frac{1}{\Gamma(\nu/2)}}\html{1/\Gamma(v/2)}
+   \int_0^{x^2/2} t^{\latex{\nu}\html{v}/2-1}e^{-t}\ dt.
+\endeq
+% F(x) obtained by integration with Mathematica.
+% Formula for the incomplete gamma taken
+% from http://mathworld.wolfram.com/IncompleteGammaFunction.html
+% Found to be equivalent to GammaDist
+It is equivalent to the gamma distribution function with parameters
+$\alpha=\latex{\nu}\html{v}/2$ and $\lambda=1$, evaluated at $x^2/2$.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ChiDist
+ * Description:  chi distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public class ChiDist extends ContinuousDistribution\begin{hide} {
+   private int nu;
+   private double C1;
+
+   private static class Function implements MathFunction {
+      protected int n;
+      protected double sum;
+
+      public Function (double s, int n)
+      {
+         this.n = n;
+         this.sum = s;
+      }
+
+      public double evaluate (double k)
+      {
+         if (k < 1.0) return 1.0e200;
+         return (sum + n * (Num.lnGamma (k / 2.0) - 0.5*(Num.LN2) - Num.lnGamma ((k + 1.0) / 2.0)));
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public ChiDist (int nu)\begin{hide} {
+      setNu (nu);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{ChiDist} object.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+       if (x <= 0.0)
+         return 0.0;
+      return Math.exp ((nu - 1)*Math.log (x) - x*x/2.0 - C1);
+   }
+
+   public double cdf (double x) {
+      return cdf (nu, x);
+   }
+
+   public double barF (double x) {
+      return barF (nu, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (nu, u);
+   }
+
+   public double getMean() {
+      return ChiDist.getMean (nu);
+   }
+
+   public double getVariance() {
+      return ChiDist.getVariance (nu);
+   }
+
+   public double getStandardDeviation() {
+      return ChiDist.getStandardDeviation (nu);
+   }\end{hide}
+
+   public static double density (int nu, double x)\begin{hide} {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("nu <= 0");
+      if (x <= 0.0)
+         return 0.0;
+      return Math.exp ((nu - 1)*Math.log (x) - x*x/2.0
+                         - (nu/2.0 - 1.0)*Num.LN2 - Num.lnGamma (nu/2.0));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int nu, double x)\begin{hide} {
+      if (x <= 0.0)
+         return 0.0;
+      return GammaDist.cdf (nu/2.0, 15, x*x/2.0);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the  distribution function by using the
+  gamma distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (int nu, double x)\begin{hide} {
+      if (x <= 0.0)
+         return 1.0;
+      return GammaDist.barF (nu/2.0, 15, x*x/2.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the complementary distribution.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (int nu, double u)\begin{hide} {
+       double res =  GammaDist.inverseF (nu/2.0, 15, u);
+       return Math.sqrt (2*res);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the inverse distribution function computed
+  using the gamma inversion.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      double[] parameters = new double[1];
+
+      double mean = 0.0;
+      for (int i = 0; i < n; i++)
+         mean += x[i];
+      mean /= (double) n;
+
+      double var = 0.0;
+      for (int i = 0; i < n; i++)
+         var += ((x[i] - mean) * (x[i] - mean));
+      var /= (double) n;
+
+      double k = Math.round (var + mean * mean) - 5.0;
+      if (k < 1.0)
+         k = 1.0;
+
+      double sum = 0.0;
+      for (int i = 0; i < n; i++) {
+         if (x[i] > 0.0)
+            sum += Math.log (x[i]);
+         else
+            sum -= 709.0;
+      }
+
+      Function f = new Function (sum, n);
+      while (f.evaluate(k) > 0.0)
+         k++;
+      parameters[0] = k;
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $\nu$ of the chi distribution
+   using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1, \ldots, n-1$. The estimate is returned in element 0
+   of the returned array.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \return{returns the parameter [$\hat{\nu}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static ChiDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new ChiDist ((int) parameters[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a chi distribution with parameter $\nu$ estimated using
+   the maximum likelihood method based on the $n$ observations $x[i]$,
+   $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (int nu)\begin{hide} {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("nu <= 0");
+      return  Num.RAC2 * Num.gammaRatioHalf(nu / 2.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean
+\begin{latexonly}
+   $$E[X] =  \frac{\sqrt{2}\,\Gamma( \frac{\nu + 1}{2} )}{\Gamma(\frac{\nu}{2})}$$
+\end{latexonly}
+   of the chi distribution with parameter $\nu$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the chi distribution
+    $E[X] = \sqrt{2}\Gamma((\nu + 1) / 2) / \Gamma(\nu / 2)$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int nu)\begin{hide} {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("nu <= 0");
+      double mean = ChiDist.getMean(nu);
+      return (nu - (mean * mean));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+\begin{latexonly}
+  $$\mbox{Var}[X] = \frac{2\,\Gamma(\frac{\nu}{2}) \Gamma(1 + \frac{\nu}{2}) -
+                    \Gamma^2(\frac{\nu + 1}{2})}{\Gamma (\frac{\nu}{2})}$$
+\end{latexonly}
+   of the chi distribution with parameter $\nu$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the chi distribution
+    $\mbox{Var}[X] = 2 [ \Gamma(\nu / 2) \Gamma(1 + \nu / 2) - \Gamma^2(1/2 (\nu + 1)) ]
+     / \Gamma (\nu / 2)$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int nu)\begin{hide} {
+      return Math.sqrt (ChiDist.getVariance (nu));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the chi distribution
+   with parameter $\nu$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the chi distribution}
+\end{htmlonly}
+\begin{code}
+
+   public int getNu()\begin{hide} {
+      return nu;
+   }
+\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $\nu$ for this object.
+ \end{tabb}
+\begin{code}
+
+   public void setNu (int nu)\begin{hide} {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("nu <= 0");
+      this.nu = nu;
+      supportA = 0.0;
+      C1 = (nu/2.0 - 1.0)*Num.LN2 + Num.lnGamma (nu/2.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Sets the value of $\nu$ for this object.
+ \end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {nu};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing parameters of the current distribution.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : nu = " + nu;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}
+

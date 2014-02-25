@@ -1,0 +1,261 @@
+\defclass {RandomStream}
+
+This interface defines the basic structures to handle multiple streams
+of uniform (pseudo)\-random numbers and convenient
+tools to move around within and across these streams.
+The actual random number generators (RNGs) are provided in classes
+that implement this \texttt{RandomStream} interface.
+%A variety of such RNGs are available, in classes 
+%\texttt{RandMrg, RandTaus}, etc.
+Each stream of random numbers is an object of the class that implements
+this interface, and can be viewed as a virtual random number generator.
+% The random number streams can also be instantiated as points from
+% HUPS (see module \texttt{Qrand}).
+
+For each type of base RNG (i.e., each implementation of the 
+\texttt{RandomStream} interface), the full period of the generator
+is cut into adjacent {\em streams\/} (or segments) of length $Z$, 
+and each of these streams is partitioned into $V$ {\em substreams\/}
+of length $W$, where $Z = VW$.
+The values of $V$ and $W$ depend on the specific RNG, but are usually
+larger than $2^{50}$.
+Thus, the distance $Z$ between the starting points of two successive 
+streams provided by an RNG usually exceeds $2^{100}$.
+The initial seed of the RNG is the starting point of the first stream.  
+It has a default value for each type of RNG,
+but this initial value can be changed by calling \texttt{setPackageSeed} 
+for the corresponding class.
+Each time a new \texttt{RandomStream} is created, its starting point
+(initial seed) is computed automatically,
+$Z$ steps ahead of the starting point of the previously created stream
+of the same type, and its current state is set equal to this starting point.
+
+For each stream, one can advance by one step and generate one value,
+or go ahead to the beginning of the next substream within this stream, 
+or go back to the beginning of the current substream, or to the beginning
+of the stream, or jump ahead or back by an arbitrary number of steps.
+Denote by $C_g$ the current state of a stream $g$,
+$I_g$ its initial state, $B_g$ the state at the beginning of the
+current substream, and $N_g$ the state at the beginning of the next substream.
+\latex{The following diagram shows an example of a stream whose
+  state is at the 6th value of the third substream, i.e., $2W+5$
+  steps ahead of its initial state $I_g$ and 5 steps ahead of its
+  state $B_g$.}
+The form of the state of a stream depends on its type.
+For example, the state of a stream of class \class{MRG32k3a} is a vector
+of six 32-bit integers represented internally as floating-point numbers
+(in \texttt{double}).
+
+\begin{latexonly}
+%% see The TeXbook, Exercice 10.4
+\def\tick#1{\vrule height 0pt depth #1pt}
+\def\enskip{\hskip.5em\relax}
+\def\ld{\hbox to 0.24 in{\vtop{\kern3.0pt\hbox{\dotfill}}}}
+\def\ts{\enskip\tick4}
+\def\suba{\hbox to 1.2in {\vtop
+ {\hbox to 1.2in{\hbox to .66in{\hrulefill}\hbox to .30in{\dotfill}\hrulefill}
+  \hbox to 1.2in{\tick9\ts\ts\ts\ts\ts\ts\ts\hfill\ts\enskip}}}}
+\def\subb{\hbox to 1.2in {\vtop
+ {\hbox to 1.2in{\hbox to .84in {\hrulefill}
+         \hbox to .24in {\dotfill}\hbox to .12in {\hrulefill}}
+  \hbox to 1.2in{\tick9\ts\ts\ts\ts\ts\ts\ts\ts\hfill\ts\enskip}}}}
+
+$$
+\vbox{\offinterlineskip
+\hbox to 5.5in{\hskip 2.4in \hbox to 1.2in{\hfil\hskip1.07em $C_g$\hfil}\hfill}
+\vskip .1pt
+\hbox to 5.5in{\hskip 2.4in \hbox to 1.2in{\hfil\hskip1.07em $\Downarrow$\hfil}
+    \hfill}
+\vtop {\offinterlineskip\hskip 0.0in \hbox to 5.5 true in
+       {\suba\suba\subb\suba\tick9
+        \hbox to .12in {\hrulefill}\hbox to .24in{\dotfill}}}\vskip .1pt
+\hskip -0.65in\hbox to 1.2 in{\hfil$I_g$\hfil}\hskip 1.25in
+  \hbox to 1.2 in{\hfil$B_g$\hfil}\hbox to 1.2 in{\hfil$N_g$\hfil}\hfill
+\vskip .1pt }
+$$
+\end{latexonly}
+
+The methods for manipulating the streams and generating random
+numbers are implemented differently for each type of RNG.
+The methods whose formal parameter types do not depend
+on the RNG type are specified in the interface \texttt{RandomStream}.
+The others (e.g., for setting the seeds) are given only in the
+classes that implement the specific RNG types.
+
+\latex{See \cite{sLAW00a,rLEC91a,rLEC02a} 
+  %and Section~\ref{sec:timeshared}
+  for examples of 
+  situations where the multiple streams offered here are useful.}
+
+\iffalse  %%%%%%%%%%%%%%%
+\begin {itemize}
+\item[(a)]
+You want to compare two or more similar systems, via simulation
+with common random numbers, with $n$ simulation runs for each system.
+% (For more details about common random numbers and other variance
+%  reduction techniques, see for example \cite{sBRA87a,sLAW91a}.)
+To guarantee that the same random numbers are used across the systems
+with good synchronization, assign different streams to different
+places where random numbers are needed in the model
+(e.g., to compare queuing systems, use one stream for the
+inter-arrival times, one stream for the service times at each queue,
+one stream for routing decisions, etc.).
+To make sure that each stream starts from
+the same state across the different systems, assign run $i$ to the
+$i$th substream, for each stream.
+The experiment then proceeds as follows.
+For the first system, simulate run 1 by starting all the streams from
+their initial seed, $I_g$.
+Before each new run, advance all the streams to the initial state
+of their next substream, $N_g$.
+After the $n$th run, reset all the streams to their initial state, $I_g$.
+Repeat for each system that you want to compare.
+%
+\item[(b)]
+You want to run simulations on several processors, in parallel,
+and you want each processor to have its own (virtual)
+random number generator.
+In this case, you can simply use one stream for each processor.
+You need a central authority, or {\em monitor\/}, to manage the
+allocation of the streams, but once a stream is allocated,
+the processors can go their own way, independently of each other.
+In this setup, the processors use in fact the same generator,
+but with different {\em seeds\/}.
+This makes the implementation easier than if a different
+generator is used on each processor.
+\end {itemize}
+\fi  %%%%%%%%%%%%%%%%%%%%
+
+Methods for generating random variates from non-uniform distributions
+are provided in the \externalclass{umontreal.iro.lecuyer}{randvar} package.
+%The class \texttt{DiscreteDist} can be used to construct an arbitrary 
+%discrete distribution over a finite set of values, and to generate from it.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandomStream
+ * Description:  basic structures to handle multiple streams of uniform
+                 (pseudo)-random numbers and tools to move around within
+                 and across these streams
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Pierre L'Ecuyer
+ * @since        2000
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.rng;
+
+public interface RandomStream \begin{hide} { \end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public void resetStartStream();
+\end{code}
+ \begin{tabb} Reinitializes the stream to its initial state $I_g$:
+   $C_g$ and $B_g$ are set to $I_g$.
+ \end{tabb}
+\begin{code}
+
+   public void resetStartSubstream();
+\end{code}
+ \begin{tabb} Reinitializes the stream to the beginning of its current
+   substream: $C_g$ is set to $B_g$.
+ \end{tabb}
+\begin{code}
+
+   public void resetNextSubstream();
+\end{code}
+ \begin{tabb} Reinitializes the stream to the beginning of its next
+   substream: $N_g$ is computed, and
+   $C_g$ and $B_g$ are set to $N_g$.
+ \end{tabb}
+\begin{code}
+
+   public String toString();
+\end{code}
+  \begin{tabb} Returns a string containing the current state of this stream.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the state of the generator formated as a string}
+\end{htmlonly}
+\begin{code}
+
+   public double nextDouble();
+\end{code}
+  \begin{tabb} Returns a (pseudo)random number from the uniform distribution
+   over the interval $(0,1)$, using this stream, after advancing its
+   state by one step.  The generators programmed in SSJ never 
+   return the values 0 or 1.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the next generated uniform}
+\end{htmlonly}
+\begin{code}
+
+   public void nextArrayOfDouble (double[] u, int start, int n);
+\end{code}
+  \begin{tabb} Generates \texttt{n} (pseudo)random numbers from the
+   uniform distribution and stores them into the array \texttt{u}
+   starting at index \texttt{start}.
+  \end{tabb}
+\begin{htmlonly}
+   \param{u}{array that will contain the generated uniforms}
+   \param{start}{starting index, in the array \texttt{u}, to write uniforms from}
+   \param{n}{number of uniforms to generate}
+\end{htmlonly}
+\begin{code}
+
+   public int nextInt (int i, int j);
+\end{code}
+ \begin{tabb} Returns a (pseudo)random number from the discrete uniform 
+   distribution over the integers $\{i,i+1,\dots,j\}$,
+   using this stream.  (Calls \texttt{nextDouble} once.)
+ \end{tabb}
+\begin{htmlonly}
+   \param{i}{smallest integer that can be generated}
+   \param{j}{greatest integer that can be generated}
+   \return{the generated integer}
+\end{htmlonly}
+\begin{code}
+
+   public void nextArrayOfInt (int i, int j, int[] u, int start, int n);
+\end{code}
+  \begin{tabb} Generates \texttt{n} (pseudo)random numbers
+   from the discrete uniform 
+   distribution over the integers $\{i,i+1,\dots,j\}$,
+   using this stream and stores the result in the array \texttt{u}
+   starting at index \texttt{start}.  (Calls \texttt{nextInt} \texttt{n} times.)
+  \end{tabb}
+\begin{htmlonly}
+   \param{i}{smallest integer that can be generated}
+   \param{j}{greatest integer that can be generated}
+   \param{u}{array that will contain the generated values}
+   \param{start}{starting index, in the array \texttt{u}, to write integers from}
+   \param{n}{number of values being generated}
+\end{htmlonly}
+\begin{code}\begin{hide} 
+}
+\end{hide}
+\end{code}

@@ -1,0 +1,342 @@
+\defclass{MultiNormalDist}
+
+Implements the abstract class \class{ContinuousDistributionMulti} for the
+{\em multinormal} distribution with mean vector $\boldmu$ and covariance
+matrix $\boldSigma$.
+The probability density is
+\begin{htmlonly}
+\eq
+   f(\mathbf{x} = x_1,\ldots,x_d) =
+         \exp\left(-(\mathbf{x} - \boldmu)^{T} \boldSigma^{-1}
+           (\mathbf{x} - \boldmu)/2\right)
+    /{\sqrt{(2\pi)^{d} \mbox{det}(\boldSigma)}}
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+   f(\boldx) = \frac{1}{\sqrt{(2\pi)^{d} \det\boldSigma}}
+         \exp\left(-\frac{1}{2}(\boldx - \boldmu)^{T} \boldSigma^{-1} (\boldx - \boldmu)\right)
+\eqlabel{eq:fMultinormal}
+\endeq
+\end{latexonly}
+where $\boldx = (x_1,\ldots,x_d)$.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        MultiNormalDist
+ * Description:  multinormal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdistmulti;
+\begin{hide}
+import cern.colt.matrix.DoubleMatrix2D;
+import cern.colt.matrix.impl.DenseDoubleMatrix2D;
+import cern.colt.matrix.linalg.Algebra;
+\end{hide}
+
+
+public class MultiNormalDist extends ContinuousDistributionMulti \begin{hide} {
+   protected int dim;
+   protected double[] mu;
+   protected DoubleMatrix2D sigma;
+   protected DoubleMatrix2D invSigma;
+
+   protected static Algebra algebra = new Algebra();
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public MultiNormalDist (double[] mu, double[][] sigma) \begin{hide} {
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double[] x) {
+      double sum = 0.0;
+
+      if (invSigma == null)
+         invSigma = algebra.inverse(sigma);
+
+      double[] temp = new double[mu.length];
+      for (int i = 0; i < mu.length; i++)
+      {
+         sum = 0.0;
+         for (int j = 0; j < mu.length; j++)
+            sum += ((x[j] - mu[j]) * invSigma.getQuick (j, i));
+         temp[i] = sum;
+      }
+
+      sum = 0.0;
+      for (int i = 0; i < mu.length; i++)
+         sum += temp[i] * (x[i] - mu[i]);
+
+      return (Math.exp(-0.5 * sum) / Math.sqrt (Math.pow (2 * Math.PI, mu.length) * algebra.det (sigma)));
+   }
+
+   public double[] getMean() {
+      return mu;
+   }
+
+   public double[][] getCovariance() {
+      return sigma.toArray();
+   }
+
+   public double[][] getCorrelation () {
+      return getCorrelation_ (mu, sigma.toArray());
+   }\end{hide}
+
+   public static double density (double[] mu, double[][] sigma, double[] x)\begin{hide} {
+      double sum = 0.0;
+      DoubleMatrix2D sig;
+      DoubleMatrix2D inv;
+
+      if (sigma.length != sigma[0].length)
+         throw new IllegalArgumentException ("sigma must be a square matrix");
+      if (mu.length != sigma.length)
+         throw new IllegalArgumentException ("mu and sigma must have the same dimension");
+
+      sig = new DenseDoubleMatrix2D (sigma);
+      inv = algebra.inverse (sig);
+
+      double[] temp = new double[mu.length];
+      for (int i = 0; i < mu.length; i++)
+      {
+         sum = 0.0;
+         for (int j = 0; j < mu.length; j++)
+            sum += ((x[j] - mu[j]) * inv.getQuick (j, i));
+         temp[i] = sum;
+      }
+
+      sum = 0.0;
+      for (int i = 0; i < mu.length; i++)
+         sum += temp[i] * (x[i] - mu[i]);
+
+      return (Math.exp(-0.5 * sum) / Math.sqrt (Math.pow (2 * Math.PI, mu.length) * algebra.det (sig)));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the density (\ref{eq:fMultinormal}) of the multinormal distribution
+   with parameters $\boldmu =$ \texttt{mu}  and $\boldSigma =$ \texttt{sigma},
+  evaluated at \texttt{x}.
+\end{tabb}
+\begin{code}
+
+   public int getDimension()\begin{hide} {
+      return dim;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the dimension $d$ of the distribution.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMean (double[] mu, double[][] sigma)\begin{hide} {
+      if (sigma.length != sigma[0].length)
+         throw new IllegalArgumentException ("sigma must be a square matrix");
+      if (mu.length != sigma.length)
+         throw new IllegalArgumentException ("mu and sigma must have the same dimension");
+
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the mean $E[\boldX] = \boldmu$ of the multinormal distribution
+   with parameters $\boldmu$ and $\boldSigma$.
+\end{tabb}
+\begin{code}
+
+   public static double[][] getCovariance (double[] mu, double[][] sigma)\begin{hide} {
+      if (sigma.length != sigma[0].length)
+         throw new IllegalArgumentException ("sigma must be a square matrix");
+      if (mu.length != sigma.length)
+         throw new IllegalArgumentException ("mu and sigma must have the same dimension");
+
+      return sigma;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the covariance matrix of the multinormal distribution
+   with parameters $\boldmu$ and $\boldSigma$.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   private static double[][] getCorrelation_ (double[] mu, double[][] sigma) {
+      double corr[][] = new double[mu.length][mu.length];
+
+      for (int i = 0; i < mu.length; i++) {
+         for (int j = 0; j < mu.length; j++)
+            corr[i][j] = - sigma[i][j] / Math.sqrt (sigma[i][i] * sigma[j][j]);
+         corr[i][i] = 1.0;
+      }
+      return corr;
+   }\end{hide}
+
+   public static double[][] getCorrelation (double[] mu, double[][] sigma)\begin{hide} {
+      if (sigma.length != sigma[0].length)
+         throw new IllegalArgumentException ("sigma must be a square matrix");
+      if (mu.length != sigma.length)
+         throw new IllegalArgumentException ("mu and sigma must have the same dimension");
+
+      return getCorrelation_ (mu, sigma);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the correlation matrix of the multinormal distribution
+   with parameters $\boldmu$ and $\boldSigma$).
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLEMu (double[][] x, int n, int d)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (d <= 0)
+         throw new IllegalArgumentException ("d <= 0");
+
+      double[] parameters = new double[d];
+      for (int i = 0; i < parameters.length; i++)
+         parameters[i] = 0.0;
+
+      for (int i = 0; i < n; i++)
+         for (int j = 0; j < d; j++)
+            parameters[j] += x[i][j];
+
+      for (int i = 0; i < parameters.length; i++)
+         parameters[i] = parameters[i] / (double) n;
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $\boldmu$ of the multinormal distribution using
+   the maximum likelihood method. It uses the $n$ observations of $d$
+   components in table $x[i][j]$, $i = 0, 1, \ldots, n-1$ and
+   $j = 0, 1, \ldots, d-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \param{d}{the dimension of each observation}
+   \return{returns the parameters [$\boldmu_1$,\ldots,$\boldmu_d$]}
+\end{htmlonly}
+\begin{code}
+
+   public static double[][] getMLESigma (double[][] x, int n, int d)\begin{hide} {
+      double sum = 0.0;
+
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (d <= 0)
+         throw new IllegalArgumentException ("d <= 0");
+
+      double[] mean = getMLEMu (x, n, d);
+      double[][] parameters = new double[d][d];
+      for (int i = 0; i < parameters.length; i++)
+         for (int j = 0; j < parameters.length; j++)
+            parameters[i][j] = 0.0;
+
+      for (int i = 0; i < parameters.length; i++)
+      {
+         for (int j = 0; j < parameters.length; j++)
+         {
+            sum = 0.0;
+            for (int t = 0; t < n; t++)
+               sum += (x[t][i] - mean[i]) * (x[t][j] - mean[j]);
+            parameters[i][j] = sum / (double) n;
+         }
+      }
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $\boldSigma$ of the multinormal distribution using
+   the maximum likelihood method. It uses the $n$ observations of $d$
+   components in table $x[i][j]$, $i = 0, 1, \ldots, n-1$ and
+   $j = 0, 1, \ldots, d-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \param{d}{the dimension of each observation}
+   \return{returns the covariance matrix $\boldSigma$}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the parameter $\boldmu$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double getMu (int i)\begin{hide} {
+      return mu[i];
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $i$-th component of the parameter $\boldmu$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[][] getSigma()\begin{hide} {
+      return sigma.toArray();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the parameter $\boldSigma$ of this object.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double[] mu, double[][] sigma)\begin{hide} {
+      if (sigma.length != sigma[0].length)
+         throw new IllegalArgumentException ("sigma must be a square matrix");
+      if (mu.length != sigma.length)
+         throw new IllegalArgumentException ("mu and sigma must have the same dimension");
+
+      this.mu = new double[mu.length];
+      this.dimension = mu.length;
+      System.arraycopy(mu, 0, this.mu, 0, mu.length);
+      this.sigma = new DenseDoubleMatrix2D (sigma);
+
+      invSigma = null;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters $\boldmu$ and $\boldSigma$ of this object.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

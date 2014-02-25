@@ -1,0 +1,307 @@
+%
+%  Pierre Tremblay, February 2004.
+%  Jean-Sébastien Parent et Maxime Dion, summer 2008
+%
+
+\defclass {VarianceGammaProcess}
+
+This class represents a \emph{variance gamma} (VG) process
+$\{S(t) = X(t; \theta, \sigma, \nu) : t \geq 0\}$. This process is
+obtained as a subordinate of the Brownian motion process $B(t;\theta,\sigma)$
+using the operational time $G(t;1,\nu)$ (see \cite{pFEL66a,fAVR06a}):
+\begin{equation}
+X(t; \theta, \sigma, \nu) := B(G(t;1,\nu),\theta, \sigma).
+\label{VGeqn}
+\end{equation}
+See also \cite{fMAD98a,fMAD91a,fMAD90a} for applications to modelling
+asset returns and option pricing.
+
+The process is sampled as follows: when \texttt{generatePath()} is called, the method
+\texttt{generate\-Path()} of the inner \class{GammaProcess} is called;
+its path is then used to set the observation times of the
+\class{BrownianMotion}.  Finally, the method \texttt{generatePath()} of
+the \class{BrownianMotion} is called.
+\emph{Warning}: If one wants to reduced the variance as much as possible
+in a QMC simulation, this way of proceeding is not optimal.  Use
+the method \texttt{generatePath(uniform01)} instead.
+
+If one calls the \texttt{nextObservation} method, the operational
+time is generated first, followed by the corresponding
+brownian motion increment, which is then returned.
+
+Note that if one wishes to use \emph{bridge} sampling with the
+\texttt{nextObservation} method, both the gamma process $G$
+and the Brownian motion process $B$ should use bridge sampling so that
+their observations are synchronized.
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        VarianceGammaProcess
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since        2004
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stochprocess;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.randvar.*;
+
+\end{hide}
+
+public class VarianceGammaProcess extends StochasticProcess \begin{hide} {
+
+    protected GammaProcess   randomTime;  // For the transformed time method
+    protected BrownianMotion BM;
+
+    protected double       theta,
+                           sigma,
+                           nu;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}\begin{hide}
+
+   public VarianceGammaProcess() {} \end{hide}
+
+   public VarianceGammaProcess (double s0, double theta, double sigma,
+                                double nu, RandomStream stream) \begin{hide} {
+        this (s0, new BrownianMotion (s0, theta, sigma, stream),
+                  new GammaProcess (0.0, 1.0, nu, stream));
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Constructs a new \texttt{VarianceGammaProcess} with parameters
+$\theta = \texttt{theta}$, $\sigma = \texttt{sigma}$, $\nu = \texttt{nu}$
+and initial value $S(t_{0}) = \texttt{s0}$.
+\texttt{stream} is used to generate both the \class{BrownianMotion} $B$ and the
+\class{GammaProcess} $G$ in (\ref{VGeqn}).
+\end{tabb}
+\begin{code}
+
+   public VarianceGammaProcess (double s0, BrownianMotion BM,
+                                GammaProcess Gamma) \begin{hide} {
+        this.BM         = BM;
+        Gamma.setParams(0.0, 1.0, Gamma.getNu());  // forces the average of the GammaProcess
+        randomTime      = Gamma;                   // to be 1.0 and the initial value to be 0.0
+        setParams (s0, BM.getMu(), BM.getSigma(), Gamma.getNu());
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Constructs a new \texttt{VarianceGammaProcess}.
+The parameters $\theta$ and  $\sigma$ are set to the parameters $\mu$ and
+$\sigma$, respectively, of the \class{BrownianMotion} \texttt{BM} and
+the parameter $\nu$ is set to the parameter $\nu$ of the \class{GammaProcess}
+\texttt{Gamma}. The parameters $\mu$ and $x0$ of the \class{GammaProcess} are
+overwritten to equal 1 and 0 respectively.
+The initial value of the process is $S(t_{0}) = {\tt s0}$.
+\end{tabb}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public double nextObservation()\begin{hide} {
+        // We first generate w, then verify what its new counter value is
+        // This is necessary to be general enough to handle bridge sampling
+        double nextBM = BM.nextObservation (randomTime.nextObservation ()); 
+        observationIndex = BM.getCurrentObservationIndex();
+        path[observationIndex] = nextBM;
+        observationCounter++;
+        return nextBM;
+    }\end{hide}
+\end{code}
+\begin{tabb} Generates the observation for the next time.
+It also works with bridge sampling; however \emph{both}
+\class{BrownianMotionBridge} and \class{GammaProcessBridge}
+must be used in the constructor in that case.  Furthermore, for bridge
+sampling, the order of the observations is that of the bridge,
+not sequential order.
+\end{tabb}
+\begin{code}
+
+   public double[] generatePath() \begin{hide} {
+        BM.setObservationTimes(randomTime.generatePath(), d);
+        path = BM.generatePath();
+        observationIndex = d;
+        observationCounter = d;
+        return path;
+    }\end{hide}
+\end{code}
+\begin{tabb} Generates and returns the path. To do so, it
+first generates the complete path of the inner \class{GammaProcess}
+and sets the observation times of the inner \class{BrownianMotion}
+to this path.  This method is not optimal to reduce the variance in
+QMC simulations; use \texttt{generatePath(double[] uniform01)} for that.
+\end{tabb}
+\begin{code}
+
+   public double[] generatePath (double[] uniform01) \begin{hide} {
+        int dd = uniform01.length;
+        int d = dd / 2;
+
+        if (dd % 2 != 0) {
+            throw new IllegalArgumentException (
+                     "The Array uniform01 must have a even length");
+        }
+
+        double[] QMCpointsGP = new double[d];
+        double[] QMCpointsBM = new double[d];
+
+        for(int i = 0; i < d; i++){
+            QMCpointsGP[i] = uniform01[2 * i];  // the odd numbers for the gamma process
+            QMCpointsBM[i] = uniform01[2 * i + 1];  //  and the even for the BM process
+        }
+        BM.setObservationTimes(randomTime.generatePath(QMCpointsGP), d);
+
+        path = BM.generatePath(QMCpointsBM);
+        observationIndex = d;
+        observationCounter = d;
+        return path;
+    }\end{hide}
+\end{code}
+\begin{tabb} Similar to the usual \texttt{generatePath()}, but here the uniform
+random numbers used for the simulation must be provided to the method.  This
+allows to properly use the uniform random variates in QMC simulations.
+This method divides the table of uniform random
+numbers \texttt{uniform01} in two smaller tables, the first one, containing the
+odd indices of \texttt{uniform01} which are used to generate the path of the inner
+\class{GammaProcess}, and the even indices (in the second table) are used to
+generate the path of the inner \class{BrownianMotion}. This way of proceeding
+reduces the variance as much as possible for QMC simulations.
+\end{tabb}
+\begin{code}
+
+    public void resetStartProcess() \begin{hide} {
+        observationIndex   = 0;
+        observationCounter = 0;
+        BM.resetStartProcess();
+        randomTime.resetStartProcess();
+    }\end{hide}
+\end{code}
+\begin{tabb} Resets the observation index and counter to 0 and
+applies the \texttt{resetStartProcess} method to the
+\class{BrownianMotion} and the \class{GammaProcess} objects
+used to generate this process.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double s0, double theta, double sigma, double nu) \begin{hide} {
+        this.x0    = s0;
+        this.theta = theta;
+        this.sigma = sigma;
+        this.nu    = nu; 
+        if (observationTimesSet) init(); // Otherwise no need to.
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Sets the parameters
+$S(t_{0}) =$ \texttt{s0}, $\theta =$ \texttt{theta}, $\sigma =$ \texttt{sigma}
+and $\nu =$ \texttt{nu} of the process.
+\emph{Warning}: This method will recompute some quantities stored internally,
+which may be slow if called repeatedly.
+\end{tabb}
+\begin{code}
+
+   public double getTheta() \begin{hide} { return theta; }\end{hide}
+\end{code}
+\begin{tabb} Returns the value of the parameter $\theta$.
+\end{tabb}
+\begin{code}
+
+   public double getSigma() \begin{hide} { return sigma; }\end{hide}
+\end{code}
+\begin{tabb} Returns the value of the parameter $\sigma$.
+\end{tabb}
+\begin{code}
+
+   public double getNu() \begin{hide} { return nu; }\end{hide}
+\end{code}
+\begin{tabb} Returns the value of the parameter $\nu$.
+\end{tabb}
+\begin{code}\begin{hide}
+
+    protected void init() {
+        super.init();
+        if(observationTimesSet){
+            randomTime.setObservationTimes(t, d);
+            randomTime.x0 = t[0];
+        }
+    }\end{hide}
+
+    public void setObservationTimes (double t[], int d) \begin{hide} {
+        super.setObservationTimes(t, d);  //sets the observation times of the GammaProcess by
+    }                                     //calling init()
+\end{hide}
+\end{code}
+\begin{tabb} Sets the observation times on the \texttt{VarianceGammaProcess} as
+usual, but also sets the observation times of the underlying
+\class{GammaProcess}. It furthermore sets the starting \emph{value}
+of the \class{GammaProcess} to \texttt{t[0]}.
+\end{tabb}
+\begin{code}
+
+    public void setStream (RandomStream stream) \begin{hide} {
+         BM.setStream (stream);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Resets the \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}'s.
+Warning: this method sets both the
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream} of the
+\class{BrownianMotion} and of the \class{GammaProcess} to
+the same \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}.
+\end{tabb}
+\begin{code}
+
+   public RandomStream getStream()\begin{hide} {
+        return BM.getStream();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Returns the random stream of the \class{BrownianMotion} process, which should
+be the same as for the \class{GammaProcess}.
+\end{tabb}
+\begin{code}
+
+   public BrownianMotion getBrownianMotion() \begin{hide} {
+      return BM;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Returns a reference to the inner \class{BrownianMotion}.
+\end{tabb}
+\begin{code}
+
+   public GammaProcess getGammaProcess() \begin{hide} {
+      return randomTime;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Returns a reference to the inner \class{GammaProcess}.
+\end{tabb}
+\begin{code}\begin{hide}
+}
+\end{hide}
+\end{code}

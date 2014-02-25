@@ -1,0 +1,307 @@
+\defclass{TruncatedDist}
+
+This container class takes an arbitrary continuous distribution and truncates
+it to an interval $[a,b]$, where $a$ and $b$ can be finite or infinite.
+If the original density and distribution function are $f_0$ and $F_0$,
+the new ones are $f$ and $F$, defined by
+\begin{latexonly}%
+\[
+  f(x) = \frac {f_0(x)}{F_0(b) - F_0(a)} \qquad\mbox { for } a\le x\le b
+\]
+\end{latexonly}
+\begin{htmlonly}
+\[
+  f(x) =  f_0(x) / (F_0(b) - F_0(a)) \qquad\mbox { for } a\le x\le b
+\]
+\end{htmlonly}%
+and $f(x)=0$ elsewhere, and
+\begin{latexonly}%
+\[
+  F(x) = \frac {F_0(x)-F_0(a)}{F_0(b)-F_0(a)}  \qquad\mbox { for } a\le x\le b.
+\]
+\end{latexonly}
+\begin{htmlonly}
+\[
+  F(x) = (F_0(x)-F_0(a))/(F_0(b)-F_0(a))  \qquad\mbox { for } a\le x\le b.
+\]
+\end{htmlonly}
+
+The inverse distribution function of the truncated distribution is
+\[
+  {F^{-1}}(u) = F_0^{-1}(F_0(a) + (F_0(b) - F_0(a))u)
+\]
+where $F_0^{-1}$ is the inverse distribution function of the
+original distribution.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        TruncatedDist
+ * Description:  an arbitrary continuous distribution truncated
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;\begin{hide}
+import umontreal.iro.lecuyer.functions.MathFunctionUtil;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public class TruncatedDist extends ContinuousDistribution\begin{hide} {
+   public static int NUMINTERVALS = 500;
+
+   private ContinuousDistribution dist0;  // The original (non-truncated) dist.
+   private double fa;                    // F(a)
+   private double fb;                    // F(b)
+   private double barfb;                 // bar F(b)
+   private double fbfa;                  // F(b) - F(a)
+   private double a;
+   private double b;
+   private double approxMean;
+   private double approxVariance;
+   private double approxStandardDeviation;\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public TruncatedDist (ContinuousDistribution dist, double a, double b)\begin{hide} {
+      setParams (dist, a, b);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Constructs a new distribution by truncating distribution \texttt{dist}
+  to the interval $[a,b]$. Restrictions: $a$ and $b$ must be finite.
+%  If \texttt{a = Double.NEGATIVE\_INFINITY}, $F_0(a)$ is assumed to be 0.
+%  If \texttt{b = Double.POSITIVE\_INFINITY}, $F_0(b)$ is assumed to be 1.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{hide}\begin{code}
+
+   public double density (double x) {
+      if ((x < a) || (x > b))
+         return 0;
+      return dist0.density (x) / fbfa;
+   }
+
+   public double cdf (double x) {
+      if (x <= a)
+         return 0;
+      else if (x >= b)
+         return 1;
+      else
+         return (dist0.cdf (x) - fa) / fbfa;
+   }
+
+   public double barF (double x) {
+      if (x <= a)
+         return 1;
+      else if (x >= b)
+         return 0;
+      else
+         return (dist0.barF (x) - barfb) / fbfa;
+   }
+
+   public double inverseF (double u) {
+      if (u == 0)
+         return a;
+      if (u == 1)
+         return b;
+      return dist0.inverseF (fa + fbfa * u);
+   }\end{code}\end{hide}
+\begin{code}
+
+   public double getMean()\begin{hide} {
+      if (Double.isNaN (approxMean))
+         throw new UnsupportedOperationException("Undefined mean");
+      return approxMean;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Returns an approximation of the mean computed with the
+  Simpson $1/3$ numerical integration rule.
+\end{tabb}
+\begin{htmlonly}
+   \exception{UnsupportedOperationException}{the mean of the truncated distribution is unknown}
+\end{htmlonly}
+\begin{code}
+
+   public double getVariance()\begin{hide} {
+      if (Double.isNaN (approxVariance))
+         throw new UnsupportedOperationException("Unknown variance");
+      return approxVariance;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Returns an approximation of the variance computed with the
+  Simpson $1/3$ numerical integration rule.
+\end{tabb}
+\begin{htmlonly}
+   \exception{UnsupportedOperationException}{the mean of the truncated distribution is unknown}
+\end{htmlonly}
+\begin{code}
+
+   public double getStandardDeviation()\begin{hide} {
+      if (Double.isNaN (approxStandardDeviation))
+         throw new UnsupportedOperationException("Unknown standard deviation");
+      return approxStandardDeviation;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Returns the square root of the approximate variance.
+\end{tabb}
+\begin{htmlonly}
+   \exception{UnsupportedOperationException}{the mean of the truncated distribution is unknown}
+\end{htmlonly}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the value of $a$.
+\end{tabb}
+\begin{code}
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the value of $b$.
+\end{tabb}
+\begin{code}
+
+   public double getFa()\begin{hide} {
+      return fa;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the value of $F_0(a)$.
+\end{tabb}
+\begin{code}
+
+   public double getFb()\begin{hide} {
+      return fb;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the value of $F_0(b)$.
+\end{tabb}
+\begin{code}
+
+   public double getArea()\begin{hide} {
+      return fbfa;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}  Returns the value of $F_0(b) - F_0(a)$,
+  the area under the truncated density function.
+\end{tabb}
+\begin{code}
+
+   public void setParams (ContinuousDistribution dist, double a, double b)\begin{hide} {
+      if (a >= b)
+         throw new IllegalArgumentException ("a must be smaller than b.");
+      this.dist0 = dist;
+      if (a <= dist.getXinf())
+         a = dist.getXinf();
+      if (b >= dist.getXsup())
+         b = dist.getXsup();
+      supportA = this.a = a;
+      supportB = this.b = b;
+      fa = dist.cdf (a);
+      fb = dist.cdf (b);
+      fbfa = fb - fa;
+      barfb = dist.barF (b);
+
+      if (((a <= dist.getXinf()) && (b >= dist.getXsup())) ||
+       ((a == Double.NEGATIVE_INFINITY) && (b == Double.POSITIVE_INFINITY))) {
+         approxMean = dist.getMean();
+         approxVariance = dist.getVariance();
+         approxStandardDeviation = dist.getStandardDeviation();
+
+      } else {
+         // The mean is the integral of xf*(x) over [a, b].
+         MomentFunction func1 = new MomentFunction (dist, 1);
+         approxMean = MathFunctionUtil.simpsonIntegral (func1, a, b, NUMINTERVALS) / fbfa;
+
+         // Estimate the integral of (x-E[X])^2 f*(x) over [a, b]
+         MomentFunction func2 = new MomentFunction (dist, 2, approxMean);
+         approxVariance = MathFunctionUtil.simpsonIntegral (func2, a, b, NUMINTERVALS) / fbfa;
+
+         approxStandardDeviation = Math.sqrt (approxVariance);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}  Sets the parameters \texttt{dist}, $a$ and $b$ for this object. See the
+  constructor for details.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {a, b, fa, fb, fbfa};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in order: [$a$, $b$, $F_0(a)$, $F_0(b)$, $F_0(b) - F_0(a)$].
+\end{tabb}
+\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : a = " + a + ", b = " + b + ", F(a) = " + fa + ", F(b) = " + fb + ", F(b)-F(a) = " + fbfa;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   private static class MomentFunction implements MathFunction {
+      private ContinuousDistribution dist;
+      private int moment;
+      private double offset;
+
+      public MomentFunction (ContinuousDistribution dist, int moment) {
+         this.dist = dist;
+         this.moment = moment;
+         offset = 0;
+      }
+
+      public MomentFunction (ContinuousDistribution dist, int moment, double offset) {
+         this (dist, moment);
+         this.offset = offset;
+      }
+
+      public double evaluate (double x) {
+         double res = dist.density (x);
+         final double offsetX = x - offset;
+         for (int i = 0; i < moment; i++)
+            res *= offsetX;
+         return res;
+      }
+   }
+}\end{hide}
+\end{code}

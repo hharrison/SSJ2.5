@@ -1,0 +1,89 @@
+\defclass{AbstractDataWriter}
+
+This abstract class implements shared functionality for data writers.
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        AbstractDataWriter
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger 
+ * @since        August 2009
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util.io;
+\begin{hide}
+import java.io.IOException;
+\end{hide}
+
+public abstract class AbstractDataWriter implements DataWriter \begin{hide} {
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Writing one-dimensional arrays}
+\begin{code}
+
+   public void write (String label, String[] a) throws IOException \begin{hide} {
+      write(label, a, a.length);
+   }
+   \end{hide}\end{code}
+\begin{tabb}
+Writes a one-dimensional array of strings.
+If \texttt{label} is \texttt{null}, writes an anonymous field.
+\end{tabb}
+\begin{code}
+    
+   public void write (String label, int[] a) throws IOException \begin{hide} {
+      write(label, a, a.length);
+   }
+   \end{hide}\end{code}
+\begin{tabb}
+Writes a one-dimensional array of 32-bit integers (big endian).
+If \texttt{label} is \texttt{null}, writes an anonymous field.
+\end{tabb}
+\begin{code}
+    
+   public void write (String label, float[] a) throws IOException \begin{hide} {
+      write(label, a, a.length);
+   }
+   \end{hide}\end{code}
+\begin{tabb}
+Writes a one-dimensional array of 32-bit floats (big endian).
+If \texttt{label} is \texttt{null}, writes an anonymous field.
+\end{tabb}
+\begin{code}
+    
+   public void write (String label, double[] a) throws IOException \begin{hide} {
+      write(label, a, a.length);
+   }
+   \end{hide}\end{code}
+\begin{tabb}
+Writes a one-dimensional array of 64-bit doubles (big endian).
+If \texttt{label} is \texttt{null}, writes an anonymous field.
+\end{tabb}
+
+
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

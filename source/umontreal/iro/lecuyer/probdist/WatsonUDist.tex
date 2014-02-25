@@ -1,0 +1,427 @@
+\defclass {WatsonUDist}
+
+Extends the class \class{ContinuousDistribution} for the
+\emph{Watson U}  distribution (see \cite{tDUR73a,tSTE70a,tSTE86b}).
+Given a sample of $n$ independent uniforms $u_i$ over $[0,1]$,
+the \emph{Watson} statistic $U_n^2$ is defined by
+\begin{latexonly}%
+\begin {eqnarray*}
+    W_n^2 &=& \frac{1}{12n} +
+            \sum_{j=1}^n \left\{u_{(j)} - \frac{(j- 1/2)}{n}\right\}^2, \\
+    U_n^2 &=& W_n^2  - n\left (\bar u_n - 1/2\right)^2.
+                                                   \eqlabel {eq:WatsonU}
+\end {eqnarray*}
+\end{latexonly}%
+\begin{htmlonly}
+\eq
+    W_n^2 = {1/ 12n} +
+            \sum_{j=1}^n \left\{u_{(j)} - {(j- 0.5)/ n}\right\}^2, \\
+    U_n^2 = W_n^2  - n\left (\bar u_n - 1/2\right)^2.
+\endeq
+\end{htmlonly}%
+  where the $u_{(j)}$ are the $u_i$ sorted in increasing order, and
+  $\bar u_n$ is the average of the observations $u_{i}$.
+ The distribution function (the cumulative probabilities)
+ is defined as $F_n(x) = P[U_n^2 \le x]$.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        WatsonUDist
+ * Description:  Watson U  distribution 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide} 
+
+public class WatsonUDist extends ContinuousDistribution\begin{hide} {
+   private static final double XSEPARE = 0.15;
+   private static final double PI = Math.PI;
+   private static final int JMAX = 10;
+   protected int n;
+
+   private static class Function implements MathFunction {
+      protected int n;
+      protected double u;
+
+      public Function (int n, double u) {
+         this.n = n;
+         this.u = u;
+      }
+
+      public double evaluate (double x) {
+         return u - cdf(n,x);
+      }
+   }
+
+   private static double cdfn (int n, double x) {
+      // The 1/n correction for the cdf, for x < XSEPARE
+      double terme;
+      double v = Math.exp (-0.125/x);
+      double somme = 0;
+      int j = 0;
+
+      do {
+         double a = (2*j + 1)*(2*j + 1);
+         terme = Math.pow (v, (double)(2*j + 1)*(2*j + 1));
+         double der = terme*(a - 4.0*x)/(8.0*x*x);
+         somme += (5.0*x - 1.0/12.0) * der / 12.0;
+         der = terme* (a*a - 24.0*a*x + 48.0*x*x)/ (64.0*x*x*x*x);
+         somme += x*x*der/6.0;
+         ++j;
+      } while (!(terme <= Math.abs(somme) * Num.DBL_EPSILON || j > JMAX));
+      if (j > JMAX)
+         System.err.println (x + ": watsonU:  somme 1/n has not converged");
+
+      v = -2.0*somme/(n*Math.sqrt (2.0*PI*x));
+      return v;
+   }\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public WatsonUDist (int n)\begin{hide} {
+      setN (n);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a {\em Watson U\/} distribution for a sample of size $n$.
+
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (n, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (n, x);
+   }
+
+   public double barF (double x) {
+      return barF (n, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (n, u);
+   }
+
+   public double getMean() {
+      return WatsonUDist.getMean (n);
+   }
+
+   public double getVariance() {
+      return WatsonUDist.getVariance (n);
+   }
+
+   public double getStandardDeviation() {
+      return WatsonUDist.getStandardDeviation (n);
+   }\end{hide}
+
+   public static double density (int n, double x)\begin{hide} {
+      if (n < 2)
+         throw new IllegalArgumentException ("n < 2");
+
+      if (x <= 1.0/(12.0*n) || x >= n/12.0 || x >= XBIG)
+         return 0.0;
+
+      final double EPS = 1.0 / 100.0;
+      return (cdf(n, x + EPS) - cdf(n, x - EPS)) / (2.0 * EPS);
+
+/*
+// This is the asymptotic density for n -> infinity
+      int j;
+      double signe;
+      double v;
+      double terme;
+      double somme;
+
+      if (x > XSEPARE) {
+         // this series converges rapidly for x > 0.15
+         v = Math.exp (-(x*2.0*PI*PI));
+         signe = 1.0;
+         somme = 0.0;
+         j = 1;
+         do {
+            terme = j*j*Math.pow (v, (double)j*j);
+            somme += signe*terme;
+            signe = -signe;
+            ++j;
+         } while (!(terme < Num.DBL_EPSILON || j > JMAX));
+         if (j > JMAX)
+            System.err.println ("watsonU:  sum1 has not converged");
+         return 4.0*PI*PI*somme;
+      }
+
+      // this series converges rapidly for x <= 0.15
+      v = Math.exp (-0.125/x);
+      somme = v;
+      double somme2 = v;
+      j = 2;
+      do {
+         terme = Math.pow (v, (double)(2*j - 1)*(2*j - 1));
+         somme += terme;
+         somme2 += terme * (2*j - 1)*(2*j - 1);
+         ++j;
+      } while (!(terme <= somme2 * Num.DBL_EPSILON || j > JMAX));
+      if (j > JMAX)
+         System.err.println ("watsonU:  sum2 has not converged");
+
+      final double RACINE = Math.sqrt (2.0*PI*x);
+      return -somme/(x*RACINE) + 2*somme2 * 0.125/ ((x*x) * RACINE);
+*/
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density of the {\em Watson U\/} distribution
+  with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int n, double x)\begin{hide} {
+      if (n < 2)
+         throw new IllegalArgumentException ("n < 2");
+
+      if (x <= 1.0/(12.0*n))
+         return 0.0;
+      if (x > 3.95 || x >= n/12.0)
+         return 1.0;
+
+      if (2 == n) {
+         if (x <= 1.0/24.0)
+            return 0.0;
+         if (x >= 1.0/6.0)
+            return 1.0;
+         return 2.0*Math.sqrt(2.0*x - 1.0/12.0);
+      }
+
+      if (x > XSEPARE)
+         return 1.0 - barF (n, x);
+
+      // this series converges rapidly for x <= 0.15
+      double terme;
+      double v = Math.exp (-0.125/x);
+      double somme = v;
+      int j = 2;
+
+      do {
+         terme = Math.pow (v, (double)(2*j - 1)*(2*j - 1));
+         somme += terme;
+         ++j;
+      } while (!(terme <= somme * Num.DBL_EPSILON || j > JMAX));
+      if (j > JMAX)
+         System.err.println (x + ": watsonU:  sum2 has not converged");
+
+      v = 2.0*somme/Math.sqrt (2.0*PI*x);
+      v += cdfn(n, x);
+      if (v >= 1.0)
+         return 1.0;
+      if (v <= 0.0)
+         return 0.0;
+       return v;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the Watson $U$ distribution function, i.e. returns
+  $P[U_n^2 \le x]$, where $U_n^2$ is the Watson statistic  
+  defined in (\ref{eq:WatsonU}). We use the asymptotic distribution for
+$n \to\infty$, plus a correction in $O(1/n)$, as given in \cite{tCSO96a}.
+%  It is given by
+%   \begin{equation}
+%    P(U_\infty^2 \le x)  \ = \ 1 + 2 \sum_{j=1}^\infty (-1)^j e^{-2 j^2 \pi^2 x}
+%                                                      \eqlabel{eq:DistWU1}
+%   \end{equation}
+%  This sum converges extremely fast except for small $x$, where alternating
+%  successive terms give rise to numerical instability.
+%  But with the Poisson summation formula \cite{mLAN73a},
+%  the sum can be transformed to
+%  \begin{equation}
+%     P(U_\infty^2 \le x)  \ = \  \sqrt{\frac2{\pi x}}\; \sum_{j=0}^\infty
+%        e^{- (2 j+1)^2/8 x}                           \eqlabel{eq:DistWU2}
+%  \end{equation}
+%  which can be used for small $x$.
+%  The absolute difference between the returned value and $P[U_n^2 \le x]$ 
+%  is estimated to be less than 0.01 for $n \ge 8$, for the asymptotic formula.
+
+% With the 1/n correction, there should be 4 decimals digits of precision. 
+ \end{tabb}
+\begin{code}
+
+   public static double barF (int n, double x)\begin{hide} {
+      if (n < 2)
+         throw new IllegalArgumentException ("n < 2");
+
+      if (x <= 1.0/(12.0*n))
+         return 1.0;
+      if (x >= XBIG || x >= n/12.0)
+         return 0.0;
+
+      if (2 == n)
+         return 1.0 - 2.0*Math.sqrt(2.0*x - 1.0/12.0);
+
+      if (x > XSEPARE) {
+         // this series converges rapidly for x > 0.15
+         double terme, ter;
+         double v = Math.exp (-2.0*PI*PI*x);
+         double signe = 1.0;
+         double somme = 0.0;
+         double son = 0.0;
+         int j = 1;
+
+         do {
+            terme = Math.pow (v, (double)j*j);
+            somme += signe*terme;
+            double h = 2*j*PI*x;
+            ter = (5.0*x - h*h - 1.0/12.0)*j*j;
+            son += signe*terme*ter;
+            signe = -signe;
+            ++j;
+         } while (!(terme < Num.DBL_EPSILON || j > JMAX));
+         if (j > JMAX)
+            System.err.println (x + ": watsonU:  sum1 has not converged");
+         v = 2.0*somme + PI*PI*son/(3.0*n);
+         if (v <= 0.0) 
+            return 0.0;
+         if (v >= 1.0)
+            return 1.0;
+         return v;
+      }
+
+      return (1.0 - cdf(n, x));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the complementary distribution function  $\bar F_n(x)$,
+  where $F_n$ is the {\em Watson\/} $U$ distribution with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double inverseF (int n, double u)\begin{hide} {
+      if (n < 2)
+         throw new IllegalArgumentException ("n < 2");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u must be in [0,1]");
+      if (u >= 1.0)
+         return n/12.0;
+      if (u <= 0.0)
+         return 1.0/(12.0*n);
+
+      if (2 == n)
+         return 1.0/24.0 + u*u/8.0;
+
+      Function f = new Function (n,u);
+      return RootFinder.brentDekker (0.0, 2.0, f, 1e-7);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes $x = F_n^{-1}(u)$, where $F_n$ is the 
+  {\em Watson\/} $U$ distribution with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double getMean (int n)\begin{hide} {
+      return 1.0/12.0;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean of the {\em Watson\/} $U$  distribution with
+   parameter $n$.
+\end{tabb}
+\begin{htmlonly}
+   \return{Returns the mean}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int n)\begin{hide} {
+      return (n - 1)/(360.0*n);
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the variance of the {\em Watson\/} $U$ distribution with
+   parameter $n$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int n)\begin{hide} {
+      return Math.sqrt (WatsonUDist.getVariance (n));
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the standard deviation of the {\em Watson\/} $U$
+  distribution with parameter $n$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation}
+\end{htmlonly}
+\begin{code}
+
+   public int getN()\begin{hide} {
+      return n;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $n$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setN (int n)\begin{hide} {
+      if (n < 2)
+         throw new IllegalArgumentException ("n < 2");
+      this.n = n;
+      supportA = 1.0/(12.0*n);
+      supportB = n/12.0;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the parameter $n$ of this object.
+ \end{tabb}
+ \begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {n};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return an array containing the parameter $n$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : n = " + n;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

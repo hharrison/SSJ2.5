@@ -1,0 +1,119 @@
+\defclass {PoissonGen}
+
+This class implements random variate generators having the {\em Poisson\/} 
+distribution.  Its mass function is
+\begin{htmlonly}
+\eq
+p(x) = e^{-\lambda}\lambda^x/(x!)\mbox{ for }x=0,1,\dots
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  p(x) = \frac{e^{-\lambda} \lambda^x}{x!} \qquad\mbox{for } x=0,1,\dots,
+                                              \label{eq:fmass-Poisson}
+\endeq
+\end{latexonly}
+where $\lambda > 0$ is a real valued parameter equal to the mean.
+
+No local copy of the parameter $\lambda = $ \texttt{lambda}
+is maintained in this class.
+The (non-static) \texttt{nextInt} method simply calls \texttt{inverseF} on the
+distribution.
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        PoissonGen
+ * Description:  random variate generators having the Poisson distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.rng.*;\end{hide}
+   
+public class PoissonGen extends RandomVariateGenInt \begin{hide} {
+   protected double lambda; 
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public PoissonGen (RandomStream s, double lambda) \begin{hide} {
+      super (s, new PoissonDist (lambda));
+      setParams (lambda);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a Poisson random variate generator with 
+  parameter $\lambda = $ \texttt{lambda}, using stream \texttt{s}. 
+ \end{tabb}
+\begin{code}
+
+   public PoissonGen (RandomStream s, PoissonDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getLambda());
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new random variate generator using the Poisson 
+    distribution \texttt{dist} and stream \texttt{s}. 
+ \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static int nextInt (RandomStream s, double lambda) \begin{hide} {
+      return PoissonDist.inverseF (lambda, s.nextDouble());
+   }\end{hide}
+\end{code}
+ \begin{tabb}  
+  A static method for generating a random variate from a 
+  {\em Poisson\/} distribution with parameter $\lambda$ = \texttt{lambda}. 
+ \end{tabb}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\lambda$ associated with this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double lam) {
+      if (lam <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      this.lambda = lam;
+   }
+\end{code}
+\begin{tabb} Sets the parameter $\lambda = $ \texttt{lam} of this object.
+\end{tabb}
+\begin{code}
+}\end{code}
+\end{hide}

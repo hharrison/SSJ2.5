@@ -1,0 +1,144 @@
+\defclass {LognormalGen}
+
+This class implements methods for generating random variates from the 
+{\em lognormal\/} distribution. Its density is
+\begin{htmlonly}
+\eq
+  f(x) = (1/(\sqrt{2\pi}\sigma x) e^{-(\ln (x) - \mu)^2/(2\sigma^2)}
+           \mbox{ for }x>0,
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq 
+  f(x) = \frac{1}{\sqrt{2\pi}\sigma x} e^{-(\ln (x) - \mu)^2/(2\sigma^2)}
+         \qquad\mbox{ for }x>0,         \eqlabel{eq:flognormal}
+\endeq
+\end{latexonly}
+where $\sigma>0$.
+
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+lognormal distribution object.
+One can also generate a lognormal random variate $X$ via 
+\[
+  \mbox{\texttt{X = Math.exp (NormalGen.nextDouble (s, mu, sigma))}},
+\]
+in which
+\texttt{NormalGen} can actually be replaced by any subclass of \texttt{NormalGen}.
+% This may be a bit faster?
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LognormalGen
+ * Description:  random variate generator for the lognormal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class LognormalGen extends RandomVariateGen \begin{hide} {
+   private double mu;
+   private double sigma = -1.0;
+
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public LognormalGen (RandomStream s, double mu, double sigma) \begin{hide} {
+      this (s, new LognormalDist(mu, sigma));
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a lognormal random variate generator with parameters
+   $\mu =$ \texttt{mu} and $\sigma =$ \texttt{sigma}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public LognormalGen (RandomStream s) \begin{hide} {
+      this (s, 0.0, 1.0);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a lognormal random variate generator with parameters
+ $\mu = 0$  and  $\sigma = 1$, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public LognormalGen (RandomStream s, LognormalDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getMu(), dist.getSigma());
+   }\end{hide}
+\end{code}
+\begin{tabb} Create a random variate generator for the lognormal 
+   distribution \texttt{dist} and stream \texttt{s}. 
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double mu, double sigma)\begin{hide} {
+      return LognormalDist.inverseF (mu, sigma, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}  Generates a new variate from the {\em lognormal\/}
+    distribution with parameters $\mu = $~\texttt{mu} and
+    $\sigma = $~\texttt{sigma}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}      
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the parameter $\mu$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return sigma;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the parameter $\sigma$ of this object.
+  \end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      this.mu = mu;
+      this.sigma = sigma;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Sets the parameters $\mu$ and $\sigma$ of this object.
+  \end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

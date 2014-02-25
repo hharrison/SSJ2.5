@@ -1,0 +1,171 @@
+\defclass{LeastSquares}
+
+Represents a polynomial obtained by the least squares method on a set of points.
+More specifically, let $(x_0,y_0), \ldots, (x_n, y_n)$ be a set of points and
+$p(x)$ the constructed polynomial of degree $m$. The constructed polynomial
+minimizes the square error \[ E^2=\sum_{i=0}^n [y_i - p(x_i)]^2.\]
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LeastSquares
+ * Description:  polynomial obtained by the least squares method on set of points
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.functionfit;
+   import umontreal.iro.lecuyer.functions.Polynomial;
+\begin{hide}
+
+import java.io.Serializable;
+import cern.colt.matrix.DoubleMatrix2D;
+import cern.colt.matrix.impl.DenseDoubleMatrix2D;
+import cern.colt.matrix.linalg.Algebra;
+\end{hide}
+
+public class LeastSquares extends Polynomial implements Serializable\begin{hide} {
+   private static final long serialVersionUID = -4997132164503234983L;
+   private static final Algebra alg = new Algebra ();
+   private double[] x;
+   private double[] y;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public LeastSquares (double[] x, double[] y, int degree)\begin{hide} {
+      super (getCoefficients (x, y, degree));
+      this.x = x.clone ();
+      this.y = y.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new least squares polynomial with points \texttt{(x[0],
+ y[0]),..., (x[n], y[n])}. The constructed polynomial has degree
+ \texttt{degree}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $x$ coordinates of the points.}
+   \param{y}{the $y$ coordinates of the points.}
+   \param{degree}{the degree of the polynomial.}
+   \exception{NullPointerException}{if \texttt{x} or \texttt{y} are \texttt{null}.}
+   \exception{IllegalArgumentException}{if the lengths of \texttt{x} and \texttt{y} are different,
+               or if less than \texttt{degree + 1} points are specified.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double[] getCoefficients (double[] x, double[] y,
+                                           int degree)\begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException ("Length of x and y not equal");
+      if (x.length < degree + 1)
+         throw new IllegalArgumentException ("Not enough points");
+
+      final double[] xSums = new double[2 * degree + 1];
+      final double[] xySums = new double[degree + 1];
+      xSums[0] = x.length;
+      for (int i = 0; i < x.length; i++) {
+         double xv = x[i];
+         xySums[0] += y[i];
+         for (int j = 1; j <= 2 * degree; j++) {
+            xSums[j] += xv;
+            if (j <= degree)
+               xySums[j] += xv * y[i];
+            xv *= x[i];
+         }
+      }
+      final DoubleMatrix2D A = new DenseDoubleMatrix2D (degree + 1, degree + 1);
+      final DoubleMatrix2D B = new DenseDoubleMatrix2D (degree + 1, 1);
+      for (int i = 0; i <= degree; i++) {
+         for (int j = 0; j <= degree; j++) {
+            final int d = i + j;
+            A.setQuick (i, j, xSums[d]);
+         }
+         B.setQuick (i, 0, xySums[i]);
+      }
+      final DoubleMatrix2D aVec = alg.solve (A, B);
+      return aVec.viewColumn (0).toArray ();
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes and returns the coefficients of the fitting polynomial of
+  degree \texttt{degree}.
+ The coordinates of the given points are  \texttt{(x[i], y[i])}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $x$ coordinates of the points.}
+   \param{y}{the $y$ coordinates of the points.}
+   \param{degree}{the degree of the polynomial.}
+   \return{the coefficients of the fitting polynomial.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getX()\begin{hide} {
+      return x;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $x$ coordinates of the fitted points.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $x$ coordinates of the fitted points.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getY()\begin{hide} {
+      return y;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $y$ coordinates of the fitted points.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $y$ coordinates of the fitted points.}
+\end{htmlonly}
+\begin{code}
+
+   public String toString()\begin{hide} {
+      return PolInterp.toString (x, y);
+   }
+
+   @Override
+\end{hide}
+\end{code}
+\begin{tabb}   Calls \externalmethod{umontreal.iro.lecuyer.functionfit}{PolInterp}{toString}{double[], double[]}
+ with the associated points.
+\end{tabb}
+\begin{htmlonly}
+   \return{a string containing the points.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public LeastSquares clone() {
+      final LeastSquares ls = (LeastSquares) super.clone ();
+      ls.x = x.clone ();
+      ls.y = y.clone ();
+      return ls;
+   }
+}\end{hide}
+\end{code}

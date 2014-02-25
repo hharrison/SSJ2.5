@@ -1,0 +1,131 @@
+\defclass{FisherFGen}
+
+This class implements random variate generators for the 
+\emph{Fisher F} distribution with $n$ and $m$
+degrees of freedom, where $n$ and $m$ are positive integers.
+The density function of this distribution is
+\begin{htmlonly}
+\eq
+   f(x) = \Gamma((n + m) / 2)n^{n/2}m^{m/2} / [\Gamma(n/2)\Gamma(m/2)]
+          x^{(n - 2) / 2} / (m + nx)^{(n + m)/2},
+\qquad\mbox{ for } x > 0.
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+ f(x) = \frac{\Gamma({(n + m)}/{2})n^{{n}/{2}}m^{{m}/{2}}}{\Gamma({n}/{2})\Gamma({m}/{2})}
+        \frac{x^{{(n - 2)}/{2}}}{(m + nx)^{{(n + m)}/{2}}},
+\qquad\mbox {for } x > 0
+\eqlabel{eq:FisherF}
+\endeq
+\end{latexonly}%
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FisherFGen
+ * Description:  random variate generators for the Fisher F distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class FisherFGen extends RandomVariateGen \begin{hide} {
+   protected int    n = -1;
+   protected int    m = -1;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public FisherFGen (RandomStream s, int n, int m) \begin{hide} {
+      super (s, new FisherFDist(n, m));
+      setParams (n, m);
+      }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a \emph{Fisher F} random variate generator with 
+ $n$ and $m$ degrees of freedom, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public FisherFGen (RandomStream s, FisherFDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getN(), dist.getM());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+ 
+   public static double nextDouble (RandomStream s, int n, int m)\begin{hide} {
+      return FisherFDist.inverseF (n, m, 15, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the \emph{Fisher F} distribution with
+   $n$ and $m$ degrees of freedom, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public int getN()\begin{hide} {
+      return n;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $n$ of this object.
+\end{tabb}
+\begin{code}
+
+   public int getM()\begin{hide} {
+      return m;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $p$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (int n, int m) {
+      if (m <= 0)
+         throw new IllegalArgumentException ("m <= 0");
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      this.m = m;
+      this.n = n;
+   }
+\end{code}
+\begin{tabb} Sets the parameters $n$ and $m$ of this object.
+\end{tabb}
+\begin{code}
+}\end{code}
+\end{hide}

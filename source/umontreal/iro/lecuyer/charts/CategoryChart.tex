@@ -1,0 +1,242 @@
+\defclass {CategoryChart}
+
+This class provides tools to create charts from data in a simple way. Its main
+feature is to produce TikZ/PGF (see WWW link \url{http://sourceforge.net/projects/pgf/}) compatible source code which can be included
+in \LaTeX\ documents, but it can also produce charts in other formats.
+One can easily create a new chart, and customize its appearance using methods
+of this class, with the encapsulated
+\externalclass{umontreal.iro.lecuyer.charts}{SSJCategorySeriesCollection} object
+representing the data, and an \externalclass{umontreal.iro.lecuyer.charts}{Axis}
+object representing the axis.
+All these classes depend on the \texttt{JFreeChart} API (see WWW link
+\url{http://www.jfree.org/jfreechart/}) which provides tools to build charts with
+Java, to draw them, and export them to files. However, only basic features are
+used here.
+
+Moreover, \texttt{CategoryChart} provides methods to plot data using a MATLAB friendly
+syntax. None of these methods provides new features; they just propose a
+different syntax to create charts. Therefore some features are unavailable
+when using these methods only.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        CategoryChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import org.jfree.chart.JFreeChart;
+import javax.swing.JFrame;\end{hide}
+
+public abstract class CategoryChart \begin{hide} {
+
+   protected Axis YAxis;
+   protected SSJCategorySeriesCollection dataset;
+   protected JFreeChart chart;
+   protected boolean latexDocFlag = true;
+
+   protected boolean autoRange;
+   protected double[] manualRange;
+
+   protected boolean grid = false;
+   protected double ystepGrid;
+
+   final protected double BOR = 0.1;\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public JFreeChart getJFreeChart() \begin{hide} {
+      return chart;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{JFreeChart} object associated with this chart.
+\end{tabb}
+\begin{htmlonly}
+   \return{the associated JFreeChart object.}
+\end{htmlonly}
+\begin{code}
+
+   public Axis getYAxis() \begin{hide} {
+      return YAxis;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's range axis ($y$-axis) object.
+\end{tabb}
+\begin{htmlonly}
+   \return{chart's range axis ($y$-axis) object.}
+\end{htmlonly}
+\begin{code}
+
+   public abstract JFrame view (int width, int height);
+\end{code}
+\begin{code}
+
+   public String getTitle() \begin{hide} {
+      return chart.getTitle().getText();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Gets the current chart title.
+\end{tabb}
+\begin{htmlonly}
+   \return{Chart title.}
+\end{htmlonly}
+\begin{code}
+
+   public void setTitle (String title) \begin{hide} {
+      chart.setTitle(title);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets a title to this chart. This title will appear on the chart displayed
+ by method \method{view}{}.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+\end{htmlonly}
+\begin{code}
+
+   public void setAutoRange () \begin{hide} {
+      autoRange = true;
+
+      double BorneMin = Math.abs((dataset.getRangeBounds())[0]);
+      double BorneMax = Math.abs((dataset.getRangeBounds())[1]);
+
+      double max = Math.max(BorneMin,BorneMax) * BOR;
+      YAxis.getAxis().setLowerBound(BorneMin - max);
+      YAxis.getAxis().setUpperBound(BorneMax + max);
+      YAxis.setLabelsAuto();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets chart $y$ range to automatic values.
+\end{tabb}
+\begin{code}
+
+   private void setManualRange (double[] range) \begin{hide}  {
+      if(range.length != 2)
+         throw new IllegalArgumentException (
+             "range must have the format: [ymin, ymax]");
+      autoRange = false;
+      YAxis.getAxis().setLowerBound(Math.min(range[0],range[1]));
+      YAxis.getAxis().setUpperBound(Math.max(range[0],range[1]));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets new $y$-axis bounds, using the format:
+\texttt{range} = [\texttt{ymin, ymax}].
+\end{tabb}
+\begin{htmlonly}
+   \param{range}{new axis ranges.}
+\end{htmlonly}
+\begin{code}
+
+   public void enableGrid (double xstep, double ystep) \begin{hide} {
+      this.grid = true;
+      this.ystepGrid = ystep;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Puts a grid on the background. It is important to note that the grid is
+   always shifted in such a way that it contains the axes. Thus, the grid does
+   not always have an intersection at the corner points; this occurs
+   only if the corner points are multiples of the steps: \texttt{xstep}
+   and \texttt{ystep} sets the step in each direction.
+\end{tabb}
+\begin{htmlonly}
+   \param{xstep}{sets the step in the x-direction.}
+   \param{ystep}{sets the step in the y-direction.}
+\end{htmlonly}
+\begin{code}
+
+   public void disableGrid() \begin{hide} {
+      this.grid = false;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Disables the background grid.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Latex-specific methods}
+
+\begin{code}
+
+   public abstract String toLatex (double width, double height);
+\end{code}
+\begin{tabb}
+   Transforms the chart into \LaTeX{} form and returns it as a \texttt{String}.
+\end{tabb}
+\begin{code}
+
+   public void setLatexDocFlag (boolean flag) \begin{hide} {
+      latexDocFlag = flag;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Same as in \class{XYChart}.
+\end{tabb}
+\begin{code}
+\begin{hide}
+
+   protected double computeYScale (double position) {
+      double[] bounds = new double[2];
+      bounds[0] = YAxis.getAxis().getLowerBound();
+      bounds[1] = YAxis.getAxis().getUpperBound();
+
+      if (position < bounds[0])
+         bounds[0] = position;
+      if (position > bounds[1])
+         bounds[1] = position;
+      bounds[0] -= position;
+      bounds[1] -= position;
+      return computeScale (bounds);
+   }
+
+   protected double computeScale (double[] bounds) {
+      int tenPowerRatio = 0;
+      // echelle < 1 si les valeurs sont grandes
+      while (bounds[1] > 1000 || bounds[0] < -1000) {
+         bounds[1] /= 10;
+         bounds[0] /= 10;
+         tenPowerRatio++;
+      }
+      // echelle > 1 si les valeurs sont petites
+      while (bounds[1] < 100 && bounds[0] > -100) {
+         bounds[1] *= 10;
+         bounds[0] *= 10;
+         tenPowerRatio--;
+      }
+      return 1/Math.pow(10, tenPowerRatio);
+   }
+}\end{hide}
+\end{code}

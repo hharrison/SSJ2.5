@@ -1,0 +1,324 @@
+\begin{thebibliography}{10}
+
+\bibitem{tAND52a}
+T.~W. Anderson and D.~A. Darling.
+\newblock Asymptotic theory of certain goodness of fit criteria based on
+  stochastic processes.
+\newblock {\em Annals of Mathematical Statistics}, 23:193--212, 1952.
+
+\bibitem{tBES75a}
+D.~J. Best and D.~E. Roberts.
+\newblock Algorithm {AS} 91: The percentage points of the $\chi^{2}$
+  distribution.
+\newblock {\em Applied Statistics}, 24:385--388, 1975.
+
+\bibitem{tBAT70a}
+G.~P. Bhattacharjee.
+\newblock The incomplete gamma integral.
+\newblock {\em Applied Statistics}, 19:285--287, 1970.
+\newblock AS32.
+
+\bibitem{tBIR69a}
+Z.~W. Birnbaum and S.~C. Saunders.
+\newblock A new family of life distributions.
+\newblock {\em Journal of Applied Probability}, 6:319--327, 1969.
+
+\bibitem{tBLA76a}
+J.~M. Blair, C.~A. Edwards, and J.~H. Johnson.
+\newblock Rational {C}hebyshev approximations for the inverse of the error
+  function.
+\newblock {\em Mathematics of Computation}, 30:827--830, 1976.
+
+\bibitem{tBOL64a}
+L.~N. Bol'shev.
+\newblock Some applications of {P}earson transformations.
+\newblock {\em Review of the Internat. Stat. Institute}, 32:14--16, 1964.
+
+\bibitem{sBRA87a}
+P.~Bratley, B.~L. Fox, and L.~E. Schrage.
+\newblock {\em A Guide to Simulation}.
+\newblock Springer-Verlag, New York, NY, second edition, 1987.
+
+\bibitem{tBRO07a}
+J.~R. Brown and M.~E. Harvey.
+\newblock Rational arithmetic {M}athematica functions to evaluate the one-sided
+  one-sample {K-S} cumulative sample distribution.
+\newblock {\em Journal of Statistical Software}, 19(6):1--32, 2007.
+
+\bibitem{tBRO08a}
+J.~R. Brown and M.~E. Harvey.
+\newblock Rational arithmetic {{M}athematica} functions to evaluate the
+  two-sided one sample {K-S} cumulative sample distribution.
+\newblock {\em Journal of Statistical Software}, 26(2):1--40, 2008.
+
+\bibitem{tCAM51a}
+B.~H. Camp.
+\newblock Approximation to the point binomial.
+\newblock {\em Ann. Math. Stat.}, 22:130--131, 1951.
+
+\bibitem{tCSO96a}
+S.~Cs\"org\H{o} and J.~J. Faraway.
+\newblock The exact and asymptotic distributions of {C}ram\'er-von mises
+  statistics.
+\newblock {\em Journal of the Royal Statistical Society, Series B},
+  58:221--234, 1996.
+
+\bibitem{tDAR60a}
+D.~A. Darling.
+\newblock On the theorems of {K}olmogorov-{S}mirnov.
+\newblock {\em Theory of Probability and Its Applications}, V(4):356--360,
+  1960.
+
+\bibitem{tDAR83a}
+D.~A. Darling.
+\newblock On the asymptotic distribution of {W}atson's statistic.
+\newblock {\em The Annals of Statistics}, 11(4):1263--1266, 1983.
+
+\bibitem{rDER09a}
+G.~Derflinger, W.~H\"{o}rmann, and J.~Leydold.
+\newblock Random variate generation by numerical inversion when only the
+  density is known.
+\newblock {\em Preprint of the Department of Statistics and Mathematics 78,
+  Wirtschaftsuniversit\"at Wien, Austria}, 2008.
+\newblock See \url{http://epub.wu-wien.ac.at/english/}.
+
+\bibitem{tDUR73a}
+J.~Durbin.
+\newblock {\em Distribution Theory for Tests Based on the Sample Distribution
+  Function}.
+\newblock SIAM CBMS-NSF Regional Conference Series in Applied Mathematics.
+  SIAM, Philadelphia, PA, 1973.
+
+\bibitem{tEVA00a}
+M.~Evans, N.~Hastings, and B.~Peacock.
+\newblock {\em Statistical Distributions}.
+\newblock Wiley, 3rd edition, 2000.
+
+\bibitem{mEVA00a}
+M.~Evans and T.~Swartz.
+\newblock {\em Approximating Integrals via {M}onte {C}arlo and Deterministic
+  Methods}.
+\newblock Oxford University Press, Oxford, UK, 2000.
+
+\bibitem{tGAU64a}
+W.~Gautschi.
+\newblock Algorithm 222: Incomplete beta function ratios.
+\newblock {\em Communications of the ACM}, 7(3):143--144, 1964.
+
+\bibitem{tGAU64b}
+W.~Gautschi.
+\newblock Certification of algorithm 222: Incomplete beta function ratios.
+\newblock {\em Communications of the ACM}, 7(3):244, 1964.
+
+\bibitem{rGEN98a}
+J.~E. Gentle.
+\newblock {\em Random Number Generation and {M}onte {C}arlo Methods}.
+\newblock Springer, New York, NY, 1998.
+
+\bibitem{pGER10a}
+I.~B. Gertsbakh and Y.~Shpungin.
+\newblock {\em Models of Network Reliability}.
+\newblock {CRC Press}, Boca Raton, FL, 2010.
+
+\bibitem{tGOL73a}
+R.~B. Goldstein.
+\newblock Algorithm 451: Chi-square quantiles.
+\newblock {\em Communications of the ACM}, 16:483--485, 1973.
+
+\bibitem{tHIL70a}
+G.~W. Hill.
+\newblock Algorithm 395: Student's $t$-distribution.
+\newblock {\em Communications of the ACM}, 13:617--619, 1970.
+
+\bibitem{tHUA07a}
+J.~S. Huang and P.~S. Shen.
+\newblock More maximum likelihood oddities.
+\newblock {\em Journal of Statistical Planning and Inference},
+  137(7):2151--2155, 2007.
+
+\bibitem{tJOH69a}
+N.~L. Johnson and S.~Kotz.
+\newblock {\em Distributions in Statistics: Discrete Distributions}.
+\newblock Houghton Mifflin, Boston, 1969.
+
+\bibitem{tJOH95a}
+N.~L. Johnson, S.~Kotz, and N.~Balakrishnan.
+\newblock {\em Continuous Univariate Distributions}, volume~1.
+\newblock Wiley, 2nd edition, 1994.
+
+\bibitem{tJOH95b}
+N.~L. Johnson, S.~Kotz, and N.~Balakrishnan.
+\newblock {\em Continuous Univariate Distributions}, volume~2.
+\newblock Wiley, 2nd edition, 1995.
+
+\bibitem{sKAC85a}
+V.~Kachitvichyanukul and B.~Schmeiser.
+\newblock Computer generation of hypergeometric random variates.
+\newblock {\em J. Statist. Comput. Simul.}, 22:127--145, 1985.
+
+\bibitem{tKEN80a}
+W.~J. {Kennedy Jr.} and J.~E. Gentle.
+\newblock {\em Statistical Computing}.
+\newblock Dekker, New York, NY, 1980.
+
+\bibitem{tKNO74a}
+M.~Knott.
+\newblock The distribution of the {C}ram\'er-von {M}ises statistic for small
+  sample sizes.
+\newblock {\em Journal of the Royal Statistical Society B}, 36:430--438, 1974.
+
+\bibitem{tKOT04a}
+S.~Kotz and J.~R. van Dorp.
+\newblock {\em {BEYOND BETA}, Other Continuous Families of Distributions with
+  Bounded Support and Applications}.
+\newblock World Scientific Publishing co., Singapore, 2004.
+
+\bibitem{pLAT99a}
+G.~Latouche and V.~Ramaswami.
+\newblock {\em Introduction to matrix analytic methods in stochastic modeling}.
+\newblock Society for Industrial and Applied Mathematics, Philadelphia, Pa.,
+  1999.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{tLEO61a}
+F.~C. Leone, L.~S. Nelson, and R.~B. Nottingham.
+\newblock The folded normal distribution.
+\newblock {\em Technometrics}, 3(4):543--550, 1961.
+
+\bibitem{tLEW61a}
+P.~A.~W. Lewis.
+\newblock Distribution of the {A}nderson-{D}arling statistic.
+\newblock {\em Annals of Mathematical Statistics}, 32:1118--1124, 1961.
+
+\bibitem{iLEY02a}
+J.~Leydold and W.~H\"ormann.
+\newblock {\em {UNU.RAN}---A Library for Universal Non-Uniform Random Number
+  Generators}, 2002.
+\newblock Available at \url{http://statistik.wu-wien.ac.at/unuran}.
+
+\bibitem{tMAR78a}
+K.~V. Mardia and P.~J. Zemroch.
+\newblock {\em Tables of the {F} and Related Distributions with Algorithms}.
+\newblock Academic Press, London, 1978.
+
+\bibitem{tMAR04a}
+G.~Marsaglia and J.~Marsaglia.
+\newblock Evaluating the {A}nderson-{D}arling distribution.
+\newblock {\em Journal of Statistical Software}, 9(2):1--5, 2004.
+\newblock See \url{http://www.jstatsoft.org/v09/i02/}.
+
+\bibitem{tMAR03a}
+G.~Marsaglia, W.~W. Tsang, and J.~Wang.
+\newblock Evaluating {K}olmogorov's distribution.
+\newblock {\em Journal of Statistical Software}, 8(18):1--4, 2003.
+\newblock URL is \url{http://www.jstatsoft.org/v08/i18/}.
+
+\bibitem{rMAR94b}
+G.~Marsaglia, A.~Zaman, and J.~C.~W. Marsaglia.
+\newblock Rapid evaluation of the inverse normal distribution function.
+\newblock {\em Statistics and Probability Letters}, 19:259--266, 1994.
+
+\bibitem{tMOL70a}
+W.~Molenaar.
+\newblock {\em Approximations to the Poisson, Binomial and Hypergeometric
+  Distribution Functions}, volume~31 of {\em Mathematical Center Tract}.
+\newblock Mathematisch Centrum, Amsterdam, 1970.
+
+\bibitem{iMOS00a}
+S.~L. Moshier.
+\newblock Cephes math library, 2000.
+\newblock See \url{http://www.moshier.net}.
+
+\bibitem{pNEU81a}
+M.~F. Neuts.
+\newblock {\em Matrix-Geometric Solutions in Stochastic Models}.
+\newblock John Hopkins, University Press, Baltimore, 1981.
+
+\bibitem{tOLI72a}
+E.~H. Oliver.
+\newblock A maximum likelihood oddity.
+\newblock {\em The American Statistician}, 26(3):43–--44, 1972.
+
+\bibitem{tPEA59a}
+E.~S. Pearson.
+\newblock Note on an approximation to the distribution of non-central $\chi^2$.
+\newblock {\em Biometrika}, 46:364, 1959.
+
+\bibitem{tPEI68a}
+D.~B. Peizer and J.~W. Pratt.
+\newblock A normal approximation for binomial, {F}, beta, and other common
+  related tail probabilities.
+\newblock {\em Journal of the American Statistical Association}, 63:1416--1456,
+  1968.
+
+\bibitem{tPEL76a}
+W.~Pelz and I.~J. Good.
+\newblock Approximating the lower tail-areas of the {K}olmogorov-{S}mirnov
+  one-sample statistic.
+\newblock {\em Journal of the Royal Statistical Society B}, 38(2):152--156,
+  1976.
+
+\bibitem{tPEN00a}
+S.~Penev and T.~Raykov.
+\newblock A {W}iener germ approximation of the noncentral chi square
+  distribution and of its quantiles.
+\newblock {\em Computational Statistics}, 15(2):219--228, 2000.
+
+\bibitem{tPOM74a}
+J.~Pomeranz.
+\newblock Exact cumulative distribution of the {K}olmogorov-{S}mirnov statistic
+  for small samples (algorithm 487).
+\newblock {\em Communications of the ACM}, 17(12):703--704, 1974.
+
+\bibitem{pROS07b}
+S.~M. Ross.
+\newblock {\em Introduction to Probability Models}.
+\newblock Academic Press, ninth edition, 2007.
+
+\bibitem{iSCHa}
+R.~B. Schnabel.
+\newblock {\em {UNCMIN}---Unconstrained Optimization Package, FORTRAN}.
+\newblock University of Colorado at Boulder.
+\newblock See \url{http://www.ici.ro/camo/unconstr/uncmin.htm}.
+
+\bibitem{tSCH78a}
+J.~L. Schonfelder.
+\newblock Chebyshev expansions for the error and related functions.
+\newblock {\em Mathematics of Computation}, 32:1232--1240, 1978.
+
+\bibitem{tSIM11a}
+R.~Simard and P.~L'Ecuyer.
+\newblock Computing the two-sided {Kolmogorov-Smirnov} distribution.
+\newblock {\em Journal of Statistical Software}, 39(11), 2011.
+\newblock URL is \url{http://www.jstatsoft.org/v39/i11}.
+
+\bibitem{tSTE70a}
+M.~A. Stephens.
+\newblock Use of the {K}olmogorov-{S}mirnov, {C}ram{\'e}r-{V}on {M}ises and
+  related statistics without extensive tables.
+\newblock {\em Journal of the Royal Statistical Society, Series B},
+  33(1):115--122, 1970.
+
+\bibitem{tSTE86b}
+M.~S. Stephens.
+\newblock Tests based on {EDF} statistics.
+\newblock In R.~B. D'Agostino and M.~S. Stephens, editors, {\em Goodness-of-Fit
+  Techniques}. Marcel Dekker, New York and Basel, 1986.
+
+\bibitem{iVERa}
+S.~P. Verrill.
+\newblock {\em {UNCMIN}---Unconstrained Optimization Package, Java}.
+\newblock US Forest Service, Forest Products Laboratory.
+\newblock Available at \url{http://www1.fpl.fs.fed.us/optimization.html}.
+
+\bibitem{tWAT76a}
+G.~S. Watson.
+\newblock Optimal invariant tests for uniformity.
+\newblock In {\em Studies in Probability and Statistics}, pages 121--127. North
+  Holland, Amsterdam, 1976.
+
+\end{thebibliography}

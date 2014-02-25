@@ -1,0 +1,421 @@
+\defclass {HistogramChart}
+
+% Extends \externalclass{umontreal.iro.lecuyer.charts}{XYChart}.
+This class provides tools to create and manage histograms.
+The \class{HistogramChart} class is the simplest way to produce histograms.
+Each \class{HistogramChart} object is linked with an
+\externalclass{umontreal.iro.lecuyer.charts}{HistogramSeriesCollection} dataset.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HistogramChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   umontreal.iro.lecuyer.stat.TallyStore;
+
+import   org.jfree.chart.ChartFactory;
+import   org.jfree.chart.ChartPanel;
+import   org.jfree.chart.axis.NumberAxis;
+import   org.jfree.chart.plot.XYPlot;
+import   org.jfree.chart.plot.PlotOrientation;
+import   org.jfree.data.statistics.HistogramBin;
+
+import   cern.colt.list.DoubleArrayList;
+
+import   java.util.ListIterator;
+import   java.util.Locale;
+import   java.util.Formatter;
+import   javax.swing.JFrame;\end{hide}
+
+public class HistogramChart extends XYChart \begin{hide} {
+
+   protected void init (String title, String XLabel, String YLabel) {
+      // create the chart...
+      chart = ChartFactory.createXYLineChart(
+         title,                    // chart title
+         XLabel,                   // x axis label
+         YLabel,                   // y axis label
+         dataset.getSeriesCollection(), // data
+         PlotOrientation.VERTICAL,
+         true,                     // include legend
+         true,                     // tooltips
+         false                     // urls
+      );
+      ((XYPlot)chart.getPlot()).setRenderer(dataset.getRenderer());
+      //Initialize axis variables
+      XAxis = new Axis( (NumberAxis)((XYPlot) chart.getPlot()).getDomainAxis(),
+            Axis.ORIENTATION_HORIZONTAL );
+      YAxis = new Axis( (NumberAxis)((XYPlot) chart.getPlot()).getRangeAxis() ,
+            Axis.ORIENTATION_VERTICAL );
+      setAutoRange(false, true, true, true);
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+   public HistogramChart () \begin{hide} {
+      super();
+      dataset = new HistogramSeriesCollection();
+      init (null, null, null);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with an empty data set.
+\end{tabb}
+\begin{code}
+
+   public HistogramChart (String title, String XLabel, String YLabel,
+                          double[]... data) \begin{hide} {
+      super();
+      dataset = new HistogramSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with input \texttt{data}.
+   \texttt{title} is a title, \texttt{XLabel} is a short description of
+   the $x$-axis, and \texttt{YLabel} a short description of the $y$-axis.
+   The input parameter \texttt{data} represents a collection of observation sets.
+   Therefore \texttt{data}$[i], i = 0,\ldots,n-1$, is used to plot the
+     $i$th histogram.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramChart (String title, String XLabel, String YLabel,
+                          double[] data, int numPoints) \begin{hide} {
+      super();
+      double[] datan = new double[numPoints];
+      System.arraycopy (data, 0, datan, 0, numPoints);
+      dataset = new HistogramSeriesCollection(datan);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with input \texttt{data}.
+   \texttt{title} is a title, \texttt{XLabel} is a short description of
+   the $x$-axis, and \texttt{YLabel} a short description of the $y$-axis.
+   The input parameter \texttt{data} represents an observation set.
+  Only \emph{the first} \texttt{numPoints} of \texttt{data} will
+  be considered to plot the histogram.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+   \param{numPoints}{Number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramChart (String title, String XLabel, String YLabel,
+                          DoubleArrayList... data) \begin{hide} {
+      super();
+      dataset = new HistogramSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with data \texttt{data}.
+   Each \texttt{DoubleArrayList} input parameter represents a collection of
+   observation sets.
+   \externalclass{cern.colt.list}{DoubleArrayList} is from the Colt library
+   and is used to store data.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of observation sets.}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramChart (String title, String XLabel, String YLabel,
+                          TallyStore... tallies) \begin{hide} {
+      super();
+      dataset = new HistogramSeriesCollection(tallies);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with data arrays contained in each
+   \externalclass{umontreal.iro.lecuyer.stat}{TallyStore} object.
+   The input parameter \texttt{tallies} represents a collection of observation sets.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{tallies}{series of observation sets.}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramChart (String title, String XLabel, String YLabel,
+                          CustomHistogramDataset data) \begin{hide} {
+      super();
+      dataset = new HistogramSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with data \texttt{data}.
+   The input parameter \texttt{data} represents a set of plotting data.
+   \externalclass{umontreal.iro.lecuyer.charts}{CustomHistogramDataset} is a
+   \texttt{JFreeChart}-like container class that stores and manages
+    observation sets.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series collection.}
+\end{htmlonly}
+\begin{code}
+
+    public HistogramChart (String title, String XLabel, String YLabel,
+                           int[] count, double[] bound) \begin{hide} {
+      super();
+      if (bound.length != count.length + 1)
+         throw new IllegalArgumentException (
+            "bound.length must be equal to count.length + 1");
+      int sum = 0;
+      for (int i = 0 ; i < count.length ; i++) sum +=count[i];
+      double[] data = new double [sum];
+      int k = 0;
+      for (int i = 0 ; i < count.length ; i++)
+         for (int j = 0 ; j < count[i] ; j++)
+            data[k++] = bound[i];
+
+      dataset = new HistogramSeriesCollection(data, sum);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{HistogramChart} instance with data \texttt{count}
+   and \texttt{bound}. The adjacent categories (or bins) are specified as
+   non-overlapping intervals: bin[j] contains the values in the interval
+   [\texttt{bound[j]}, \texttt{bound[j+1]}], and \texttt{count[j]} is the
+   number of such values. % \texttt{bound}$_{j+1}$ is the right boundary of
+  %  bin$_j$ and also the left boundary of bin$_{j+1}$.
+   Thus the length of \texttt{bound} must be equal to
+   the length of \texttt{count} plus one: the last value of \texttt{bound}
+   is the right boundary of the last bin.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{count}{the number of observation between each bound.}
+   \param{bound}{the bounds of the observations}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+\begin{hide}
+   public void setAutoRange (boolean right, boolean top)  {
+         throw new UnsupportedOperationException(
+            "You can't use setAutoRange with HistogramChart class, use setAutoRange().");
+   }
+   public void setManuelRange (double [] range, boolean right, boolean top) {
+         throw new UnsupportedOperationException(
+            "You can't use setManuelRange with HistogramChart class, use setManuelRange(range).");
+   }
+\end{hide}
+
+   public HistogramSeriesCollection getSeriesCollection() \begin{hide} {
+      return (HistogramSeriesCollection)dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's dataset.
+\end{tabb}
+\begin{htmlonly}
+   \return{the chart's dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setSeriesCollection (HistogramSeriesCollection dataset) \begin{hide} {
+      this.dataset = dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Links a new dataset to the current chart.
+\end{tabb}
+\begin{htmlonly}
+   \param{dataset}{new dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setTicksSynchro (int s) \begin{hide} {
+      if (((CustomHistogramDataset)this.dataset.getSeriesCollection()).getBinWidth(s) == -1){
+         DoubleArrayList newTicks = new DoubleArrayList();
+         ListIterator binsIter = ((HistogramSeriesCollection)this.dataset).getBins(s).listIterator();
+
+         int i = 0;
+         HistogramBin prec = (HistogramBin)binsIter.next();
+         double var;
+         newTicks.add(prec.getStartBoundary());
+         newTicks.add(var = prec.getEndBoundary());
+         HistogramBin temp;
+         while(binsIter.hasNext()) {
+            temp = (HistogramBin)binsIter.next();
+            if(temp.getStartBoundary() != var) {
+               newTicks.add(var = temp.getStartBoundary());
+            } else if(temp.getEndBoundary() != var) {
+               newTicks.add(var = temp.getEndBoundary());
+            }
+         }
+         XAxis.setLabels(newTicks.elements());
+      }
+      else {
+         XAxis.setLabels(((CustomHistogramDataset)this.dataset.getSeriesCollection()).getBinWidth(s));
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Synchronizes $x$-axis ticks to the $s$-th histogram bins.
+\end{tabb}
+\begin{htmlonly}
+   \param{s}{selects histogram used to define ticks.}
+\end{htmlonly}
+\begin{code}
+
+   public JFrame view (int width, int height) \begin{hide} {
+      JFrame myFrame;
+      if(chart.getTitle() != null)
+         myFrame = new JFrame("HistogramChart from SSJ: " + chart.getTitle().getText());
+      else
+         myFrame = new JFrame("HistogramChart from SSJ");
+      ChartPanel chartPanel = new ChartPanel(chart);
+      chartPanel.setPreferredSize(new java.awt.Dimension(width, height));
+      myFrame.setContentPane(chartPanel);
+      myFrame.pack();
+      myFrame.setDefaultCloseOperation (JFrame.DISPOSE_ON_CLOSE);
+      myFrame.setLocationRelativeTo (null);
+      myFrame.setVisible(true);
+      return myFrame;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Displays chart on the screen using Swing.
+   This method creates an application containing a chart panel displaying
+   the chart. The created frame is positioned on-screen, and displayed before
+   it is returned. The \texttt{width} and the \texttt{height}
+   of the chart are measured in pixels.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{frame width in pixels.}
+   \param{height}{frame height in pixels.}
+   \return{frame containing the chart.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{\LaTeX-specific method}
+
+\begin{code}
+
+   public String toLatex (double width, double height) \begin{hide} {
+      double xunit, yunit;
+      double[] save = new double[4];
+
+      if (dataset.getSeriesCollection().getSeriesCount() == 0)
+         throw new IllegalArgumentException("Empty chart");
+      if (YAxis.getTwinAxisPosition() < 0)
+         YAxis.setTwinAxisPosition(0);
+
+      // Calcul des parametres d'echelle et de decalage
+      double XScale = computeXScale(XAxis.getTwinAxisPosition());
+      double YScale = computeYScale(YAxis.getTwinAxisPosition());
+
+      // taille d'une unite en x et en cm dans l'objet "tikzpicture"
+      xunit = width / ( (Math.max(XAxis.getAxis().getRange().getUpperBound(), XAxis.getTwinAxisPosition()) * XScale) - (Math.min(XAxis.getAxis().getRange().getLowerBound(), XAxis.getTwinAxisPosition()) * XScale) );
+      // taille d'une unite en y et en cm dans l'objet "tikzpicture"
+     yunit = height / ( (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition()) * YScale) - (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition()) * YScale) );
+
+      Formatter formatter = new Formatter(Locale.US);
+
+      /*Entete du document*/
+      if (latexDocFlag) {
+         formatter.format("\\documentclass[12pt]{article}%n%n");
+         formatter.format("\\usepackage{tikz}%n\\usetikzlibrary{plotmarks}%n\\begin{document}%n%n");
+      }
+      if (chart.getTitle() != null)
+         formatter.format("%% PGF/TikZ picture from SSJ: %s%n", chart.getTitle().getText());
+      else
+         formatter.format("%% PGF/TikZ picture from SSJ %n");
+      formatter.format("%% XScale = %s,  YScale = %s,  XShift = %s,  YShift = %s%n", XScale, YScale, XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition());
+      formatter.format("%% Therefore, thisFileXValue = (originalSeriesXValue+XShift)*XScale%n");
+      formatter.format("%%        and thisFileYValue = (originalSeriesYValue+YShift)*YScale%n%n");
+      if (chart.getTitle() != null)
+         formatter.format("\\begin{figure}%n");
+      formatter.format("\\begin{center}%n");
+      formatter.format("\\begin{tikzpicture}[x=%scm, y=%scm]%n", xunit, yunit);
+      formatter.format("\\footnotesize%n");
+      if (grid)
+         formatter.format("\\draw[color=lightgray] (%s, %s) grid[xstep = %s, ystep=%s] (%s, %s);%n",
+            (Math.min(XAxis.getAxis().getRange().getLowerBound(), XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale,
+            xstepGrid*XScale, ystepGrid*YScale,
+            (Math.max(XAxis.getAxis().getRange().getUpperBound(), XAxis.getTwinAxisPosition())-XAxis.getTwinAxisPosition()) * XScale,
+            (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale );
+      setTick0Flags();
+      formatter.format("%s", XAxis.toLatex(XScale) );
+      formatter.format("%s", YAxis.toLatex(YScale) );
+
+      formatter.format("%s", dataset.toLatex(
+         XScale, YScale,
+         XAxis.getTwinAxisPosition(), YAxis.getTwinAxisPosition(),
+         XAxis.getAxis().getLowerBound(), XAxis.getAxis().getUpperBound(),
+         YAxis.getAxis().getLowerBound(), YAxis.getAxis().getUpperBound()));
+
+      formatter.format("\\end{tikzpicture}%n");
+      formatter.format("\\end{center}%n");
+      if (chart.getTitle() != null) {
+         formatter.format("\\caption{");
+         formatter.format(chart.getTitle().getText());
+         formatter.format("}%n\\end{figure}%n");
+      }
+      if (latexDocFlag)
+         formatter.format("\\end{document}%n");
+      return formatter.toString();
+   }\end{hide}
+\end{code}
+
+\begin{code}
+\begin{hide}
+}\end{hide}
+\end{code}

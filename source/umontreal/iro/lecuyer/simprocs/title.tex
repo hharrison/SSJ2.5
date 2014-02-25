@@ -1,0 +1,24 @@
+\begin{titlepage}
+
+\title{simprocs}{Process-driven Simulation Management}
+
+\begin {quote}
+This package offers some (not-so-efficient) facilities for process-driven 
+simulation.  It provides suspend, resume,
+and synchronization tools for simulated processes.
+It has two different implementations, one based on Java threads
+and the other using an interpreter that translates everything to events.
+The first implementation was developed for \emph{green threads}, 
+which are essentially \emph{simulated} threads and are available
+in the JDK~1.3.1 and earlier environments by running programs with 
+\texttt{java -classic} option.
+Unfortunately, more recent Java virtual machines offer only native threads.
+This limits the number of processes, slows down the execution,
+and sometimes prevent the programs from running properly. 
+The second (slower) implementation uses an interpreter borrowed from the DSOL
+simulation system  to simulate process interactions in a single thread.
+\end {quote}
+
+\vfill\vfill
+
+\end{titlepage}

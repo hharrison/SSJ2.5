@@ -1,0 +1,455 @@
+\defclass{Pearson6Dist}
+
+Extends the class \class{ContinuousDistribution} for
+the {\em Pearson type VI\/} distribution with shape parameters
+$\alpha_1 > 0$ and $\alpha_2 > 0$, and scale parameter $\beta > 0$.
+The density function is given by
+\begin{htmlonly}
+\eq
+  f(x) = (x / \beta)^{\alpha_{1} - 1} / (\beta \mathcal{B}(\alpha_{1},
+\alpha_{2})[1 + x/\beta]^{\alpha_{1} + \alpha_{2}})
+  \qquad \mbox{for } x > 0,
+\endeq
+ and $f(x) = 0$ otherwise,
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  f(x) =\left\{\begin{array}{ll} \displaystyle
+      \frac{\left({x}/{\beta}\right)^{\alpha_{1} - 1}}{\beta
+\mathcal{B}(\alpha_{1}, \alpha_{2})(1 + {x}/{\beta})^{\alpha_{1} +
+\alpha_{2}}}
+  & \quad \mbox{for } x > 0, \\[14pt]
+   0 & \quad \mbox{otherwise,}
+   \end{array} \right.
+  \eqlabel{eq:fpearson6}
+\endeq
+\end{latexonly}
+where $\mathcal{B}$ is the beta function.
+The distribution function is given by
+\begin{htmlonly}
+\eq
+   F(x) = F_{B}\left(x / (x + \beta)\right)
+   \qquad \mbox{for } x > 0,
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+   F(x) = F_{B}\left(\frac{x}{x + \beta}\right)
+   \qquad \mbox{for } x > 0,
+   \eqlabel{eq:Fpearson6}
+\endeq
+\end{latexonly}
+ and $F(x) = 0$ otherwise, where $F_{B}(x)$ is the distribution function
+of a beta distribution with shape
+parameters $\alpha_1$ and $\alpha_2$.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Pearson6Dist
+ * Description:  Pearson type VI distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+import optimization.*;
+\end{hide}
+
+public class Pearson6Dist extends ContinuousDistribution\begin{hide} {
+   protected double alpha1;
+   protected double alpha2;
+   protected double beta;
+   protected double logBeta; // Ln (Beta (alpha1, alpha2))
+
+   private static class Optim implements Uncmin_methods {
+      private int n;
+      private double[] x;
+
+      public Optim (double[] x, int n) {
+         this.n = n;
+         this.x = new double[n];
+         System.arraycopy (x, 0, this.x, 0, n);
+      }
+
+      public double f_to_minimize (double[] param) {
+
+         if ((param[1] <= 0.0) || (param[2] <= 0.0) || (param[3] <= 0.0))
+            return 1e200;
+
+         double sumLogY = 0.0;
+         double sumLog1_Y = 0.0;
+         for (int i = 0; i < n; i++)
+         {
+            if (x[i] > 0.0)
+               sumLogY += Math.log (x[i] / param[3]);
+            else
+               sumLogY -= 709.0;
+            sumLog1_Y += Math.log1p (x[i] / param[3]);
+         }
+
+         return (n * (Math.log (param[3]) + Num.lnBeta (param[1], param[2])) -
+         (param[1] - 1.0) * sumLogY + (param[1] + param[2]) * sumLog1_Y);
+      }
+
+      public void gradient (double[] x, double[] g)
+      {
+      }
+
+      public void hessian (double[] x, double[][] h)
+      {
+      }
+   }
+\end{hide}\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public Pearson6Dist (double alpha1, double alpha2, double beta)\begin{hide} {
+      setParam (alpha1, alpha2, beta);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a \texttt{Pearson6Dist} object with parameters $\alpha_1$ =
+   \texttt{alpha1}, $\alpha_2$ = \texttt{alpha2} and $\beta$ = \texttt{beta}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      if (x <= 0.0)
+         return 0.0;
+      return Math.exp ((alpha1 - 1.0) * Math.log (x / beta) - (logBeta +
+            (alpha1 + alpha2) * Math.log1p (x / beta))) / beta;
+   }
+
+   public double cdf (double x) {
+      return cdf (alpha1, alpha2, beta, x);
+   }
+
+   public double barF (double x) {
+      return barF (alpha1, alpha2, beta, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (alpha1, alpha2, beta, u);
+   }
+
+   public double getMean () {
+      return getMean (alpha1, alpha2, beta);
+   }
+
+   public double getVariance () {
+      return getVariance (alpha1, alpha2, beta);
+   }
+
+   public double getStandardDeviation () {
+      return getStandardDeviation (alpha1, alpha2, beta);
+   }\end{hide}
+
+   public static double density (double alpha1, double alpha2,
+                                 double beta, double x)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+      if (x <= 0.0)
+         return 0.0;
+
+      return Math.exp ((alpha1 - 1.0) * Math.log (x / beta) -
+         (Num.lnBeta (alpha1, alpha2) + (alpha1 + alpha2) * Math.log1p (x / beta))) / beta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the density function of a Pearson VI distribution with shape
+parameters $\alpha_1$
+   and $\alpha_2$, and scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double alpha1, double alpha2,
+                             double beta, double x)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+      if (x <= 0.0)
+         return 0.0;
+
+      return BetaDist.cdf (alpha1, alpha2, 15, x / (x + beta));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the distribution function of a Pearson VI distribution with
+shape parameters $\alpha_1$
+   and $\alpha_2$, and scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double barF (double alpha1, double alpha2,
+                              double beta, double x)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+      if (x <= 0.0)
+         return 1.0;
+
+      return 1.0 - BetaDist.cdf (alpha1, alpha2, 15, x / (x + beta));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the complementary distribution function of a Pearson VI distribution
+   with shape parameters $\alpha_1$ and $\alpha_2$, and scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double inverseF (double alpha1, double alpha2,
+                                  double beta, double u)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+
+      double y = BetaDist.inverseF (alpha1, alpha2, 15, u);
+
+      return ((y * beta) / (1.0 - y));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the inverse distribution function of a Pearson VI distribution
+   with shape parameters $\alpha_1$ and $\alpha_2$, and scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double[] parameters = new double[3];
+      double[] xpls = new double[4];
+      double[] param = new double[4];
+      double[] fpls = new double[4];
+      double[] gpls = new double[4];
+      int[] itrcmd = new int[2];
+      double[][] h = new double[4][4];
+      double[] udiag = new double[4];
+
+      Optim system = new Optim (x, n);
+
+      double mean = 0.0;
+      double mean2 = 0.0;
+      double mean3 = 0.0;
+      for (int i = 0; i < n; i++)
+      {
+         mean += x[i];
+         mean2 += x[i] * x[i];
+         mean3 += x[i] * x[i] * x[i];
+      }
+      mean /= (double) n;
+      mean2 /= (double) n;
+      mean3 /= (double) n;
+
+      double r1 = mean2 / (mean * mean);
+      double r2 = mean2 * mean / mean3;
+
+      param[1] = - (2.0 * (-1.0 + r1 * r2)) / (-2.0 + r1 + r1 * r2);
+      if(param[1] <= 0) param[1] = 1;
+      param[2] = (- 3.0 - r2 + 4.0 * r1 * r2) / (- 1.0 - r2 + 2.0 * r1 * r2);
+      if(param[2] <= 0) param[2] = 1;
+      param[3] = (param[2] - 1.0) * mean / param[1];
+      if(param[3] <= 0) param[3] = 1;
+
+      Uncmin_f77.optif0_f77 (3, param, system, xpls, fpls, gpls, itrcmd, h, udiag);
+
+      for (int i = 0; i < 3; i++)
+         parameters[i] = xpls[i+1];
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Estimates the parameters $(\alpha_1,\alpha_2,\beta)$ of the Pearson VI distribution
+    using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a three-element
+    array, in regular order: [$\alpha_1, \alpha_2$, $\beta$].
+   \begin{detailed}
+   The estimate of the parameters is given by maximizing numerically the
+   log-likelihood function, using the Uncmin package \cite{iSCHa,iVERa}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \return{returns the parameters [$\hat{\alpha_1}, \hat{\alpha_2}, \hat{\beta}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static Pearson6Dist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new Pearson6Dist (parameters[0], parameters[1], parameters[2]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a Pearson VI distribution with parameters $\alpha_1$,
+   $\alpha_2$ and $\beta$, estimated using the maximum likelihood method based on
+   the $n$ observations $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double alpha1, double alpha2,
+                                 double beta)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 1.0)
+         throw new IllegalArgumentException("alpha2 <= 1");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+
+      return ((beta * alpha1) / (alpha2 - 1.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes and returns the mean $E[X] = (\beta \alpha_1) / (\alpha_2 - 1)$ of a
+   Pearson VI distribution with shape parameters $\alpha_1$ and $\alpha_2$, and
+   scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double getVariance (double alpha1, double alpha2,
+                                     double beta)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 2");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+
+      return (((beta * beta) * alpha1 * (alpha1 + alpha2 - 1.0)) /
+((alpha2 - 1.0) * (alpha2 - 1.0) * (alpha2 - 2.0)));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes and returns the variance
+   $\mbox{Var}[X] = [\beta^2 \alpha_1 (\alpha_1 + \alpha_2 - 1)] /
+    [(\alpha_2 - 1)^2(\alpha_2 - 2)]$ of a Pearson VI distribution with shape
+   parameters $\alpha_1$ and $\alpha_2$, and scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public static double getStandardDeviation (double alpha1, double alpha2,
+                                              double beta)\begin{hide} {
+      return Math.sqrt (getVariance (alpha1, alpha2, beta));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes and returns the standard deviation of a Pearson VI
+distribution with shape
+   parameters $\alpha_1$ and $\alpha_2$, and scale parameter $\beta$.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha1()\begin{hide} {
+      return alpha1;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\alpha_1$ parameter of this object.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha2()\begin{hide} {
+      return alpha2;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\alpha_2$ parameter of this object.
+\end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\beta$ parameter of this object.
+\end{tabb}
+\begin{code}
+
+   public void setParam (double alpha1, double alpha2, double beta)\begin{hide} {
+      if (alpha1 <= 0.0)
+         throw new IllegalArgumentException("alpha1 <= 0");
+      if (alpha2 <= 0.0)
+         throw new IllegalArgumentException("alpha2 <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException("beta <= 0");
+      supportA = 0.0;
+      this.alpha1 = alpha1;
+      this.alpha2 = alpha2;
+      this.beta = beta;
+      logBeta = Num.lnBeta (alpha1, alpha2);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters $\alpha_1$, $\alpha_2$ and $\beta$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {alpha1, alpha2, beta};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\alpha_1$, $\alpha_2$, $\beta$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : alpha1 = " + alpha1 + ", alpha2 = " + alpha2 + ", beta = " + beta;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

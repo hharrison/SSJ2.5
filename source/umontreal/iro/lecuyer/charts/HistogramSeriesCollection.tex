@@ -1,0 +1,635 @@
+\defclass {HistogramSeriesCollection}
+
+Stores data used in a \texttt{HistogramChart}. %This class extends
+%\externalclass{umontreal.iro.lecuyer.charts}{SSJXYSeriesCollection}.
+\texttt{HistogramSeriesCollection} provides complementary tools to draw histograms.
+One may add observation sets, define histogram bins, set plot color and plot style,
+enable/disable filled shapes, and set margin between shapes for each series.
+%
+This class is linked with class \texttt{CustomHistogramDataset} to store data plots,
+and linked with JFreeChart \texttt{XYBarRenderer} to render the plot.
+\texttt{CustomHistogramDataset} has been developed at the Universit\'
+e de Montr\'eal to extend the JFreeChart API,
+and is used to manage histogram datasets in a JFreeChart chart.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HistogramSeriesCollection
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   umontreal.iro.lecuyer.stat.TallyStore;
+import   umontreal.iro.lecuyer.util.Num;
+
+import   org.jfree.chart.renderer.xy.XYBarRenderer;
+import   org.jfree.data.statistics.HistogramBin;
+
+import   cern.colt.list.DoubleArrayList;
+
+import   java.util.Locale;
+import   java.util.Formatter;
+import   java.util.List;
+import   java.util.ListIterator;
+import   java.awt.Color;\end{hide}
+
+public class HistogramSeriesCollection extends SSJXYSeriesCollection \begin{hide} {
+   protected boolean[] filled;   // fill flag for each series
+   protected double[] lineWidth; // sets line width
+   protected int numBin = 20;    // default number of bins
+
+   private int calcNumBins (int n) {
+      // set the number of bins
+      int numbins = (int) Math.ceil (1.0 + Num.log2(n));
+      if (n > 5000)
+         numbins *= 2;
+      return numbins;
+   }\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+   public HistogramSeriesCollection() \begin{hide} {
+      renderer = new XYBarRenderer();
+      seriesCollection = new CustomHistogramDataset();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{HistogramSeriesCollection} instance with empty dataset.
+\end{tabb}
+\begin{code}
+
+   public HistogramSeriesCollection (double[]... data) \begin{hide} {
+      seriesCollection = new CustomHistogramDataset();
+      renderer = new XYBarRenderer();
+      CustomHistogramDataset tempSeriesCollection =
+             (CustomHistogramDataset)seriesCollection;
+      for (int i = 0; i < data.length; i ++) {
+         numBin = calcNumBins(data[i].length);
+         tempSeriesCollection.addSeries(i, data[i], numBin);
+      }
+
+      // set default colors
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         renderer.setSeriesPaint(i, getDefaultColor(i));
+      }
+
+      // set default plot style
+      filled = new boolean[seriesCollection.getSeriesCount()];
+      lineWidth = new double[seriesCollection.getSeriesCount()];
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         filled[i] = false;
+         lineWidth[i] = 0.5;
+         setFilled(i, false);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{HistogramSeriesCollection} instance with given data series.
+   Bins the elements of data in equally spaced containers (the number of bins
+   can be changed using the method \method{setBins}{}).
+   Each input parameter % (or matrix column)
+   represents a data series.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramSeriesCollection (double[] data, int numPoints) \begin{hide} {
+      seriesCollection = new CustomHistogramDataset();
+      renderer = new XYBarRenderer();
+      CustomHistogramDataset tempSeriesCollection =
+             (CustomHistogramDataset)seriesCollection;
+      numBin = calcNumBins(numPoints);
+      tempSeriesCollection.addSeries(0, data, numPoints, numBin);
+
+      // set default colors
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         renderer.setSeriesPaint(i, getDefaultColor(i));
+      }
+
+      // set default plot style
+      filled = new boolean[seriesCollection.getSeriesCount()];
+      lineWidth = new double[seriesCollection.getSeriesCount()];
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         filled[i] = false;
+         lineWidth[i] = 0.5;
+         setFilled(i, false);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{HistogramSeriesCollection} instance with the given data
+   series \texttt{data}. Bins the elements of data in equally spaced containers
+   (the number of bins can be changed using the method \method{setBins}{}).
+   Only the first \texttt{numPoints} of \texttt{data} will be taken into account.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{Point set}
+   \param{numPoints}{Number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramSeriesCollection (DoubleArrayList... data) \begin{hide} {
+      seriesCollection = new CustomHistogramDataset();
+      renderer = new XYBarRenderer();
+      CustomHistogramDataset tempSeriesCollection =
+          (CustomHistogramDataset)seriesCollection;
+
+      for (int i = 0; i < data.length; i++) {
+         numBin = calcNumBins(data[i].size());
+         tempSeriesCollection.addSeries(i, data[i].elements(), data[i].size(), numBin);
+      }
+
+      // set default colors
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         renderer.setSeriesPaint(i, getDefaultColor(i));
+      }
+
+      // set default plot style
+      filled = new boolean[seriesCollection.getSeriesCount()];
+      lineWidth = new double[seriesCollection.getSeriesCount()];
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         filled[i] = false;
+         lineWidth[i] = 0.5;
+         setFilled(i, false);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{HistogramSeriesCollection}.
+   Bins the elements of data in equally spaced containers (the number of bins
+   can be changed using the method \method{setBins}{}).
+   The input parameter represents a set of data plots. Each
+  \externalclass{cern.colt.list}{DoubleArrayList} variable corresponds
+   to a histogram on the chart.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{series of observation sets.}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramSeriesCollection (TallyStore... tallies) \begin{hide} {
+      seriesCollection = new CustomHistogramDataset();
+      renderer = new XYBarRenderer();
+      CustomHistogramDataset tempSeriesCollection = (CustomHistogramDataset)seriesCollection;
+
+      double h;
+      for (int i = 0; i < tallies.length; i++) {
+         // Scott's formula
+         h = 3.5*tallies[i].standardDeviation() /
+                           Math.pow(tallies[i].numberObs(), 1.0/3.0);
+         numBin = (int) ((tallies[i].max() - tallies[i].min()) / (1.5*h));
+         tempSeriesCollection.addSeries (i, tallies[i].getArray(),
+              tallies[i].numberObs(), numBin, tallies[i].min(), tallies[i].max());
+      }
+
+      // set default colors
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         renderer.setSeriesPaint(i, getDefaultColor(i));
+      }
+
+      // set default plot style
+      filled = new boolean[seriesCollection.getSeriesCount()];
+      lineWidth = new double[seriesCollection.getSeriesCount()];
+      for (int i = 0; i < tempSeriesCollection.getSeriesCount(); i++) {
+         filled[i] = false;
+         lineWidth[i] = 0.5;
+         setFilled(i, false);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{HistogramSeriesCollection} instance with default
+ parameters and given data. The input parameter represents a collection of
+ data observation sets. Each \texttt{TallyStore} input parameter represents
+ an observation set.
+\end{tabb}
+\begin{htmlonly}
+   \param{tallies}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public HistogramSeriesCollection (CustomHistogramDataset data) \begin{hide} {
+      renderer = new XYBarRenderer();
+      seriesCollection = data;
+
+      // set default colors
+      for (int i = 0; i < data.getSeriesCount(); i++) {
+         renderer.setSeriesPaint(i, getDefaultColor(i));
+      }
+
+      // set default plot style
+      filled = new boolean[seriesCollection.getSeriesCount()];
+      lineWidth = new double[seriesCollection.getSeriesCount()];
+      for (int i = 0; i < data.getSeriesCount(); i++) {
+         filled[i] = false;
+         lineWidth[i] = 0.5;
+         setFilled(i, false);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{HistogramSeriesCollection} instance.
+   The input parameter represents a set of plotting data.
+   Each series of the given collection corresponds to a histogram.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Data control methods}
+
+\begin{code}
+
+   public int add (double[] data) \begin{hide} {
+      return add (data, data.length);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{new series.}
+   \return{Integer that represent the new point set.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (double[] data, int numPoints) \begin{hide} {
+      CustomHistogramDataset tempSeriesCollection = (CustomHistogramDataset)seriesCollection;
+      tempSeriesCollection.addSeries(tempSeriesCollection.getSeriesCount(),
+            data, numPoints, numBin);
+
+      boolean[] newFilled = new boolean[seriesCollection.getSeriesCount()];
+      double[] newLineWidth = new double[seriesCollection.getSeriesCount()];
+
+      // color
+      int j = seriesCollection.getSeriesCount() - 1;
+      renderer.setSeriesPaint(j, getDefaultColor(j));
+      newFilled[j] = false;
+      newLineWidth[j] = 0.5;
+
+      for (j = 0; j < seriesCollection.getSeriesCount() - 1; j++) {
+         newFilled[j] = filled[j];
+         newLineWidth[j] = lineWidth[j];
+      }
+
+      filled = newFilled;
+      lineWidth = newLineWidth;
+
+      return seriesCollection.getSeriesCount() - 1;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Only \emph{the first}
+  \texttt{numPoints} of \texttt{data} will be added to the new series.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{new series.}
+   \param{numPoints}{Number of points to add}
+   \return{Integer that represent the new point set.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (DoubleArrayList observationSet) \begin{hide} {
+      return add(observationSet.elements(), observationSet.size());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection.
+\end{tabb}
+\begin{htmlonly}
+   \param{observationSet}{new series values.}
+   \return{Integer that represent the new point set's position in the \texttt{CustomHistogramDataset} object.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (TallyStore tally) \begin{hide} {
+      return add(tally.getArray(), tally.numberObs());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection.
+\end{tabb}
+\begin{htmlonly}
+   \param{tally}{\externalclass{umontreal.iro.lecuyer.stat}{TallyStore} to add values.}
+   \return{Integer that represent the new point set's position in the \texttt{CustomHistogramDataset} object.}
+\end{htmlonly}
+\begin{code}
+
+   public CustomHistogramDataset getSeriesCollection() \begin{hide} {
+      return (CustomHistogramDataset)seriesCollection;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{CustomHistogramDataset} object associated with the current variable.
+\end{tabb}
+\begin{htmlonly}
+   \return{\texttt{CustomHistogramDataset} object associated with the current variable.}
+\end{htmlonly}
+\begin{code}
+
+   public List getBins (int series) \begin{hide} {
+      return ((CustomHistogramDataset)seriesCollection).getBins(series);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the bins for a series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \return{A list of bins.}
+   \throws{IndexOutOfBoundsException}{if \texttt{series} is outside the specified range.}
+\end{htmlonly}
+\begin{code}
+
+   public void setBins (int series, int bins) \begin{hide} {
+      ((CustomHistogramDataset)seriesCollection).setBins(series, bins);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets \texttt{bins} periodic bins from the observation minimum values to the observation maximum value for a series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \param{bins}{the number of periodic bins.}
+   \throws{IndexOutOfBoundsException}{if \texttt{series} is outside the specified range.}
+\end{htmlonly}
+\begin{code}
+
+   public void setBins (int series, int bins, double minimum, double maximum) \begin{hide} {
+      ((CustomHistogramDataset)seriesCollection).setBins(series, bins, minimum, maximum);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets \texttt{bins} periodic bins from \texttt{minimum} to \texttt{maximum} for a series.
+   Values falling on the boundary of adjacent bins will be assigned to the higher indexed bin.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \param{bins}{the number of periodic bins.}
+   \param{minimum}{minimum value.}
+   \param{maximum}{maximum value.}
+   \throws{IndexOutOfBoundsException}{if \texttt{series} is outside the specified range.}
+\end{htmlonly}
+\begin{code}
+
+   public void setBins (int series, HistogramBin[] binsTable) \begin{hide} {
+      ((CustomHistogramDataset)seriesCollection).setBins(series, binsTable);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Links bins given by table \texttt{binsTable} to a series.
+   Values falling on the boundary of adjacent bins will be assigned to the higher indexed bin.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \param{binsTable}{new bins table.}
+   \throws{IndexOutOfBoundsException}{if \texttt{series} is outside the specified range.}
+\end{htmlonly}
+\begin{code}
+
+   public List getValuesList (int series) \begin{hide} {
+      return ((CustomHistogramDataset)seriesCollection).getValuesList(series);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the values for a series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \return{A list of values.}
+   \throws(IndexOutOfBoundsException}{if <code>series</code> is outside the specified range.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getValues (int series) \begin{hide} {
+      return ((CustomHistogramDataset)seriesCollection).getValues(series);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the values for a series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \return{A list of values.}
+   \throws(IndexOutOfBoundsException}{if <code>series</code> is outside the specified range.}
+\end{htmlonly}
+\begin{code}
+
+   public void setValues (int series, List valuesList) \begin{hide} {
+      ((CustomHistogramDataset)seriesCollection).setValues(series, valuesList);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets a new values set to a series from a \texttt{List} variable.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \param{valuesList}{new values list.}
+\end{htmlonly}
+\begin{code}
+
+   public void setValues (int series, double[] values) \begin{hide} {
+      ((CustomHistogramDataset)seriesCollection).setValues(series, values);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets a new values set to a series from a table.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{the series index (in the range \texttt{0} to \texttt{getSeriesCount() - 1}).}
+   \param{values}{new values table.}
+\end{htmlonly}
+
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Rendering methods}
+
+\begin{code}
+
+   public boolean getFilled (int series) \begin{hide} {
+      return filled[series];
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the \texttt{filled} flag associated with the \texttt{series}-th
+  data series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{series index.}
+   \return{fill flag.}
+\end{htmlonly}
+\begin{code}
+
+   public void setFilled (int series, boolean filled) \begin{hide} {
+      this.filled[series] = filled;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the \texttt{filled} flag. This option fills histogram rectangular.
+   The fill color is the current series color, alpha's color parameter will
+   be used to draw transparency.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{series index.}
+   \param{filled}{fill flag.}
+\end{htmlonly}
+\begin{code}
+
+   public double getMargin() \begin{hide} {
+      return ((XYBarRenderer)renderer).getMargin();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Returns the margin which is a percentage amount by which the bars are trimmed.
+\end{tabb}
+\begin{code}
+
+   public void setMargin (double margin) \begin{hide} {
+      ((XYBarRenderer)renderer).setMargin(margin);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Sets the margin which is a percentage amount by which the bars are trimmed for all series.
+\end{tabb}
+\begin{htmlonly}
+   \param{margin}{margin percentage amount.}
+\end{htmlonly}
+\begin{code}
+
+   public double getOutlineWidth (int series) \begin{hide} {
+      return lineWidth[series];
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Returns the outline width in pt.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{series index.}
+\end{htmlonly}
+\begin{code}
+
+   public void setOutlineWidth (int series, double outline) \begin{hide} {
+      this.lineWidth[series] = outline;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+    Sets the outline width in pt.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{series index.}
+   \param{outline}{outline width.}
+\end{htmlonly}
+\begin{code}
+
+   public String toLatex (double XScale, double YScale, double XShift,
+                          double YShift, double xmin, double xmax,
+                          double ymin, double ymax) \begin{hide} {
+
+      // Calcule les bornes reelles du graphique, en prenant en compte la position des axes
+      xmin = Math.min(XShift, xmin);
+      xmax = Math.max(XShift, xmax);
+      ymin = Math.min(YShift, ymin);
+      ymax = Math.max(YShift, ymax);
+
+      CustomHistogramDataset tempSeriesCollection = (CustomHistogramDataset)seriesCollection;
+      Formatter formatter = new Formatter(Locale.US);
+      double var;
+      double margin = ((XYBarRenderer)renderer).getMargin();
+
+      for (int i = tempSeriesCollection.getSeriesCount() - 1; i >= 0; i--) {
+         List temp = tempSeriesCollection.getBins(i);
+         ListIterator iter = temp.listIterator();
+
+         Color color = (Color)renderer.getSeriesPaint(i);
+         String colorString = detectXColorClassic(color);
+         if (colorString == null) {
+            colorString = "color"+i;
+            formatter.format( "\\definecolor{%s}{rgb}{%.2f, %.2f, %.2f}%n",
+                              colorString, color.getRed()/255.0, color.getGreen()/255.0,
+                              color.getBlue()/255.0);
+         }
+
+         HistogramBin currentBin=null;
+         while(iter.hasNext()) {
+            double currentMargin;
+            currentBin = (HistogramBin)iter.next();
+            currentMargin = ((margin*(currentBin.getEndBoundary()-currentBin.getStartBoundary())))*XScale;
+            if ((currentBin.getStartBoundary() >= xmin && currentBin.getStartBoundary() <= xmax)
+               && (currentBin.getCount() >= ymin && currentBin.getCount() <= ymax) )
+            {
+               var = Math.min( currentBin.getEndBoundary(), xmax);
+               if (filled[i]) {
+                  formatter.format("\\filldraw [line width=%.2fpt, opacity=%.2f, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+                        lineWidth[i], (color.getAlpha()/255.0), colorString,
+                        currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+                        currentMargin, (var-XShift)*XScale, (currentBin.getCount()-YShift)*YScale);
+              }
+              else {
+                  formatter.format("\\draw [line width=%.2fpt, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+                        lineWidth[i], colorString,
+                        currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+                        currentMargin, (var-XShift)*XScale, (currentBin.getCount()-YShift)*YScale);
+              }
+            }
+            else if (   (currentBin.getStartBoundary() >= xmin && currentBin.getStartBoundary() <= xmax)
+                        && (currentBin.getCount() >= ymin && currentBin.getCount() > ymax) )
+            { // Cas ou notre rectangle ne peut pas etre affiche en entier (trop haut)
+               var = Math.min( currentBin.getEndBoundary(), xmax);
+               if (filled[i]) {
+                  formatter.format("\\filldraw [line width=%.2fpt,  opacity=%.2f, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+                        lineWidth[i], (color.getAlpha()/255.0), colorString,
+                        currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+                        currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+                  formatter.format("\\draw [line width=%.2fpt, color=%s, style=dotted] ([xshift=%.4f] %.4f, %.4f) rectangle ([yshift=3mm, xshift=-%.4f] %.4f, %.4f); %%%n",
+                        lineWidth[i], colorString,
+                        currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, (ymax-YShift)*YScale,
+                        currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+               }
+               else {
+                  formatter.format("\\draw [line width=%.2fpt, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+                        lineWidth[i], colorString,
+                        currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+                        currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+
+                  formatter.format("\\draw [line width=%.2fpt, color=%s, style=dotted] ([xshift=%.4f] %.4f, %.4f) rectangle ([yshift=3mm, xshift=-%.4f] %.4f, %.4f); %%%n",
+                        lineWidth[i], colorString,
+                        currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, (ymax-YShift)*YScale,
+                        currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+               }
+            }
+         }
+      }
+      return formatter.toString();
+   }
+}\end{hide}
+\end{code}

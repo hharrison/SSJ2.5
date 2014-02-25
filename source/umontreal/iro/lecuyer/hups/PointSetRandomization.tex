@@ -1,0 +1,99 @@
+\defclass{PointSetRandomization}
+
+This interface is used to randomize a
+\externalclass{umontreal.iro.lecuyer.hups}{PointSet}. One can
+implement method \method{randomize}{PointSet} in any way. This
+method must use an internal
+\externalclass{umontreal.iro.lecuyer.rng}{RandomStream}. This
+stream can be set in the constructor, but the methods
+\method{getStream}{} and \method{setStream}{RandomStream} must be
+implemented.
+
+The method \method{randomize}{PointSet} must be implemented using
+combinations of the randomization methods from the point set such
+as
+\externalmethod{umontreal.iro.lecuyer.hups}{PointSet}{addRandomShift}{},
+\externalmethod{umontreal.iro.lecuyer.hups}{DigitalNet}{leftMatrixScramble}{},
+\externalmethod{umontreal.iro.lecuyer.hups}{DigitalNet}{striped\-Matrix\-Scramble}{},
+\hspace{1pt}\ldots
+
+If more than one \class{PointSetRandomization} is applied to the
+same point set, the randomizations will concatenate if they are of
+different types, but only the last of each type will remain.
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Interface:    PointSetRandomization
+ * Description:  Used to randomize a PointSet
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;
+\begin{hide}
+import umontreal.iro.lecuyer.rng.RandomStream;
+
+\end{hide}
+public interface PointSetRandomization \begin{hide} {
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+\begin{code}
+
+   public void randomize (PointSet p);
+\end{code}
+\begin{tabb}
+   This method must randomize \texttt{p}.
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{Point set to randomize}
+\end{htmlonly}
+\begin{code}
+
+   public void setStream (RandomStream stream);
+\end{code}
+\begin{tabb}
+   Sets the internal
+   \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} to
+   \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{stream to use in the randomization}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStream getStream();
+\end{code}
+\begin{tabb}
+   Returns the internal
+   \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}.
+\end{tabb}
+\begin{htmlonly}
+   \return{stream used in the randomization}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

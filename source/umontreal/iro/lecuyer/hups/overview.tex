@@ -1,0 +1,638 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+
+%%%%%%%%%%%%
+\subsection*{Monte Carlo and quasi-Monte Carlo}
+
+This package provides classes implementing \emph{highly uniform point sets}
+(HUPS) over the $s$-dimensional unit hypercube $[0,1)^s$,
+and tools for their randomization.
+The terminology \emph{low-discrepancy sequence} (LDS) is often used
+for infinite sequences of points such that the \emph{discrepancy}
+between the distribution of the first $n$ points of the sequence and
+the uniform distribution converges to zero at a certain rate
+when $n\to\infty$ \cite{rNIE92b}.
+HUPS and LDS are used for quasi-Monte Carlo integration,
+as we now briefly explain.
+See, e.g., \cite{vFOX99a,fGLA04a,rHEL98a,vLEC02a,vLEC03b,%
+vOWE98a,rNIE92b,vSLO94a,rTEZ95a}
+for further details.
+
+Suppose we want to estimate the integral of a function $f$ defined over
+the $s$-dimensional unit hypercube,
+\begin{equation}
+  \mu = \int_{[0,1)^s}\   f(\bu) d\bu.                      \label{eq:mu}
+\end{equation}
+Practically any mathematical expectation that can be estimated by
+simulation can be written in this way, usually for a very complicated
+$f$ and sometimes for $s=\infty$.
+Indeed, the source of randomness of stochastic simulations
+is usually a \emph{stream} of real numbers $\bu = (u_0,u_1,u_2,\dots)$
+whose purpose is to imitate i.i.d.\ $U(0,1)$ random variables.
+These real numbers are transformed in complicated ways to produce
+the estimator.  Thus, the dimension $s$ of the integral (\ref{eq:mu})
+represents the number of calls to the uniform random number generator
+if that number is deterministic.
+If it is random and unbounded, we take $s = \infty$.
+In the latter case, however, we can assume that the \emph{actual}
+number of calls is finite with probability one (otherwise the simulation
+may never end).
+
+We consider an estimator of $\mu$ of the form
+\begin{equation}
+  Q_n = \frac{1}{n} \sum_{i=0}^{n-1} f(\bu_i),             \label{eq:Qn}
+\end{equation}
+which is the average of $f$ over the \emph{point set}
+$P_n = \{\bu_0,\dots,\bu_{n-1}\} \subset [0,1)^s$.
+
+With the \emph{Monte Carlo} (MC) method, the $\bu_i$'s are
+i.i.d.{} random vectors uniformly distributed over $[0,1)^s$.
+Then, $Q_n$ is an unbiased estimator of $\mu$ with variance
+$\sigma^2/n$, where
+\begin{equation}
+ \sigma^2 = \int_{[0,1)^s} f^2(\bu) d\bu - \mu^2,
+\end{equation}
+and it obeys a central-limit theorem if $\sigma^2 < \infty$.
+
+\emph{Quasi-Monte Carlo} (QMC) methods use point sets $P_n$
+that are \emph{more evenly distributed} over the unit hypercube
+than typical random points.
+We call them \emph{highly uniform point sets} (HUPS).
+The aim is to reduce the size of the integration error $Q_n - \mu$.
+Two important classes of methods for constructing such point sets are
+\emph{digital nets} and \emph{integration lattices}
+\cite{rNIE92b,vSLO94a,vLEC02a,fGLA04a}.
+Both are implemented in this package, in various flavors.
+
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection*{Elementary constructions}
+
+To give an idea of how HUPS and LDS can be constructed, we start with
+a simple one-dimensional example.
+If $s=1$ and $n$ is fixed, very simple highly uniform constructions are
+the point sets $P_n = \{0,\, 1/n,\, \dots, (n-1)/n\}$ and
+the shifted version $P'_n = \{1/(2n),\, 3/(2n),\, \dots, (2n-1)/(2n)\}$.
+
+In $s > 1$ dimensions, the simplest extensions would be as follows.
+Let $n = d^s$ for some integer $d$ and define $P_n$ as the
+Cartesian product of $s$ copies of the one-dimensional sets $P_d$;
+that is, $P_n = \{(u_0,\dots,u_{s-1}) :
+u_j \in \{0,\, 1/d,\, \dots, (d-1)/d\}$ for each $j\}$,
+and similarly for $P'_n$.
+The point sets thus obtained are regular rectangular grids.
+Unfortunately, this approach breaks down rapidly when $s$ gets large,
+because $n$ must increase exponentially fast with $s$ for fixed $d$.
+Another important drawback is that when $P_n$ is projected over
+lower-dimensional subspaces, several points are projected onto each other
+and become redundant \cite{vLEC02a}.
+
+A better idea is to construct a point set $P_n$ in $s$ dimensions
+such that each one-dimensional projection of $P_n$ is the set
+of values $\{0,\, 1/n,\, \dots, (n-1)/n\}$.
+Of course, these values should not be visited in the same order for
+all coordinates, because otherwise all the points would lie on the
+diagonal line going from $(0,\dots,0)$ to $(1,\dots,1)$.
+In other words, for each coordinate $j$, $0\le j < s$, we must define
+a different \emph{permutation} of the integers $\{0,\dots,n-1\}$ and
+visit the values $\{0,\, 1/n,\, \dots, (n-1)/n\}$ in the order determined
+by that permutation.  The trick is to select those permutations in a
+way that $P_n$ itself is highly uniform over $[0,1)^s$ in a well-defined
+sense (to be determined).
+This is what most construction methods attempt to achieve.
+Before looking at concrete ways of defining such permutations,
+we introduce a related issue: what to do if $n$ is not fixed.
+
+For $s=1$, a simple way of filling up the unit interval $[0,1)$
+uniformly is via the low-discrepancy sequence
+0, 1/2, 1/4, 3/4, 1/8, 5/8, 3/8, 7/8, 1/16, 9/16, \ldots,
+called the \emph{van der Corput sequence} in base 2.
+More generally, select an integer $b \ge 2$, called the \emph{base}.
+The \emph{radical inverse} function in base $b$, $\psi_b : \NN\to[0,1)$,
+is defined as follows.  If $i$ is a $k$-digit integer in base $b$
+with digital $b$-ary expansion
+\[
+  i = a_0 + a_1 b + \dots + a_{k-1} b^{k-1},
+\]
+then
+\[
+  \psi_b(i) = a_0 b^{-1} + a_1 b^{-2} + \cdots + a_{k-1} b^{-k}.
+\]
+For a given $b$, $\psi_b(0), \psi_b(1), \psi_b(2), \dots$
+is called the \emph{van der Corput sequence in base $b$}.
+This sequence fills up the unit interval $[0,1)$ quite uniformly.
+For example, for $b=2$ we obtain the sequence mentioned above
+and for $b=3$ we obtain
+0, 1/3, 2/3, 1/9, 4/9, 7/9, 2/9, 5/9, 8/9, 1/27, 10/27, 19/27, \ldots.
+Moreover, for two relatively prime bases $b_1$ and $b_2$, the two
+sequences have no value in common except 0.
+
+For $s > 1$, one could either take different (relatively prime)
+bases for the different coordinates, or take the same basis $b$
+but permute the successive values using a different permutation for
+each coordinate.   These permutations are usually selected in a way
+that for every integer $k$, the first $b^k$ values that are
+enumerated remain the same (they are the values
+of $\psi_b(i)$ for $i=0,\dots,b^k-1$), but they are enumerated in a
+different order.  Several digital net constructions (to be defined later)
+fit this framework.
+
+If we decide to take different bases, the most natural choice is to
+take the $j$th smallest prime, $b_j$, as a base for coordinate $j-1$;
+that is, base 2 for coordinate 0, base 3 for coordinate 1,
+base 5 for coordinate 2, and so on.
+The infinite sequence thus defined, where point $i$ is
+\eq
+ \bu_i = (\psi_{b_1}(i),\psi_{b_2}(i),\dots, \psi_{b_{s}}(i))
+                                            \eqlabel{eq:Halton-point}
+\endeq
+for $i \ge 0$, was proposed in \cite{rHAL60a} and is called
+the \emph{Halton sequence}.
+One drawback of this sequence is that for large $s$, the base $b_s$
+becomes quite large.
+
+In the case where $n$ is fixed,
+% for any point set for which each coordinate goes
+% through the values $0, 1/n, \ldots, (n-1)/n$ (in a different order),
+we can always take $i/n$ as the first coordinate of point $i$.
+In particular, the \emph{Hammersley point set} with $n$ points
+in $s$ dimensions contains the points
+\eq
+ \bu_i = (i/n,\psi_{b_1}(i),\psi_{b_2}(i),\dots, \psi_{b_{s-1}}(i)),
+                                            \eqlabel{eq:Hammersley-point}
+\endeq
+for $i=0,\dots,n-1$ \cite{rHAM60a}.
+Historically, Halton sequences were defined as extensions of
+Hammersley point sets.
+
+
+
+%%%%%%%%%%%%%%%%
+\subsection*{Digital nets}
+
+\emph{Digital nets and sequences} are an important class of HUPS
+and LDS constructions.
+Most concrete implementations, e.g., those proposed by
+Sobol', Faure, Niederreiter, and Niederreiter and Xing,
+are \emph{linear} digital nets and sequences, defined as follows
+(see also \cite{rNIE92b,rTEZ95a,vLEC02a}).
+
+Let $b\ge 2$ be an arbitrary integer (usually a prime number), called
+the \emph{base}.
+A net that contains $n = b^k$ points in $s$ dimensions is defined via
+$s$ \emph{generator matrices} $\bC_0,\dots,\bC_{s-1}$, which are
+(in theory) $\infty\times k$ matrices whose elements are in
+$\ZZ_b = \{0,\dots,b-1\}$.
+The matrix $\bC_j$ is used for coordinate $j$ of all the points, for $j\ge 0$.
+To define the $i$th point $\bu_i$, for $i=0,\dots,b^k-1$, write
+the digital expansion of $i$ in base $b$ and multiply the vector of its
+digits by $\bC_j$ to obtain the digits of the expansion of $u_{i,j}$,
+the $j$th coordinate of $\bu_i$.  That is,
+\hrichard {Dans cette introduction, les indices dimensionnels varient
+ parfois de 1 \`a $s$, et parfois de 0 \`a $s-1$.
+ Ailleurs et dans les m\'ethodes, ils varient de 0 \`a $s-1$.}
+\begin{eqnarray}
+  i &=& \sum_{\ell=0}^{k-1} a_{i,\ell} b^\ell,   \eqlabel{eq:digital-i} \\
+ \pmatrix{u_{i,j,1}\cr u_{i,j,2}\cr \vdots \cr }
+    &=& \bC_j \pmatrix{a_{i,0}\cr a_{i,1}\cr \vdots \cr a_{i,k-1}\cr},
+                                                 \eqlabel{eq:digital-Cj} \\
+ u_{i,j} &=& \sum_{\ell=1}^\infty u_{i,j,\ell} b^{-\ell},
+                                                 \eqlabel{eq:digital-uij} \\
+  \bu_i &=& (u_{i,0},\dots,u_{i,s-1}).             \eqlabel{eq:digital-ui}
+\end{eqnarray}
+In practice, the expansion in (\ref{eq:digital-uij}) is truncated to the
+first $r$ digits for some positive integer $r$, so each matrix $\bC_j$ is
+actually truncated to a $r\times k$ matrix.
+Typically $r$ is equal to $k$, or is slightly larger,
+or is selected so that $b^r$ is near $2^{31}$.
+
+Usually, the first $k$ lines of each $\bC_j$ form a nonsingular
+$k\times k$ matrix.  Then, the $n$ output values for coordinate $j$,
+$u_{0,j},\dots, u_{n-1,j}$, when truncated to their first $k$ fractional
+digits in base $b$, are a permutation of the numbers
+$0, 1/n, \dots, (n-1)/n$.
+Different coordinates simply use different permutations,
+implemented via the matrices $\bC_j$.
+
+When the first $k$ lines of $\bC_j$ form the identity and the other
+lines are zero, the first $n$ output values are the first $n$ elements
+of the van der Corput sequence in base $b$.
+If we reverse the order of the columns of that matrix $\bC_j$
+(i.e., column $c$ will contain a one in line $k-c+1$ and zeros elsewhere,
+for $0\le c < k$), we obtain the output values
+$0, 1/n, \dots, (n-1)/n$ in that order.
+With a slight abuse of language, we shall call this first matrix
+(with the identity followed by lines of zeros) the \emph{identity}
+and the second one (with the columns in reverse order) the
+\emph{reflected identity}.
+It is customary to take $\bC_0$ as the identity for digital sequences,
+and often for digital nets as well.
+But for digital nets (where $n$ is fixed in advance),
+one can take $\bC_0$ as the reflected identity instead,
+then $\bC_1$ as the identity, and so on.
+That is, the matrix $\bC_j$ for the digital net is taken as the matrix
+$\bC_{j-1}$ of the digital sequence.
+Our package often gives the choice.
+
+For digital sequences, the matrices $\bC_j$ actually have an infinite
+number of columns, although only the first $k$ columns are needed to
+generate the first $b^k$ points.  So in practice, we never need to store
+more than a finite number of columns at a time.
+Whenever we find that we need more than $b^k$ points for the current
+value of $k$, we can simply increase $k$ and add the corresponding
+columns to the matrices $\bC_j$.
+
+The classes \externalclass{umontreal.iro.lecuyer.hups}{DigitalNet}
+ and \externalclass{umontreal.iro.lecuyer.hups}{DigitalSequence}
+implement generic digital nets and sequences.
+Specific instances are constructed in subclasses of these two classes.
+
+
+%%%%%%%%%%%%%%%%
+\subsection*{Lattice Rules}
+
+An \emph{integration lattice} is a discrete (but infinite)
+subset of $\RR^s$ of the form
+\[
+ L_s = \left\{\bv = \sum_{j=1}^s h_j {\bv_j}
+             \mbox{ such that each } h_j\in\ZZ\right\},
+\]
+where $\bv_1,\dots,\bv_s \in \RR^s$ are linearly independent over $\RR$
+and $\ZZ^s \subseteq L_s$.  This last condition means that
+$L_s$ must contain all integer vectors, and this implies that
+$L_s$ is periodic with period 1 along each of the $s$ coordinates.
+The approximation of $\mu$ by $Q_n$ with the point set
+$P_n = L_s \cap [0,1)^s$ is called a \emph{lattice rule}
+\cite{mKOR59a,vSLO94a}.  The value of $n$ is the number of points
+of the lattice that are in the unit hypercube $[0,1)^s$.
+
+Let $\bV$ be the matrix whose rows are the basis vectors
+$\bv_1,\cdots,\bv_s$ and $\bV^{-1}$ its inverse.
+One has $\ZZ^s\subseteq L_s$ if and only if
+all entries of $\bV^{-1}$ are integer.
+When this holds, $n = \det(\bV^{-1})$
+and all entries of $\bV$ are multiples of $1/n$.
+
+The \emph{rank} of the lattice is the smallest $r$ such that one can
+find a basis of the form $\bv_1,\dots, \bv_r,\be_{r+1},\cdots,\be_s$,
+where $\be_j$ is the $j$th unit vector in $s$ dimensions.
+In particular, a lattice rule of \emph{rank 1} has a basis of the form
+$\bv_1 = (a_1, \dots, a_{s})/n$ and $\bv_j = \be_j$ for $j>1$,
+where $a_j \in\ZZ_n$ for each $j$.
+It is a \emph{Korobov} rule if $\bv_1$ has the special
+form $\bv_1 = (1,\; a,\; a^2 \mod n,\; \dots,\; a^{s-1} \mod n)/n$
+for some $a\in\ZZ_n$.
+The point set $P_n$ of a Korobov lattice rule can also be written as
+$P_n = \{(x_1,\dots,x_s)/n$ such that $x_1\in\ZZ_n$ and
+$x_j = a x_{j-1} \mod n$ for all $j > 1\}$.  This is the set of all
+vectors of successive values produced by a linear congruential generator
+(LCG) with modulus $n$ and multiplier $a$, from all possible initial
+states, including 0.  In this case, the points are easy to enumerate
+by using the recurrence.
+
+
+%%%%%%%%%%%%%%%%
+\subsection*{Cycle-based point sets}
+
+Certain types of point sets are defined pretty much like random number
+generators: choose a finite state space $\cS$, a transition function
+$f : \cS\to\cS$, an output function $g : \cS\to [0,1)$, and define
+\eq
+ P_n = \{\bu = (u_0,u_1,\dots) : s_0\in\cS,\ s_j = f(s_{j-1}),
+               \mbox{ and } u_j = g(s_j) \mbox{ for all } j\}.
+\endeq
+This is the set of all vectors of successive output values produced
+by the recurrence defined by $f$ and the output function $g$, from all
+possible initial states.
+The value of $n$ is the cardinality of $\cS$ and the dimension $s$
+is infinite.  We could also have $n = \infty$ (an infinite sequence)
+if $\cS$ is infinite but denumerable and ordered (so we know in which
+order to enumerate the points).
+
+Let us assume that $n$ is finite and that for each $s_0\in\cS$,
+the recurrence $s_j = f(s_{j-1})$ is \emph{purely periodic}, i.e.,
+there is always an integer $j$ such that $s_j = s_0$.
+The smallest such $j$, called the \emph{period length}, depends in
+general on $s_0$.  Thus, the state space $\cS$ is partitioned into a
+finite number of \emph{cycles}.  The successive coordinates of any point
+$\bu\in P_n$ are periodic with period length equal to the length of the
+cycle that contains $s_0$ (and the following $s_j$'s).
+
+One way of implementing such a point set while avoiding to recompute
+$f$ and $g$ each time a coordinate is needed is to store explicitly
+all the cycles of the recurrence, in the form of a \emph{list of cycles}.
+We can store either the successive $u_j$'s directly, or the successive
+$s_j$'s, over each cycle.
+The class \externalclass{umontreal.iro.lecuyer.hups}{CycleBasedPointSet}
+ provides the framework for doing that.
+
+For example, a Korobov lattice point set is defined via the recurrence
+$x_j = a x_{j-1} \mod n$ and output function $u_j = x_j/n$.
+If $n$ is prime and $a$ is a primitive element modulo $n$, then there
+are two cycles: one of period 1 that contains only 0, and
+the other of period $n-1$.
+For more general $n$ and $a$, there will be more cycles.
+The class  \externalclass{umontreal.iro.lecuyer.hups}{LCGPointSet}
+ constructs this type of point set and
+stores explicitly the successive values of $u_j$ over the different cycles.
+
+There are cases where $n$ is a power of two, say $n = 2^k$,
+and where the state $s_j$ is represented as a $k$-bit string.
+In that context, it is often more convenient to store the successive
+$s_j$'s instead of the successive $u_j$'s, over the set of cycles
+(e.g., if a random digital shift in base 2 is to be applied to
+randomize the points, it can be performed by applying a bitwise xor
+directly to $s_j$).
+When generating the coordinates, the $s_j$'s can be interpreted as
+$2^k$-bit integers and multiplied by $2^{-k}$ to produce the output.
+This is supported by the class
+ \externalclass{umontreal.iro.lecuyer.hups}{CycleBasedPointSetBase2}.
+Special instances of this class are usually based on
+linear recurrences modulo 2 and they include the Korobov-type
+\emph{polynomial lattice rules}
+\cite{rLEC99a,vLEC99a,rLEC02b,vLEM03a,rPAN04a}.
+
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection*{Randomized quasi-Monte Carlo}
+
+In their original versions, these HUPS are deterministic, and the
+corresponding QMC methods give a \emph{deterministic} integration error
+that is difficult to estimate.
+In \emph{randomized} QMC methods, $P_n$ is randomized, preferably in a
+way that it retains its high uniformity over $[0,1)^s$ when taken as a set,
+while each of its points has the uniform distribution over $[0,1)^s$
+when taken individually.  Then, $Q_n$ becomes an unbiased estimator
+of $\mu$, hopefully with smaller variance than the standard MC estimator.
+To estimate the variance and compute a confidence interval on
+$\mu$, one can apply $m$ independent randomizations to the same $P_n$,
+and compute ${\bar X_m}$ and ${S_{m,x}^2}$, the sample mean and sample
+variance of the $m$ corresponding (independent) copies of $Q_n$.
+Then, $E[\bar X_m] = \mu$ and $E[S_{m,x}^2] = \Var[Q_n] = m\Var[\bar X_m]$
+\cite{vLEC00b}.
+
+Two examples of such randomizations are the \emph{random shift modulo 1},
+proposed in \cite{vCRA76a} and implemented in class
+\externalclass{umontreal.iro.lecuyer.hups}{RandShiftedPointSet},
+and the \emph{random digital shift in base $b$}, described and
+implemented in class \externalclass{umontreal.iro.lecuyer.hups}{DigitalNet}.
+These randomizations are also incorporated directly in certain types
+of point sets such as
+\externalclass{umontreal.iro.lecuyer.hups}{CycleBasedPointSet},
+\externalclass{umontreal.iro.lecuyer.hups}{CycleBasedPointSetBase2}, etc.
+
+In the random shift modulo 1, we generate a \emph{single} point $\bu$
+uniformly over $[0,1)^s$ and add it to each point of $P_n$,
+coordinate-wise, modulo 1.
+Since all points of $P_n$ are shifted by the same amount,
+the set retains most of its structure and uniformity.
+
+For the random digital shift in base $b$, we generate again a single
+$\bu = (u_1,\dots,u_s)$ uniformly over $[0,1)^s$,
+write the digital expansion in base $b$ of each of its coordinates,
+say $u_j = \sum_{\ell=1}^\infty d_{j,\ell} b^{-\ell}$,
+then add $d_{j,\ell}$ modulo $b$ to the $\ell$th digit of the
+digital expansion in base $b$ of the $j$th coordinate of each point
+$\bu_i\in P_n$.  For $b=2$, the digit-wise addition modulo $b$ becomes
+a bitwise exclusive-or, which is fast to perform on a computer.
+
+An interesting property of the digital shift in base $b$ is that
+if the hypercube $[0,1)^s$ is partitioned into $b^{q_1 + \cdots + q_s}$
+rectangular boxes
+of the same size by partitioning the $j$th axis into $b^{q_j}$ equal
+parts for each $j$, for some integers $q_j \ge 0$
+(such a partition is called a \emph{$\bq$-equidissection in base $b$}
+of the unit hypercube, where $\bq = (q_1,\dots,q_s)$),  then the number of
+boxes that contain $m$ points, for each integer $m$, is unchanged by
+the randomization.  In particular, if each box contains the same number
+of points of $P_n$ before the randomization, then it also does after the
+randomization.
+In this case, we say that $P_n$ is \emph{$\bq$-equidistributed in base $b$}.
+Several other randomization methods exist and most are adapted to
+special types of point sets; see, e.g.,
+ \externalclass{umontreal.iro.lecuyer.hups}{DigitalNet} and \cite{vOWE03a}.
+
+
+%%%%%%%%%%%%%%%
+\subsection*{Point set implementations and enumeration tools}
+
+Let $\bu_i = (u_{i,0}, u_{i,1}, \dots, u_{i,s-1})$
+be the elements of the point set $P_n$, for $i=0,\dots,n-1$.
+Both the number of points $n$ and the dimension $s$ can be finite
+or infinite.  The point set can be viewed as a two-dimensional array
+whose element $(i,j)$ contains $u_{i,j}$, the coordinate $j$ of point $i$.
+In the implementations of typical point sets, the values $u_{i,j}$ are
+not stored explicitly in a two-dimensional array, but pertinent
+information is organized so that the points and their coordinates can be
+generated efficiently.  The base class for point sets is the abstract
+class \externalclass{umontreal.iro.lecuyer.hups}{PointSet}.
+
+To enumerate the successive points or the successive coordinates of a
+given point, we use \emph{point set iterators},
+which resemble the iterators defined
+in Java \emph{collections}, except that they loop over bi-dimensional sets.
+Their general behavior is defined in the interface
+ \externalclass{umontreal.iro.lecuyer.hups}{PointSetIterator}.
+Several independent iterators can coexist at any given time for the same
+point set.  Each one maintains a current point index and a current
+coordinate index, which are incremented by one when the iterator advances
+to the next point or the next coordinate.  Both are initialized to 0.
+Each subclass of \externalclass{umontreal.iro.lecuyer.hups}{PointSet}
+ has its own implementation of
+\externalclass{umontreal.iro.lecuyer.hups}{PointSetIterator} and has
+ a method \texttt{iterator} that
+creates and returns a new point set iterator of the correct type.
+
+An important feature of the
+\externalclass{umontreal.iro.lecuyer.hups}{PointSetIterator} interface is that
+it extends the \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}
+ interface.  This means that any
+point set iterator can be used in place of a random stream that is
+supposed to generate i.i.d.{} $U(0,1)$ random variables, anywhere in a
+simulation program.  It then becomes very easy to replace the
+(pseudo)random numbers by the coordinates $u_{i,j}$ of a randomized HUPS
+without changing the internal code of the simulation program.
+
+
+%%%%%%%%%%%%%%%
+\subsection*{Transformed point sets and containers}
+
+HUPS are often transformed either deterministically or randomly.
+Deterministic transformations can be applied to improve the uniformity,
+or to eliminate some points or coordinates (i.e., selecting subsets),
+or to concatenate point sets (padding), or to take an antithetic version
+of a point set, etc.
+Random transformations are used for randomized QMC.
+They are also useful when the \emph{average} of a uniformity measure
+of interest over the outcomes of a certain type of randomization is
+much better than the worst case and may be better than the uniformity
+measure of the original point set.
+When a point set is transformed, we often want to keep the original
+as well, and we may want to apply different types of transformations
+or different independent randomizations to the same point set.
+
+This can be achieved via \emph{container} point sets, which are defined
+in terms of another point set to which they keep a reference
+and apply certain transformations.
+\externalclass{umontreal.iro.lecuyer.hups}{ContainerPointSet} is the base
+ class for such containers.
+One example is \externalclass{umontreal.iro.lecuyer.hups}{RandShiftedPointSet},
+ which applies a random shift
+modulo 1 to the point set that it contains.
+Of course, the contained point set can be a container itself and this
+can be done recursively, but too many levels of recursiveness may impair
+the performance (speed).
+
+% CachedPointSet...
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Examples}
+
+ To be done...
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{comment}
+\subsection*{Steps for performing Quasi-Monte Carlo simulation}
+
+\begin{enumerate}
+\item Decide which type of point set will be used and create it
+  by constructing a subclass of
+  \externalclass{umontreal.iro.lecuyer.hups}{PointSet}.
+\item Get an iterator for the point set and use it as an ordinary
+  random number stream.  It can be used to create non-uniform
+  random number generators as well, although only inversion
+  should be used.
+\item For each of the $R$ replications of the simulation, do
+  the following to compute the statistic $x_r$, for $r=0,\dots,R-1$.
+\begin{enumerate}
+\item Randomize the point set using a uniform x1random number stream.
+\item Perform $n$ replications of the simulation, each with a
+  different point in the point set.  For each replication, one should
+obtain the result $x_{r,i}$, where $i=0,\dots,n-1$.
+
+Note: All the points from a finite point set should be used to
+fully take advantage of its low discrepancy.
+\item Compute the statistic
+\[x_r=\latex{\frac1n}\html{(1/n)}\sum_{i=0}^{n-1} x_{r,i}.\]
+\item Reset the point set iterator for the next replication.
+\end{enumerate}
+\item The values $x_0,\dots,x_{r-1}$ can be used as statistical
+  observations to compute the $\bar x$ estimator, confidence interval, ...
+\end{enumerate}
+
+\subsection*{Representation of a point set}
+
+The (abstract) base class
+\externalclass{umontreal.iro.lecuyer.hups}{PointSet} views
+a \emph{point set} as
+a set of $n$ points in the $t$-dimensional unit hypercube $[0,1)^t$.
+A point set can also be viewed (and stored) as an $n\times t$ matrix
+whose element $(i,j)$ is the $j$th coordinate of the $i$th point,
+for $0\le i < n$ and $0\le j < t$ (both the point and coordinate
+indexes start from zero).
+One can directly use methods of this class, but this is sometimes not
+the most efficient technique for accessing coordinates of a point set
+and it results in two versions of the same simulation application,
+one for Monte Carlo and another one for Quasi-Monte Carlo.
+The class contains a method allowing one to construct a
+\emph{point set iterator} which can traverse the point set more
+efficiently.
+
+The \externalclass{umontreal.iro.lecuyer.hups}{PointSetIterator} contains
+all needed methods to traverse a point set.  One can return only one
+coordinate, $t$ coordinates, change the current coordinate and
+current point index, reset the iterator, ... Since the class
+implements \externalclass{umontreal.iro.lecuyer.rng}{RandomStream},
+it can be used exactly as a uniform random number generator.
+This allows one to use the same application logic for MC and QMC
+simulation; only the initialization part will depend on the type of simulation.
+Every point set implements its own specialized iterator, allowing
+an efficient access to the coordinates.
+
+\subsection*{Supported types of point sets}
+
+The \texttt{hups} package supports several types of point sets implemented
+in different classes extending
+\externalclass{umontreal.iro.lecuyer.hups}{PointSet}.
+The \externalclass{umontreal.iro.lecuyer.hups}{CycleBasedPointSet}
+class provides the needed basis for implementing cycle-based point sets.
+Each point is obtained by an initial value which lies in a given cycle.
+The coordinates are obtained by visiting all the points of the given cycle
+periodically, so the point set has an infinite dimension.
+The \externalclass{umontreal.iro.lecuyer.hups}{LCGPointSet} is an
+implementation of a cycle-based point set whose cycles
+are generated using a small LCG.  Such a point set
+corresponds to a Korobov lattice rule.
+
+Generic rank 1 lattices rules are implemented in the class
+\externalclass{umontreal.iro.lecuyer.hups}{Rank1Lattice}.
+Korobov lattice sequences are implemented in the class
+\externalclass{umontreal.iro.lecuyer.hups}{KorobovLatticeSequence}.
+
+Two types of digital nets are supported, namely
+base-2 and base-$b$.  They are implemented in separate
+base class because some optimizations can be done
+for the special case of base~2.
+The \externalclass{umontreal.iro.lecuyer.hups}{DigitalNetBase2} class,
+which implements digital nets in base 2, provides all required
+facilities for computing points from such a digital net.
+It also supports scrambling as
+randomization.  A digital net implementation needs
+to provide the adequate generating matrices to the base class.
+Sobol, Niederreiter and Niederreiter-Xing sequences are
+supported in base~2.
+
+The class \externalclass{umontreal.iro.lecuyer.hups}{DigitalNet}
+provides the required facilities for implementing digital
+nets in an arbitrary base $b$.  For now, the only supported digital net
+in base $b > 2$ is the Faure sequence.
+
+Some supported point sets are nor lattice rules, nor digital nets.
+The Halton sequence and Hammersley net are ancestors of
+linear digital nets and sequences and they are implemented in
+ordinary and scrambled forms.
+
+\subsection*{Randomization and container point sets}
+
+Randomization can be performed in two ways.  The interface
+\externalclass{umontreal.iro.lecuyer.hups}{Randomization} is used
+to specify randomizations transforming the structure of the point set,
+for example scrambling in the case of digital nets. The class
+\externalclass{umontreal.iro.lecuyer.hups}{PointSet} contains
+an internal list of randomizations that will be applied sequentially
+when calling the method
+\externalmethod{umontreal.iro.lecuyer.hups}{PointSet}{randomize}{}.
+The method \externalmethod{umontreal.iro.lecuyer.hups}{PointSet}{unrandomize}{}
+restores the point set to its original, deterministic, structure.
+Other randomizations act somewhat like a filter and are implemented as
+container point sets.  For example, the class
+\externalclass{umontreal.iro.lecuyer.hups}{RandShiftedPointSet}
+represents a point set whose coordinates are shifted modulo 1 with a random
+factor.  This shift is applied after the contained point set generates
+its coordinates and it can be applied to any point set.
+% The class \externalclass{umontreal.iro.lecuyer.hups}{RandXoredPointSet}
+% is also a container class that performs a XOR randomization
+% on a child point set.
+
+The package uses container point set for other purposes than
+randomization.
+The class \externalclass{umontreal.iro.lecuyer.hups}{CachedPointSet}
+can be used to store the coordinates of a point set.  It is then stored
+internally as a matrix and can be accessed very efficiently.
+The \externalclass{umontreal.iro.lecuyer.hups}{SubsetOfPointSet}
+allows one to constrain a point set's size or dimension, for example
+to get the dimension of a cycle-based point set finite.
+The class \externalclass{umontreal.iro.lecuyer.hups}{PaddedPointSet}
+gathers some coordinates of several point sets to construct
+a padded point set.
+The class \externalclass{umontreal.iro.lecuyer.hups}{AntitheticPointSet}
+allows one to switch on or off the antithetic coordinates generation.
+
+Such container point sets implement their own iterators that use
+the iterators of the contained point sets to access the points almost
+as efficiently as if the contained point set iterators were used directly.
+
+\end{comment}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

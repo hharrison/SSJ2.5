@@ -1,0 +1,180 @@
+\defclass {InverseGaussianProcessPCA}
+
+Approximates a principal component analysis (PCA)
+decomposition of the \texttt{InverseGaussianProcess}.
+The PCA decomposition of a \class{BrownianMotionPCA}
+with a covariance matrix identical to the one
+of our \texttt{InverseGaussianProcess} is used to 
+generate the path of our \texttt{InverseGaussianProcess}
+\cite{fLEC08a}.  Such a path is a perfectly random path
+and it is hoped that it will provide reduction
+in the simulation variance when using quasi-Monte Carlo.
+
+The method \texttt{nextObservation()} cannot be used with 
+PCA decompositions since the whole path must be generated at
+once. 
+
+
+\bigskip\hrule\bigskip
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        InverseGaussianProcessPCA
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.stochprocess;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.randvar.*;
+
+\end{hide}
+
+public class InverseGaussianProcessPCA extends InverseGaussianProcess \begin{hide} {
+
+    protected BrownianMotionPCA bmPCA;
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public InverseGaussianProcessPCA (double s0, double delta, double gamma,
+                                     RandomStream stream) \begin{hide} {
+        super(s0, delta, gamma, stream);
+        bmPCA = new BrownianMotionPCA(0.,0.,delta,stream);
+        numberOfRandomStreams = 1;
+    }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new \texttt{InverseGaussianProcessPCA}.
+The initial value \texttt{s0} will be overridden by $t[0]$ when
+the observation times are set.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double[] generatePath () {
+        double[] uniformIncrement = new double[d];
+        double[] BMpath = bmPCA.generatePath();
+
+        for(int i = 0; i < d; i++)
+        {
+            double dt    = bmPCA.mudt[i]; //bmTime[i + 1] - bmTime[i];
+            double sigma = bmPCA.sigmasqrdt[i] ;//Math.sqrt(dt) * bmSigma;
+            uniformIncrement[i] =
+            NormalDistQuick.cdf01( (BMpath[i+1] - BMpath[i] - bmPCA.mu * dt)/sigma );
+        }
+        path[0] = x0;
+        for(int i = 0; i < d; i++)
+            path[i+1] = path[i] +
+                InverseGaussianDist.inverseF(imu[i], ilam[i], uniformIncrement[i]);
+
+        observationIndex   = d;
+        observationCounter = d;
+        return path;
+    }\end{hide}
+
+   public double[] generatePath (double[] uniforms01) \begin{hide} {
+        double[] uniformIncrement = new double[d];
+        double[] BMpath = bmPCA.generatePath(uniforms01);
+
+        for(int i = 0; i < d; i++)
+        {
+            double dt    = bmPCA.mudt[i]; //bmTime[i + 1] - bmTime[i];
+            double sigma = bmPCA.sigmasqrdt[i] ;//Math.sqrt(dt) * bmSigma;
+            uniformIncrement[i] =
+            NormalDistQuick.cdf01( (BMpath[i+1] - BMpath[i] - bmPCA.mu * dt)/sigma );
+        }
+        path[0] = x0;
+        for(int i = 0; i < d; i++)
+            path[i+1] = path[i] +
+                InverseGaussianDist.inverseF(imu[i], ilam[i], uniformIncrement[i]);
+
+        observationIndex   = d;
+        observationCounter = d;
+        return path;
+    }\end{hide}
+\end{code}
+\begin{tabb} Instead of using the internal stream to generate the path,
+uses an array of uniforms $U[0,1)$.  The length of the array should be
+equal to the length of the number of periods in the observation
+times. This method is useful for \class{NormalInverseGaussianProcess}.
+\end{tabb}
+\begin{code}
+
+   public double nextObservation() \begin{hide} {
+        throw new UnsupportedOperationException("Not implementable for PCA.");
+    }\end{hide}
+\end{code}
+\begin{tabb} Not implementable for PCA.
+\end{tabb}
+\begin{code}
+   
+   public void setObservationTimes (double t[], int d) \begin{hide} {
+        super.setObservationTimes(t,d);
+        bmPCA.setObservationTimes(t,d);
+    }\end{hide}
+\end{code}
+\begin{tabb}
+Sets the observation times of both the \class{InverseGaussianProcessPCA}
+and the inner \\  \class{BrownianMotionPCA}.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public RandomStream getStream() {
+        if( stream != bmPCA.getStream() )
+            throw new IllegalStateException("Two different streams or more are present");
+        return stream;
+    }
+
+
+    public void setStream (RandomStream stream) {
+        super.setStream(stream);
+        bmPCA.setStream(stream);
+    }\end{hide}
+
+   public void setBrownianMotionPCA (BrownianMotionPCA bmPCA)\begin{hide} {
+        this.bmPCA = bmPCA;
+    }\end{hide}
+\end{code}
+\begin{tabb} Sets the brownian motion PCA.  The observation times
+will be overriden when the method \texttt{observationTimes()} is called on 
+the \class{InverseGaussianProcessPCA}.
+\end{tabb}
+\begin{code}
+
+   public BrownianMotion getBrownianMotionPCA() \begin{hide} {
+        return bmPCA; 
+    }\end{hide}
+\end{code}
+\begin{tabb} Returns the \class{BrownianMotionPCA}.
+\end{tabb}
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

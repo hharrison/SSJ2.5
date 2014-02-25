@@ -1,0 +1,92 @@
+\defclass{PiecewiseConstantFunction}
+
+
+Represents a piecewise-constant function.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        PiecewiseConstantFunction
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Éric Buist
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.functions;\begin{hide}
+
+import java.util.Arrays;
+\end{hide}
+
+public class PiecewiseConstantFunction implements MathFunction\begin{hide} {
+   private double[] x;
+   private double[] y;
+\end{hide}
+
+   public PiecewiseConstantFunction (double[] x, double[] y)\begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException();
+      this.x = x.clone ();
+      this.y = y.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new piecewise-constant function
+ with $X$ and $Y$ coordinates given
+ by \texttt{x} and \texttt{y}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the $X$ coordinates.}
+   \param{y}{the $Y$ coordinates.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getX()\begin{hide} {
+      return x.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $X$ coordinates of the function.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $X$ coordinates of the function.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getY()\begin{hide} {
+      return y.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $Y$ coordinates of
+ the function.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $Y$ coordinates of the function.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public double evaluate (double x) {
+      final int idx = Arrays.binarySearch (this.x, x);
+      if (idx >= 0)
+         return y[idx];
+      final int insertionPoint = -(idx + 1);
+      return y[insertionPoint];
+   }
+}\end{hide}
+\end{code}

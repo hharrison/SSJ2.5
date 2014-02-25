@@ -1,0 +1,127 @@
+\defclass{RatioFunction}
+
+Represents a function computing a ratio of two values.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RatioFunction
+ * Description:  Represents a function computing a ratio of two values.
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util;\begin{hide}
+\end{hide}
+
+
+public class RatioFunction implements MultivariateFunction\begin{hide} {
+   private double zeroOverZero = Double.NaN;
+\end{hide}
+\end{code}
+\subsubsection*{Constructors}
+\begin{code}
+
+   public RatioFunction()\begin{hide} {}\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new ratio function.
+\end{tabb}
+\begin{code}
+
+   public RatioFunction (double zeroOverZero)\begin{hide} {
+      this.zeroOverZero = zeroOverZero;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new ratio function that returns
+   \texttt{zeroOverZero} for the special case of $0/0$.
+   See the \method{getZeroOverZeroValue}{}  method for more information.
+   The default value of \texttt{zeroOverZero} is \texttt{Double.NaN}.
+\end{tabb}
+\begin{htmlonly}
+   \param{zeroOverZero}{the value for $0/0$.}
+\end{htmlonly}
+\subsubsection*{Methods}
+\begin{code}
+
+   public double getZeroOverZeroValue()\begin{hide} {
+      return zeroOverZero;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the value returned by \method{evaluate}{(double[])} in the
+ case where the $0/0$ function is calculated.
+ The default value for $0/0$ is \texttt{Double.NaN}.
+
+ Generally, $0/0$ is undefined, and therefore associated with the \texttt{Double.NaN}
+  constant, meaning \emph{not-a-number}.
+ However, in certain applications, it can be defined differently to accomodate some special cases.
+ For exemple, in a queueing system, if there are no arrivals, no customers are served,
+ lost, queued, etc.  As a result, many performance measures of interest turn out to be
+ $0/0$.  Specifically, the loss probability, i.e., the ratio of
+ lost customers over the number of arrivals, should be 0 if there is no arrival;
+ in this case, $0/0$ means 0.
+ On the other hand, the service level, i.e., the fraction of customers waiting less than
+ a fixed threshold, could be fixed to 1 if there is no arrival.
+\end{tabb}
+\begin{htmlonly}
+   \return{the value for $0/0$.}
+\end{htmlonly}
+\begin{code}
+
+   public void setZeroOverZeroValue (double zeroOverZero)\begin{hide} {
+      this.zeroOverZero = zeroOverZero;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Sets the value returned by \method{evaluate}{(double[])} for
+ the undefined function $0/0$ to \texttt{zeroOverZero}.
+ See \method{getZeroOverZeroValue}{} for more information.
+\end{tabb}
+\begin{htmlonly}
+   \param{zeroOverZero}{the new value for $0/0$.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public int getDimension() {
+      return 2;
+   }
+
+   public double evaluate (double... x) {
+      if (x.length != 2)
+         throw new IllegalArgumentException
+            ("Invalid length of x");
+      if (x[0] == 0 && x[1] == 0)
+         return zeroOverZero;
+      return x[0]/x[1];
+   }
+
+   public double evaluateGradient (int i, double... x) {
+      if (x.length != 2)
+         throw new IllegalArgumentException
+            ("Invalid length of x");
+      switch (i) {
+      case 0: return 1.0/x[1];
+      case 1: return -x[0]/(x[1]*x[1]);
+      default: throw new IndexOutOfBoundsException
+         ("Invalid value of i: " + i); 
+      }
+   }
+}\end{hide}
+\end{code}

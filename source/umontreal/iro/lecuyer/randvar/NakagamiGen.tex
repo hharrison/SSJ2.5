@@ -1,0 +1,139 @@
+\defclass {NakagamiGen}
+
+This class implements random variate generators for the {\em Nakagami\/} 
+distribution. See the definition in 
+\externalclass{umontreal.iro.lecuyer.probdist}{NakagamiDist} of package
+\texttt{probdist}.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NakagamiGen
+ * Description:  random variate generators for the Nakagami distribution.
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class NakagamiGen extends RandomVariateGen \begin{hide} {
+   // Distribution parameters
+   protected double a;
+   protected double lambda;
+   protected double c;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public NakagamiGen (RandomStream s, double a, double lambda, double c) \begin{hide} {
+      super (s, new NakagamiDist (a, lambda, c));
+      setParams (a, lambda, c);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new Nakagami generator with parameters $a=$ \texttt{a}, 
+ $\lambda =$ \texttt{lambda} and $c =$ \texttt{c}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public NakagamiGen (RandomStream s, NakagamiDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getA(), dist.getLambda(), dist.getC());
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double a, double lambda,
+                                    double c)\begin{hide} {
+      return NakagamiDist.inverseF (a, lambda, c, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the {\em Nakagami\/} distribution with
+ parameters $a=$ \texttt{a}, 
+ $\lambda =$ \texttt{lambda} and $c =$ \texttt{c}, using stream \texttt{s}.
+\end{tabb}
+\begin{htmlonly}
+   \param{s}{the random stream}
+   \param{a}{the location parameter}
+   \param{lambda}{the scale parameter}
+   \param{c}{the shape parameter}
+   \return{Generates a variate from the {\em Nakagami\/} distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the location parameter $a$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the location parameter mu}
+\end{htmlonly}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the scale parameter $\lambda$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the scale parameter mu}
+\end{htmlonly}
+\begin{code}
+
+   public double getC()\begin{hide} {
+      return c;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the shape parameter $c$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the shape parameter mu}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   protected void setParams (double a, double lambda, double c) {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      this.a = a;
+      this.lambda = lambda;
+      this.c = c;
+   }
+}\end{hide}
+\end{code}

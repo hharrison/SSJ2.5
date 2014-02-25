@@ -1,0 +1,45 @@
+\documentclass [12pt]{article}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{ssj}
+\usepackage{color}
+\usepackage{pictexwd}
+
+
+% \dateheadtrue
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{titlepage}
+\title{stat}{Tools for Collecting Statistics}
+
+\vfill
+\end{titlepage}
+\pagenumbering{roman}
+\tableofcontents
+
+\pagenumbering{arabic}
+
+
+%\appendix
+\include{overview}
+\include{ObservationListener}
+\include{StatProbe}
+\include{Tally}
+\include{TallyStore}
+\include{TallyHistogram}
+
+\include{list/overview}
+\include{list/ArrayOfObservationListener}
+\include{list/ListOfStatProbes}
+\include{list/ListOfTallies}
+\include{list/ListOfTalliesWithCovariance}
+
+%\setcounter{section}{1}
+%\renewcommand{\thesection}{\Alph{section}.}
+
+
+\bibliography{simul,random,ift,stat,prob,vrt}
+\bibliographystyle{plain}
+
+\end{document}

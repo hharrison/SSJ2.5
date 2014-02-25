@@ -1,0 +1,140 @@
+\defclass{RandomStreamInstantiationException}
+
+This exception is thrown when a random stream factory cannot instantiate a stream
+on a call to its \externalmethod{umontreal.iro.lecuyer.rng}{RandomStreamFactory}{newInstance}{()} method.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandomStreamInstantiationException
+ * Description:  thrown when a random stream factory cannot instantiate a stream
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.rng;
+
+public class RandomStreamInstantiationException extends RuntimeException\begin{hide} {
+   private RandomStreamFactory factory;
+\end{hide}
+
+   public RandomStreamInstantiationException (RandomStreamFactory factory)\begin{hide} {
+      super();
+      this.factory = factory;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new random stream instantiation exception with
+ no message, no cause, and thrown by the given \texttt{factory}.
+\end{tabb}
+\begin{htmlonly}
+   \param{factory}{the random stream factory which thrown the exception.}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStreamInstantiationException (RandomStreamFactory factory,
+                                         String message)\begin{hide} {
+      super (message);
+      this.factory = factory;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new random stream instantiation exception with
+ the given \texttt{message}, no cause, and concerning \texttt{factory}.
+\end{tabb}
+\begin{htmlonly}
+   \param{factory}{the random stream factory concerned by the exception.}
+   \param{message}{the error message describing the exception.}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStreamInstantiationException (RandomStreamFactory factory,
+                                         Throwable cause)\begin{hide} {
+      super (cause);
+      this.factory = factory;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new random stream instantiation exception with
+ no message, the given \texttt{cause}, and concerning \texttt{factory}.
+\end{tabb}
+\begin{htmlonly}
+   \param{factory}{the random stream factory concerned by the exception.}
+   \param{cause}{the cause of the exception.}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStreamInstantiationException (RandomStreamFactory factory,
+                                         String message, Throwable cause)\begin{hide} {
+      super (message, cause);
+      this.factory = factory;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new random stream instantiation exception with
+ the given \texttt{message}, the supplied \texttt{cause}, 
+ and concerning \texttt{factory}.
+\end{tabb}
+\begin{htmlonly}
+   \param{factory}{the random stream factory concerned by the exception.}
+   \param{message}{the error message describing the exception.}
+   \param{cause}{the cause of the exception.}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStreamFactory getRandomStreamFactory()\begin{hide} {
+      return factory;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the random stream factory concerned by this exception.
+\end{tabb}
+\begin{htmlonly}
+   \return{the random stream factory concerned by this exception.}
+\end{htmlonly}
+\begin{code}
+
+   public String toString()\begin{hide} {
+      if (factory == null)
+         return super.toString();
+
+      StringBuffer sb = new StringBuffer (getClass().getName());
+      sb.append (": For random stream factory ");
+      sb.append (factory.toString());
+      String msg = getMessage();
+      if (msg != null)
+         sb.append (", ").append (msg);
+      return sb.toString();
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}   Returns a short description of the exception.
+ If \method{getRandomStreamFactory}{()} returns \texttt{null},
+ this calls \texttt{super.toString}. Otherwise, the
+ result is the concatenation of:
+\end{tabb}
+\begin{tabbb}
+  a) the name of the actual class of the exception;\\
+  b) the string \texttt{": For random stream factory "};\\
+  c) the result of \method{getRandomStreamFactory}{()}\texttt{.toString()};\\
+  d) if \externalmethod{java.lang}{Throwable}{getMessage}{()} is non-\texttt{null},
+     \texttt{", "} followed by the result of 
+     \externalmethod{java.lang}{Throwable}{getMessage}{()}.
+\end{tabbb}
+\begin{htmlonly}
+   \return{a string representation of the exception.}
+\end{htmlonly}

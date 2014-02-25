@@ -1,0 +1,261 @@
+\defclass{Misc}
+
+This class provides miscellaneous functions that are hard to classify.
+Some may be moved to another class in the future.
+
+\bigskip\hrule
+
+\begin{code}\begin{hide}
+/*
+ * Class:        Misc
+ * Description:  Miscellaneous functions that are hard to classify.
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util;\begin{hide}
+
+import umontreal.iro.lecuyer.functions.MathFunction;\end{hide}
+
+
+public class Misc\begin{hide} {
+   private Misc() {}\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double quickSelect (double[] t, int n, int k)\begin{hide} {
+      double[] U = new double[n];
+      double[] V = new double[n];
+      double p = t[k - 1];
+      int u = 0;
+      int v = 0;
+      int indV = 0;
+
+      for (int i = 0; i < n; i++) {
+         if (t[i] <= p) {
+            v++;
+            if (t[i] != p) {
+               U[u++] = t[i];
+            }
+         } else
+            V[indV++] = t[i];
+      }
+
+      if (k <= u)
+         return quickSelect (U, u, k);
+      else if (k > v)
+         return quickSelect (V, indV, k - v);
+      else return p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $k^{\mbox{th}}$ smallest item of the array $t$ of size $n$.
+   Array $t$ is unchanged by the method.
+\end{tabb}
+\begin{htmlonly}
+   \param{t}{the array which contain the items}
+   \param{n}{the number of items in the array}
+   \param{k}{the index of the smallest item}
+   \return{the kth smallest item of the array $t$}
+\end{htmlonly}
+\begin{code}
+
+   public static int quickSelect (int[] t, int n, int k)\begin{hide} {
+      int[] U = new int[n];
+      int[] V = new int[n];
+      int p = t[k - 1];
+      int u = 0;
+      int v = 0;
+      int indV = 0;
+
+      for (int i = 0; i < n; i++) {
+         if (t[i] <= p) {
+            v++;
+            if (t[i] != p) {
+               U[u++] = t[i];
+            }
+         } else
+            V[indV++] = t[i];
+      }
+
+      if (k <= u)
+         return quickSelect (U, u, k);
+      else if (k > v)
+         return quickSelect (V, indV, k - v);
+      else return p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $k^{\mbox{th}}$ smallest item of the array $t$ of size $n$.
+   Array $t$ is unchanged by the method.
+\end{tabb}
+\begin{htmlonly}
+   \param{t}{the array which contain the items}
+   \param{n}{the number of items in the array}
+   \param{k}{the index of the smallest item}
+   \return{the kth smallest item of the array $t$}
+\end{htmlonly}
+\begin{code}
+
+   public static int getTimeInterval (double[] times, int start, int end,
+                                      double t)\begin{hide} {
+      if (start < 0)
+         throw new IllegalArgumentException
+            ("The starting index must not be negative");
+      int n = end - start;
+      if (n < 0)
+         throw new IllegalArgumentException
+            ("The ending index must be greater than or equal to the starting index");
+      if (t < times[start])
+         return -1;
+      if (t >= times[end])
+         return n;
+
+      int start0 = start;
+      // Perform binary search to find the interval index
+      int mid = (start + end)/2;
+      // Test if t is inside the interval mid.
+      // The interval mid starts at times[mid],
+      // and the interval mid+1 starts at times[mid + 1].
+      while (t < times[mid] || t >= times[mid + 1]) {
+         if (start == end)
+            // Should not happen, safety check to avoid infinite loops.
+            throw new IllegalStateException();
+         if (t < times[mid])
+            // time corresponds to an interval before mid.
+            end = mid - 1;
+         else
+            // time corresponds to an interval after mid.
+            start = mid + 1;
+         mid = (start + end)/2;
+      }
+      return mid - start0;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the index of the time interval corresponding to time \texttt{t}.
+ Let $t_0\le\cdots\le t_n$ be simulation times stored in a subset of
+ \texttt{times}.  This method uses binary search to determine the
+ smallest value $i$ for which $t_i\le t < t_{i+1}$, and returns $i$.
+ The value of $t_i$ is stored in \texttt{times[start+i]} whereas
+ $n$ is defined as \texttt{end - start}.
+ If $t<t_0$, this returns $-1$.  If $t\ge t_n$, this returns $n$.
+ Otherwise, the returned value is greater than or equal to 0, and
+ smaller than or equal to $n-1$. \texttt{start} and \texttt{end} are only used
+ to set lower and upper limits of the search in the \texttt{times}
+ array; the index space of the returned value always starts at 0.
+ Note that if the elements of \texttt{times} with indices \texttt{start},
+ \ldots, \texttt{end} are not sorted in non-decreasing order,
+ the behavior of this method is undefined.
+\end{tabb}
+\begin{htmlonly}
+   \param{times}{an array of simulation times.}
+   \param{start}{the first index in the array to consider.}
+   \param{end}{the last index (inclusive) in the array to consider.}
+   \param{t}{the queried simulation time.}
+   \return{the index of the interval.}
+   \exception{NullPointerException}{if \texttt{times} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if \texttt{start} is negative,
+    or if \texttt{end} is smaller than \texttt{start}.}
+   \exception{ArrayIndexOutOfBoundsException}{if \texttt{start + end}
+    is greater than or equal to the length of \texttt{times}.}
+\end{htmlonly}
+\begin{code}
+
+   public static void interpol (int n, double[] X, double[] Y, double[] C)\begin{hide} {
+      int j;
+      // Compute divided differences for the Newton interpolating polynomial
+      for (j = 0; j <= n; ++j)
+         C[j] = Y[j];
+      for (int i = 1; i <= n; ++i)
+         for (j = n; j >= i; --j) {
+            if (X[j] == X[j-i])
+               C[j] = 0;
+            else
+               C[j] = (C[j] - C[j-1]) / (X[j] - X[j-i]);
+         }
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the Newton interpolating polynomial.  Given the $n+1$
+ real distinct points $(x_0, y_0),$ $(x_1, y_1),\ldots, (x_n, y_n)$,
+  with \texttt{X[i]} $= x_i$, \texttt{Y[i]} $= y_i$, this function computes
+  the $n+1$ coefficients \texttt{C[i]} $= c_i$ of the Newton
+  interpolating polynomial $P(x)$ of degree $n$ passing through these points,
+  i.e. such that $y_i= P(x_i)$, given by
+\begin{equation}
+\qquad  P(x) = c_0 + c_1(x-x_0) + c_2(x-x_0)(x-x_1) + \cdots +
+    c_n(x-x_0)(x-x_1) \cdots(x-x_{n-1}).    \label{eq.newton.interpol}
+\end{equation}
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{degree of the interpolating polynomial}
+   \param{X}{$x$-coordinates of points}
+   \param{Y}{$y$-coordinates of points}
+   \param{C}{Coefficients of the interpolating polynomial}
+\end{htmlonly}
+\begin{code}
+
+   public static double evalPoly (int n, double[] X, double[] C, double z) \begin{hide} {
+      double v = C[n];
+      for (int j = n-1; j >= 0; --j)
+         v = v*(z - X[j]) + C[j];
+      return v;
+   }\end{hide}
+\end{code}
+\begin{tabb} Given $n$, $X$ and $C$ as described in
+ \method{interpol}{int,double[],double[],double[]}\texttt{(n, X, Y, C)}, this
+function returns the value of the interpolating polynomial $P(z)$ evaluated
+ at $z$ (see eq. \ref{eq.newton.interpol}).
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{degree of the interpolating polynomial}
+   \param{X}{$x$-coordinates of points}
+   \param{C}{Coefficients of the interpolating polynomial}
+   \param{z}{argument where polynomial is evaluated}
+   \return{Value of the interpolating polynomial $P(z)$}
+\end{htmlonly}
+\begin{code}
+
+   public static double evalPoly (double[] C, int n, double x) \begin{hide} {
+      double v = C[n];
+      for (int j = n-1; j >= 0; --j)
+         v = v*x + C[j];
+      return v;
+   }\end{hide}
+\end{code}
+\begin{tabb} Evaluates the polynomial 
+\begin{equation}
+\qquad  P(x) = c_0 + c_1 x + c_2 x^2 + \cdots + c_n x^n  \label{eq.horner}
+\end{equation}
+of degree $n$ with coefficients $c_j =$ \texttt{C[j]} at $x$. 
+\end{tabb}
+\begin{htmlonly}
+   \param{C}{Coefficients of the polynomial}
+   \param{n}{degree of the polynomial}
+   \param{x}{argument where polynomial is evaluated}
+   \return{Value of the polynomial $P(x)$}
+\end{htmlonly}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

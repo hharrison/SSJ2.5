@@ -1,0 +1,15 @@
+\begin{thebibliography}{1}
+
+\bibitem{mDEB78a}
+C.~{de Boor}.
+\newblock {\em A Practical Guide to Splines}.
+\newblock Number~27 in Applied Mathematical Sciences Series. Springer-Verlag,
+  New York, 1978.
+
+\bibitem{mPOL93a}
+D.~S.~G. Pollock.
+\newblock Smoothing with cubic splines.
+\newblock Technical report, University of London, Queen Mary and Westfield
+  College, London, 1993.
+
+\end{thebibliography}

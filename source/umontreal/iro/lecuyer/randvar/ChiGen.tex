@@ -1,0 +1,121 @@
+\defclass {ChiGen}
+
+This class implements random variate generators for the 
+{\em chi\/} distribution. It has  $\nu>0$ degrees of freedom and
+its density function is
+\begin{htmlonly}%
+\eq 
+  f (x) =  e^{-x^2 /2} x^{\nu-1} / (2^{(\nu /2) - 1}\Gamma (\nu /2))
+             \qquad \mbox {for } x > 0
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+(see \cite{tJOH95a}, page 417)
+\eq f (x) = \frac {e^{-x^2 /2} x^{\nu-1}}{2^{(\nu /2) - 1}\Gamma (\nu /2)}
+             \qquad \mbox {for } x > 0,
+                                             \eqlabel{eq:Fchi}
+\endeq
+\end{latexonly}
+where $\Gamma (x)$ is the gamma function defined
+in\latex{ (\ref{eq:Gamma})}\html{ \class{GammaGen}}.
+
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution (slow).
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ChiGen
+ * Description:  random variate generators for the chi distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class ChiGen extends RandomVariateGen \begin{hide} {
+   protected int nu = -1;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public ChiGen (RandomStream s, int nu) \begin{hide} {
+      super (s, new ChiDist(nu));
+      setParams (nu);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a \emph{chi}  random variate generator with 
+ $\nu =$ \texttt{nu} degrees of freedom, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public ChiGen (RandomStream s, ChiDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getNu ());
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Create a new generator for the distribution \texttt{dist},
+    using stream \texttt{s}. 
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, int nu)\begin{hide} {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("nu <= 0");
+      return ChiDist.inverseF (nu, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Generates a random variate from the chi distribution with $\nu = $~\texttt{nu}
+   degrees of freedom, using stream \texttt{s}.
+\end{tabb}
+\begin{code} 
+     
+   public int getNu()\begin{hide} {
+      return nu;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+  Returns the value of $\nu$ for this object.
+\end{tabb}
+\begin{hide}\begin{code} 
+     
+   protected void setParams (int nu) {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("nu <= 0");
+      this.nu = nu;
+   }
+}
+\end{code}
+\end{hide}

@@ -1,0 +1,194 @@
+\defclass{GammaRejectionLoglogisticGen}
+
+This class implements {\em gamma\/} random variate generators using
+ a rejection method with loglogistic envelopes,\latex{ from \cite{rCHE77a}}.
+For each gamma variate, the first two uniforms are taken from the 
+main stream and all additional uniforms (after the first rejection)
+are obtained from the auxiliary stream.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        GammaRejectionLoglogisticGen
+ * Description:  gamma random variate generators using a rejection method
+                 with log-logistic envelopes
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class GammaRejectionLoglogisticGen extends GammaGen \begin{hide} {
+    
+   private RandomStream auxStream;
+
+   // UNURAN parameters for the distribution
+   private double beta;
+   private double gamma;
+   // Generator parameters
+   // Rejection with log-logistic envelopes
+   private double aa;
+   private double bb;
+   private double cc;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public GammaRejectionLoglogisticGen (RandomStream s, RandomStream aux,
+                                        double alpha, double lambda) \begin{hide} {
+      super (s, null);
+      auxStream = aux;
+      setParams (alpha, lambda);
+      beta  = 1.0/lambda;
+      gamma = 0.0;
+      init ();
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a gamma random variate generator with parameters $\alpha =$ 
+ \texttt{alpha} and $\lambda =$ \texttt{lambda}, using main stream \texttt{s} and 
+  auxiliary stream \texttt{aux}.
+ The auxiliary stream is used when a random number of uniforms
+ is required for a rejection-type generation method.
+\end{tabb}
+\begin{code}
+
+   public GammaRejectionLoglogisticGen (RandomStream s,
+                                        double alpha, double lambda) \begin{hide} {
+      this (s, s, alpha, lambda);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a gamma random variate generator with parameters $\alpha =$ 
+ \texttt{alpha} and $\lambda =$ \texttt{lambda}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public GammaRejectionLoglogisticGen (RandomStream s, RandomStream aux, 
+                                        GammaDist dist) \begin{hide} {
+      super (s, dist);
+      auxStream = aux;
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getLambda());
+      beta  = 1.0/dist.getLambda();
+      gamma = 0.0;
+      init ();
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator object for the gamma 
+    distribution \texttt{dist}, using main stream \texttt{s} and 
+    auxiliary stream \texttt{aux}. 
+    The auxiliary stream is used when a random number of uniforms
+    is required for a rejection-type generation method.
+  \end{tabb}
+\begin{code}
+
+   public GammaRejectionLoglogisticGen (RandomStream s, GammaDist dist) \begin{hide} {
+      this (s, s, dist);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator object for the gamma
+    distribution \texttt{dist} and  stream \texttt{s} for both the main and
+    auxiliary stream.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public RandomStream getAuxStream()\begin{hide} {
+      return auxStream;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the auxiliary stream associated with this object.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public double nextDouble() {
+      return rejectionLogLogistic 
+                      (stream, auxStream, alpha, beta, gamma, aa, bb, cc);
+   }\end{hide}
+
+   public static double nextDouble (RandomStream s, RandomStream aux, 
+                                    double alpha, double lambda)\begin{hide} {
+      double aa, bb, cc;
+
+      // Code taken from UNURAN
+      aa = (alpha > 1.0) ? Math.sqrt (alpha + alpha - 1.0) : alpha;
+      bb = alpha - 1.386294361;
+      cc = alpha + aa;
+    
+      return rejectionLogLogistic (s, aux, alpha, 1.0/lambda, 0.0, aa, bb, cc);
+   }\end{hide}
+\end{code}
+ \begin{tabb} Generates a new gamma variate with parameters
+  $\alpha = $~\texttt{alpha} and $\lambda = $~\texttt{lambda}, using
+  main stream \texttt{s} and auxiliary stream \texttt{aux}.
+ \end{tabb}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha, 
+                                    double lambda)\begin{hide} {
+      return nextDouble (s, s, alpha, lambda);
+   }\end{hide}
+\end{code}
+ \begin{tabb}  
+   Same as \method{nextDouble}{}~\texttt{(s, s, alpha, lambda)}.
+ \end{tabb}
+\begin{code}\begin{hide}
+
+   private static double rejectionLogLogistic
+      (RandomStream stream, RandomStream auxStream,
+       double alpha, double beta, double gamma,
+        double aa, double bb, double cc) {
+      // Code taken from UNURAN
+      double X;
+      double u1,u2,v,r,z;
+
+      while (true) {
+         u1 = stream.nextDouble();
+         u2 = stream.nextDouble();
+         stream = auxStream;
+         v = Math.log (u1/(1.0 - u1))/aa;
+         X = alpha*Math.exp (v);
+         r = bb + cc*v - X;
+         z = u1*u1*u2;
+         if (r + 2.504077397 >= 4.5*z) break;
+         if (r >= Math.log (z)) break;
+      }
+
+      return gamma + beta*X;
+   }
+
+   private void init() {
+      // Code taken from UNURAN
+      aa = (alpha > 1.0) ? Math.sqrt (alpha + alpha - 1.0) : alpha;
+      bb = alpha - 1.386294361;
+      cc = alpha + aa;
+   }
+
+}\end{hide}
+\end{code}

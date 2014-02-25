@@ -1,0 +1,244 @@
+\defclass{PointSetIterator}
+
+Objects of classes that implement this interface are \emph{iterators} 
+that permit one to enumerate
+(or observe) the successive points of a point set and the successive 
+coordinates of these points.
+Each \class{PointSetIterator}{} is associated with a given point set
+and maintains a \emph{current point} index $i$ and a \emph{current coordinate}
+index $j$, which are both initialized to zero.
+
+Successive coordinates can be accessed one or many at a time by the methods
+\method{nextCoor\-di\-nate}{} and \method{nextCoordi\-nates}{}, respectively.
+The current coordinate index $j$ can be set explicitely by
+\method{setCurCoordIndex}{} and \method{resetCurCoordIndex}{}. 
+Similar methods are available for resetting and accessing the current point.
+The method \method{nextPoint}{} permits one to 
+enumerate the successive points in natural order. 
+
+This class also implements the \class{RandomStream} interface.
+This permits one to replace random numbers by the coordinates of
+(randomized) quasi-Monte Carlo points without changing the code that calls
+the generators in a simulation program.
+That is, the same simulation program can be used for both Monte Carlo 
+and quasi-Monte Carlo simulations.
+The method \method{nextDouble}{} does exactly the same as 
+\method{nextCoordinate}{}, it returns the current coordinate of the 
+current point and advances the current coordinate by one.  
+The substreams correspond to the points, so  
+\method{resetStartSubstream}{} resets the current point coordinate to zero, 
+\method{resetNextSubstream}{} resets the iterator to the next point, and
+\method{resetStartStream}{} resets the iterator to the first point of 
+the point set.
+
+There can be several iterators over the same point set.
+These iterators are independent from each other.  
+Classes that implement this interface must maintain enough information 
+so that each iterator is unaffected by other iterator's operations.
+However, the iterator does not need to be independent of the underlying 
+point set.  If the point set is modified (e.g., randomized), the iterator
+may continue to work as usual.
+
+Point set iterators are implemented as inner classes because
+this gives a direct access to the private members (or variables) 
+of the class.  This is important for efficiency.
+They are quite similar to the iterators in Java \emph{collections}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule\bigskip
+
+\begin{code}
+\begin{hide}
+/*
+ * Interface:    PointSetIterator
+ * Description:  Iterator over point sets
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+
+import umontreal.iro.lecuyer.rng.RandomStream;\end{hide}
+
+public interface PointSetIterator extends RandomStream\begin{hide} {\end{hide}
+
+   public void setCurCoordIndex (int j);
+\end{code}
+ \begin{tabb}
+   Sets the current coordinate index to $j$, so that 
+   the next calls to \method{nextCoordinate}{} or  \method{nextCoordinates}{}
+   will return the values $u_{i,j}, u_{i,j+1}, \dots$, where $i$ is the
+   index of the current point.
+ \end{tabb}
+\begin{htmlonly}
+   \param{j}{index of the new current coordinate}
+\end{htmlonly}
+\begin{code}
+
+   public void resetCurCoordIndex();
+\end{code}
+ \begin{tabb}
+  Equivalent to \method{setCurCoordIndex}{}~\texttt{(0)}.
+ \end{tabb}
+\begin{code}
+
+   public int getCurCoordIndex();
+\end{code}
+ \begin{tabb}
+   Returns the index $j$ of the current coordinate.  This may be useful,
+   e.g., for testing if enough coordinates are still available.
+ \end{tabb}
+\begin{htmlonly}
+   \return{index of the current coordinate}
+\end{htmlonly}
+\begin{code}
+
+   public boolean hasNextCoordinate();
+\end{code}
+ \begin{tabb}
+   Returns \texttt{true} if the current point has another coordinate.
+   This can be useful for testing if coordinates are still available.
+ \end{tabb}
+\begin{htmlonly}
+   \return{\texttt{true} if the current point has another coordinate}
+\end{htmlonly}
+\begin{code}
+
+   public double nextCoordinate();
+\end{code}
+ \begin{tabb}
+   Returns the current coordinate $u_{i,j}$ and advances to the next one.
+   If no current coordinate is available (either because the current
+   point index has reached the number of points or because the current
+   coordinate index has reached the number of dimensions), it throws a 
+   \externalclass{java.util}{NoSuchElementException}.
+ \end{tabb}
+\begin{htmlonly}
+   \return{value of the current coordinate}
+   \exception{NoSuchElementException}{if no such coordinate is available}
+\end{htmlonly}
+\begin{code}
+
+   public void nextCoordinates (double[] p, int d);
+\end{code}
+ \begin{tabb}
+   Returns the next \texttt{d} coordinates of the current point in \texttt{p}
+   and advances the current coordinate index by \texttt{d}.
+   If the remaining number of coordinates is too small, a
+   \texttt{NoSuchElementException} is thrown, as in \method{nextCoordinate}{}.
+%   This method does not necessarily check if \texttt{p} is large enough.
+ \end{tabb}
+\begin{htmlonly}
+   \param{p}{array to be filled with the coordinates, starting at index 0}
+   \param{d}{number of coordinates to get}
+   \exception{NoSuchElementException}{if there are not enough 
+             remaining coordinates in the current point}
+\end{htmlonly}
+\begin{code}
+
+   public void setCurPointIndex (int i);
+\end{code}
+ \begin{tabb}
+   Resets the current point index to $i$ and the current coordinate 
+   index to zero.  If \texttt{i} is larger or equal to the number of points,
+   an exception will \emph{not} be raised here, but only later if we 
+   ask for a new coordinate or point. 
+% The next call to either \method{nextCoordinates}{}
+% or \method{nextCoordinate}{} will return coordinates starting from $u_{i,0}$.
+ \end{tabb}
+\begin{htmlonly}
+   \param{i}{new index of the current point}
+\end{htmlonly}
+\begin{code}
+
+   public void resetCurPointIndex();
+\end{code}
+ \begin{tabb}
+   Equivalent to \method{setCurPointIndex}{}~\texttt{(0)}.
+ \end{tabb}
+\begin{code}
+
+   public int resetToNextPoint();
+\end{code}
+ \begin{tabb}
+   Increases the current point index by 1 and returns its new value.
+   If there is no more point, an exception will be raised only if we 
+   ask for a new coordinate or point later on. 
+%    Equivalent to 
+%   \method{setCurPointIndex}{}~\texttt{(}\method{getCurPointIndex()}{}~\texttt{+ 1)}
+ \end{tabb}
+\begin{htmlonly}
+   \return{index of the new current point}
+\end{htmlonly}
+\begin{code}
+
+   public int getCurPointIndex();
+\end{code}
+ \begin{tabb}
+   Returns the index $i$ of the current point.  
+   This can be useful, e.g., for caching point sets.
+%   and efficient implementations.
+% (see examples in the code).
+ \end{tabb}
+\begin{htmlonly}
+   \return{index of the current point}
+\end{htmlonly}
+\begin{code}
+
+   public boolean hasNextPoint();
+\end{code}
+ \begin{tabb}
+   Returns \texttt{true} if there is a next point.
+   This can be useful for testing if points are still available.
+ \end{tabb}
+\begin{htmlonly}
+   \return{\texttt{true} if a next point is available from the iterated point set}
+\end{htmlonly}
+\begin{code}
+
+   public int nextPoint (double[] p, int d);\begin{hide}
+}\end{hide}
+\end{code}
+ \begin{tabb}
+   Returns the \emph{first} \texttt{d} coordinates of the \emph{current} 
+   point in \texttt{p}, advances to the next point, and
+   returns the index of the \emph{new} current point.
+   Even if the current coordinate index is 0, the point returned
+   starts from coordinate 0.
+   After obtaining the last point via this method, the current point
+   index (returned by the method) is equal to the number of points,
+   so it is no longer a valid point index.
+   An exception will then be raised if we attempt to generate additional
+   points or coordinates.
+
+  Specialized implementations of this method often allow for increased 
+  efficiency, e.g., for cycle-based point sets where the cycles 
+  (but not the points)
+  are stored explicitly or for digital nets  
+  by allowing non-incremental point enumerations via Gray-code counters.
+ \end{tabb}
+\begin{htmlonly}
+   \param{p}{array to be filled with the coordinates, 
+             starting from array index 0}
+   \param{d}{number of coordinates to return}
+   \return{index of the new current point}
+   \exception{NoSuchElementException}{if there are not enough coordinates 
+     available in the current point for filling \texttt{p}}
+\end{htmlonly}

@@ -1,0 +1,172 @@
+\defclass {BetaSymmetricalPolarGen}
+
+This class implements {\em symmetrical beta\/} random variate generators using
+Ulrich's polar method \cite{rULR84a}. The method generates two uniform
+random variables $x \in [0, 1]$ and $y \in [-1, 1]$ until
+ $x^2 + y^2 \le 1$. Then it returns
+\begin{equation}
+\begin{latexonly}
+   \frac12 + \frac{xy}{S}\sqrt{1 - S^{2/(2\alpha - 1)}}   \label{eq.beta.ulrich}
+\end{latexonly}
+\begin{htmlonly}
+    (1 / 2) + ({xy}\sqrt{1 - S^{2/(2\alpha - 1)}}) / S  \label{eq.beta.ulrich}
+\end{htmlonly}
+\end{equation}
+where $S = x^2 + y^2$, and $\alpha$ is the shape parameter of the beta
+distribution. The method is valid only when $\alpha > 1/2$.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BetaSymmetricalPolarGen
+ * Description:  symmetrical beta random variate generators using
+                 Ulrich's polar method 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.BetaSymmetricalDist;
+\end{hide}
+
+public class BetaSymmetricalPolarGen extends BetaSymmetricalGen \begin{hide} {
+   private double afactor;      // = 2/(2*alpha - 1)
+   private RandomStream stream2;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public BetaSymmetricalPolarGen (RandomStream s1, RandomStream s2,
+                                   double alpha) \begin{hide} {
+      super (s1, null);
+      stream2 = s2;
+      if (alpha <= 0.5)
+         throw new IllegalArgumentException ("  must have alpha > 1/2");
+      afactor = 2.0/(2.0*alpha - 1.0);
+      setParams (alpha, alpha, 0.0, 1.0);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a symmetrical beta random variate generator with
+ parameter $\alpha =$ \texttt{alpha},  using stream \texttt{s1} to generate $x$
+  and stream \texttt{s2} to generate $y$, as in
+(\ref{eq.beta.ulrich}) above. Restriction: $\alpha > 1/2$.
+\end{tabb}
+\begin{code}
+
+   public BetaSymmetricalPolarGen (RandomStream s1, double alpha) \begin{hide} {
+      this (s1, s1, alpha);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a symmetrical beta random variate generator with
+ parameter $\alpha =$ \texttt{alpha},  using stream \texttt{s1} to generate $x$
+ and $y$, as in (\ref{eq.beta.ulrich}) above.  Restriction: $\alpha > 1/2$.
+\end{tabb}
+\begin{code}
+
+   public BetaSymmetricalPolarGen (RandomStream s1, RandomStream s2,
+                                   BetaSymmetricalDist dist) \begin{hide} {
+      super (s1, dist);
+      stream2 = s2;
+      double alp = dist.getAlpha();
+      if (alp <= 0.5)
+         throw new IllegalArgumentException ("  must have alpha > 1/2");
+      afactor = 2.0/(2.0*dist.getAlpha() - 1.0);
+      setParams (alp, alp, 0.0, 1.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator for the distribution \texttt{dist}, using
+   stream \texttt{s1} to generate $x$ and stream \texttt{s2} to generate $y$,
+   as in (\ref{eq.beta.ulrich}) above.
+    Restriction: \texttt{dist} must have $\alpha > 1/2$.
+  \end{tabb}
+\begin{code}
+
+   public BetaSymmetricalPolarGen (RandomStream s1,
+                                   BetaSymmetricalDist dist) \begin{hide} {
+      this (s1, s1, dist);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator for the distribution \texttt{dist},
+     using only one stream \texttt{s1}.
+    Restriction: \texttt{dist} must have $\alpha > 1/2$.
+  \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public static double nextDouble (RandomStream s1, RandomStream s2,
+                                    double alpha) \begin{hide}  {
+      double u, v, S;
+      do {
+         u = s1.nextDouble();
+         v = -1.0 + 2.0*s2.nextDouble();
+         S = u*u + v*v;
+      } while (S > 1.0);
+      return 0.5 + u*v/S* Math.sqrt(1.0 - Math.pow(S, 2.0/(2.0*alpha - 1.0)));
+   }\end{hide}
+\end{code}
+  \begin{tabb} Generates a random number using Ulrich's polar method. Stream
+  \texttt{s1} generates $x$ and stream \texttt{s2}  generates $y$
+   [see eq. (\ref{eq.beta.ulrich})].
+  Restriction:  $\alpha > 1/2$.
+  \end{tabb}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha) \begin{hide}  {
+      return nextDouble (s, s, alpha);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Generates a random number by Ulrich's polar method using
+  stream \texttt{s}.  Restriction:  $\alpha > 1/2$.
+  \end{tabb}
+\begin{code} \begin{hide}
+
+   public double nextDouble() {
+      // Generates a random number using Ulrich's polar method.
+      double u, v, S;
+      do {
+         u = stream.nextDouble();
+         v = -1.0 + 2.0*stream2.nextDouble();
+         S = u*u + v*v;
+      } while (S > 1.0);
+      return 0.5 + u*v/S* Math.sqrt(1.0 - Math.pow(S, afactor));
+  }\end{hide}
+
+   public RandomStream getStream2()\begin{hide} {
+      return stream2;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns stream \texttt{s2} associated with this object.
+\end{tabb}
+\begin{code}\begin{hide}
+}
+\end{hide}
+\end{code}

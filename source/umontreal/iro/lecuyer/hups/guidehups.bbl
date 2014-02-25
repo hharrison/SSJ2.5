@@ -1,0 +1,249 @@
+\begin{thebibliography}{10}
+
+\bibitem{rANT79a}
+I.~A. Antonov and V.~M. Saleev.
+\newblock An economic method of computing {LP}$_\tau$-sequences.
+\newblock {\em Zh. Vychisl. Mat. i. Mat. Fiz.}, 19:243--245, 1979.
+\newblock In {R}ussian.
+
+\bibitem{rBRA88c}
+P.~Bratley and B.~L. Fox.
+\newblock Algorithm 659: Implementing {S}obol's quasirandom sequence generator.
+\newblock {\em ACM Transactions on Mathematical Software}, 14(1):88--100, 1988.
+
+\bibitem{rBRA92a}
+P.~Bratley, B.~L. Fox, and H.~Niederreiter.
+\newblock Implementation and tests of low-discrepancy sequences.
+\newblock {\em ACM Transactions on Modeling and Computer Simulation},
+  2:195--213, 1992.
+
+\bibitem{vCRA76a}
+R.~Cranley and T.~N.~L. Patterson.
+\newblock Randomization of number theoretic methods for multiple integration.
+\newblock {\em {SIAM} Journal on Numerical Analysis}, 13(6):904--914, 1976.
+
+\bibitem{rFAU92a}
+H.~Faure.
+\newblock Good permutations for extreme discrepancy.
+\newblock {\em Journal of Number Theory}, 42:47--56, 1992.
+
+\bibitem{vFAU09a}
+H.~Faure and C.~Lemieux.
+\newblock Generalized {H}alton sequences in 2008: A comparative study.
+\newblock {\em {ACM} Transactions on Modeling and Computer Simulation},
+  19(4):Article 15, 2009.
+
+\bibitem{rFAU02a}
+H.~Faure and S.~Tezuka.
+\newblock Another random scrambling of digital $(t,s)$-sequences.
+\newblock In K.-T. Fang, F.~J. Hickernell, and H.~Niederreiter, editors, {\em
+  {M}onte {C}arlo and Quasi-{M}onte {C}arlo Methods 2000}, pages 242--256,
+  Berlin, 2002. Springer-Verlag.
+
+\bibitem{rFOX86a}
+B.~L. Fox.
+\newblock Implementation and relative efficiency of quasirandom sequence
+  generators.
+\newblock {\em ACM Transactions on Mathematical Software}, 12:362--376, 1986.
+
+\bibitem{vFOX99a}
+B.~L. Fox.
+\newblock {\em Strategies for Quasi-{M}onte {C}arlo}.
+\newblock Kluwer Academic, Boston, MA, 1999.
+
+\bibitem{fGLA04a}
+P.~Glasserman.
+\newblock {\em Monte {C}arlo Methods in Financial Engineering}.
+\newblock Springer-Verlag, New York, 2004.
+
+\bibitem{rHAL60a}
+J.~H. Halton.
+\newblock On the efficiency of certain quasi-random sequences of points in
+  evaluating multi-dimensional integrals.
+\newblock {\em Numerische Mathematik}, 2:84--90, 1960.
+
+\bibitem{rHAM60a}
+J.~M. Hammersley.
+\newblock {M}onte {C}arlo methods for solving multivariate problems.
+\newblock {\em Annals of the {N}ew {Y}ork Academy of Science}, 86:844--874,
+  1960.
+
+\bibitem{rHEL98a}
+P.~Hellekalek and H.~Niederreiter.
+\newblock The weighted spectral test: Diaphony.
+\newblock {\em ACM Transactions on Modeling and Computer Simulation},
+  8(1):43--60, 1998.
+
+\bibitem{vHIC02a}
+F.~J. Hickernell.
+\newblock Obtaining ${O(N^{-2+\epsilon})}$ convergence for lattice quadrature
+  rules.
+\newblock In K.-T. Fang, F.~J. Hickernell, and H.~Niederreiter, editors, {\em
+  {M}onte {C}arlo and Quasi-{M}onte {C}arlo Methods 2000}, pages 274--289,
+  Berlin, 2002. Springer-Verlag.
+
+\bibitem{vHIC01a}
+F.~J. Hickernell, H.~S. Hong, P.~L'Ecuyer, and C.~Lemieux.
+\newblock Extensible lattice sequences for quasi-{M}onte {C}arlo quadrature.
+\newblock {\em {SIAM} Journal on Scientific Computing}, 22(3):1117--1138, 2001.
+
+\bibitem{vHON03a}
+H.~S. Hong and F.~H. Hickernell.
+\newblock Algorithm 823: Implementing scrambled digital sequences.
+\newblock {\em {ACM} Transactions on Mathematical Software}, 29:95--109, 2003.
+
+\bibitem{mKOR59a}
+N.~M. Korobov.
+\newblock The approximate computation of multiple integrals.
+\newblock {\em Dokl. Akad. Nauk {SSSR}}, 124:1207--1210, 1959.
+\newblock in Russian.
+
+\bibitem{rLEC99a}
+P.~L'Ecuyer.
+\newblock Tables of maximally equidistributed combined {LFSR} generators.
+\newblock {\em Mathematics of Computation}, 68(225):261--269, 1999.
+
+\bibitem{vLEC03b}
+P.~L'Ecuyer.
+\newblock Quasi-{M}onte {C}arlo methods for simulation.
+\newblock In {\em Proceedings of the 2003 Winter Simulation Conference}, pages
+  81--90, Piscataway, NJ, 2003. {IEEE} Press.
+
+\bibitem{vLEC99a}
+P.~L'Ecuyer and C.~Lemieux.
+\newblock Quasi-{M}onte {C}arlo via linear shift-register sequences.
+\newblock In {\em Proceedings of the 1999 Winter Simulation Conference}, pages
+  632--639. {IEEE} Press, 1999.
+
+\bibitem{vLEC00b}
+P.~L'Ecuyer and C.~Lemieux.
+\newblock Variance reduction via lattice rules.
+\newblock {\em Management Science}, 46(9):1214--1235, 2000.
+
+\bibitem{vLEC02a}
+P.~L'Ecuyer and C.~Lemieux.
+\newblock Recent advances in randomized quasi-{M}onte {C}arlo methods.
+\newblock In M.~Dror, P.~L'Ecuyer, and F.~Szidarovszky, editors, {\em Modeling
+  Uncertainty: An Examination of Stochastic Theory, Methods, and Applications},
+  pages 419--474. Kluwer Academic, Boston, 2002.
+
+\bibitem{rLEC02b}
+P.~L'Ecuyer and F.~Panneton.
+\newblock Construction of equidistributed generators based on linear
+  recurrences modulo 2.
+\newblock In K.-T. Fang, F.~J. Hickernell, and H.~Niederreiter, editors, {\em
+  {M}onte {C}arlo and Quasi-{M}onte {C}arlo Methods 2000}, pages 318--330.
+  Springer-Verlag, Berlin, 2002.
+
+\bibitem{iLEM04a}
+C.~Lemieux, M.~Cieslak, and K.~Luttmer.
+\newblock {\em {RandQMC} User's Guide: A Package for Randomized Quasi-{M}onte
+  {C}arlo Methods in {C}}, 2004.
+\newblock Software {user's} guide, available at
+  \url{http://www.math.uwaterloo.ca/~clemieux/randqmc.html}.
+
+\bibitem{vLEM03a}
+C.~Lemieux and P.~L'Ecuyer.
+\newblock Randomized polynomial lattice rules for multivariate integration and
+  simulation.
+\newblock {\em {SIAM} Journal on Scientific Computing}, 24(5):1768--1789, 2003.
+
+\bibitem{mMAT99a}
+J.~Matou\v{s}ek.
+\newblock {\em Geometric Discrepancy: An Illustrated Guide}.
+\newblock Springer-Verlag, Berlin, 1999.
+
+\bibitem{rNIE92b}
+H.~Niederreiter.
+\newblock {\em Random Number Generation and Quasi-{M}onte {C}arlo Methods},
+  volume~63 of {\em SIAM CBMS-NSF Regional Conference Series in Applied
+  Mathematics}.
+\newblock SIAM, Philadelphia, PA, 1992.
+
+\bibitem{rNIE98a}
+H.~Niederreiter and C.~Xing.
+\newblock Nets, $(t,s)$-sequences, and algebraic geometry.
+\newblock In P.~Hellekalek and G.~Larcher, editors, {\em Random and
+  Quasi-Random Point Sets}, volume 138 of {\em Lecture Notes in Statistics},
+  pages 267--302. Springer, New York, NY, 1998.
+
+\bibitem{vOWE98a}
+A.~B. Owen.
+\newblock {L}atin supercube sampling for very high-dimensional simulations.
+\newblock {\em {ACM} Transactions on Modeling and Computer Simulation},
+  8(1):71--102, 1998.
+
+\bibitem{vOWE03a}
+A.~B. Owen.
+\newblock Variance with alternative scramblings of digital nets.
+\newblock {\em {ACM} Transactions on Modeling and Computer Simulation},
+  13(4):363--378, 2003.
+
+\bibitem{rPAN04t}
+F.~Panneton.
+\newblock {\em Construction d'ensembles de points bas\'ee sur des r\'ecurrences
+  lin\'eaires dans un corps fini de caract\'eristique 2 pour la simulation
+  {M}onte {C}arlo et l'int\'egration quasi-{M}onte {C}arlo}.
+\newblock PhD thesis, D\'epartement d'informatique et de recherche
+  op\'erationnelle, Universit\'e de Montr\'eal, Canada, August 2004.
+
+\bibitem{rPAN04a}
+F.~Panneton and P.~L'Ecuyer.
+\newblock Random number generators based on linear recurrences in {$F_{2^w}$}.
+\newblock In H.~Niederreiter, editor, {\em {M}onte {C}arlo and Quasi-{M}onte
+  {C}arlo Methods 2002}, pages 367--378, Berlin, 2004. Springer-Verlag.
+
+\bibitem{rPAN04d}
+F.~Panneton and P.~L'Ecuyer.
+\newblock Infinite-dimensional point sets based on linear recurrences over
+  {GF($2^w$)}.
+\newblock In H.~Niederreiter and D.~Talay, editors, {\em {M}onte {C}arlo and
+  Quasi-{M}onte {C}arlo Methods 2004}, Berlin, 2005. Springer-Verlag.
+\newblock to appear.
+
+\bibitem{rPIR01c}
+G.~Pirsic.
+\newblock A software implementation of {N}iederreiter-{X}ing sequences.
+\newblock In K.-T. Fang, F.~J. Hickernell, and H.~Niederreiter, editors, {\em
+  {M}onte {C}arlo and Quasi-{M}onte {C}arlo Methods 2000}. Springer, 2001.
+\newblock To appear.
+
+\bibitem{vSLO94a}
+I.~H. Sloan and S.~Joe.
+\newblock {\em Lattice Methods for Multiple Integration}.
+\newblock Clarendon Press, Oxford, 1994.
+
+\bibitem{rSOB67a}
+I.~M. Sobol'.
+\newblock The distribution of points in a cube and the approximate evaluation
+  of integrals.
+\newblock {\em U.S.S.R. Comput. Math. and Math. Phys.}, 7(4):86--112, 1967.
+
+\bibitem{rSOB76b}
+I.~M. Sobol'.
+\newblock Uniformly distributed sequences with an additional uniform property.
+\newblock {\em USSR Comput.\ Math.\ Math.\ Phys.\ Academy of Sciences},
+  16:236--242, 1976.
+
+\bibitem{rSTR95a}
+J.~Struckmeier.
+\newblock Fast generation of low-discrepancy sequences.
+\newblock {\em Journal of Computational and Applied Mathematics}, 61(4):29--41,
+  1995.
+
+\bibitem{rTEZ95a}
+S.~Tezuka.
+\newblock {\em Uniform Random Numbers: Theory and Practice}.
+\newblock Kluwer Academic Publishers, Norwell, MA, 1995.
+
+\bibitem{rTEZ02a}
+S.~Tezuka and H.~Faure.
+\newblock $i$-binomial scrambling of digital nets and sequences.
+\newblock Technical report, {IBM} Research, Tokyo Research Laboratory, 2002.
+
+\bibitem{vWAN99a}
+X.~Wang and F.~J. Hickernell.
+\newblock Randomized {H}alton sequences.
+\newblock {\em Mathematical and Computer Modelling}, 32:887--899, 2000.
+
+\end{thebibliography}

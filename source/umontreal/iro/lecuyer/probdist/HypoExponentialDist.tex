@@ -1,0 +1,406 @@
+\defclass {HypoExponentialDist}
+
+This class implements the \emph{hypoexponential} distribution,
+also called the generalized Erlang  distribution. Let the $X_j$,
+$j=1,\ldots,k$, be $k$ independent exponential random variables with different
+rates $\lambda_j$, i.e. assume that $\lambda_j \neq \lambda_i$ for
+$i \neq j$. Then the sum $\sum_{j=1}^kX_j$ is called a \emph{hypoexponential}
+random variable.
+
+Let the  $k\times k$ upper triangular bidiagonal matrix
+%
+\begin{latexonly}%
+\begin{equation}
+\label{eq:tail-hypomatrix}
+  \bA = \begin{pmatrix}
+   -\lambda_1 & \lambda_1 & 0 & \ldots & 0 \\
+   0 & -\lambda_2& \lambda_2 & \ldots &  0 \\
+   \vdots &  \vdots & \ddots & ~~\ddots & \vdots   \\
+   0 & \ldots  & 0 &  -\lambda_{k-1} & \lambda_{k-1} \\
+   0 & \ldots  & 0 &   0 & -\lambda_k
+  \end{pmatrix}
+\end{equation}
+\end{latexonly}%
+%
+\begin{htmlonly}%
+\begin{equation}
+\label{eq:tail-hypomatrix}
+  \bA = \begin{array}{ccccc}
+   -\lambda_1 & \lambda_1 & 0 & \ldots & 0 \\
+   0 & -\lambda_2& \lambda_2 & \ldots &  0 \\
+   \vdots &  \vdots & \ddots & ~~\ddots & \vdots   \\
+   0 & \ldots  & 0 &  -\lambda_{k-1} & \lambda_{k-1} \\
+   0 & \ldots  & 0 &   0 & -\lambda_k
+  \end{array}
+\end{equation}
+\end{htmlonly}%
+%
+with  $\lambda_j$ the rates of the $k$ exponential random variables;
+then the cumulative complementary probability of the hypoexponential
+distribution is given by \cite{pNEU81a,pLAT99a}
+\begin{equation}
+\label{eq:tail-hypoexp}
+\bar F(x) = 
+\begin{latexonly} \mathbb{P} \end{latexonly}
+\begin{htmlonly} \mathcal{P} \end{htmlonly}
+\left[X_1 + \cdots + X_k > x \right] =
+\sum_{j=1}^k \left(e^{\bA x}\right)_{1j},
+\end{equation}
+%
+i.e., it is the sum of the elements of the first row of matrix $e^{\bA x}$.
+The density of the hypoexponential distribution is
+\eq  f(x) = \left(-e^{\bA x}\bA\right)_{1k} =
+      \lambda_k  \left(e^{\bA x}\right)_{1k},
+    \eqlabel{eq:fhypoexp}
+\endeq
+%
+i.e., it is element $(1,k)$ of matrix $-e^{\bA x}\bA$.
+The distribution function is as usual $F(x) = 1 - \bar F(x)$.
+
+See the class \class{HypoExponentialDistQuick} for alternative formulae
+for the probabilities.
+
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}\begin{hide}
+/*
+ * Class:        HypoExponentialDist
+ * Description:  Hypo-exponential distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since        January 2011
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import java.util.Formatter;
+import java.util.Locale;
+import cern.colt.matrix.*;
+import  umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public class HypoExponentialDist extends ContinuousDistribution\begin{hide} {
+   protected double[] m_lambda;
+
+   protected static void testLambda (double[] lambda) {
+      int k = lambda.length;
+      for (int j = 0; j < k; ++j) {
+         if (lambda[j] <= 0)
+            throw new IllegalArgumentException ("lambda_j <= 0");
+      }
+   }
+
+
+   // Builds the bidiagonal matrix A out of the lambda
+   private static DoubleMatrix2D buildMatrix (double[] lambda, double x) {
+      int k = lambda.length;
+      DoubleFactory2D F2 = DoubleFactory2D.dense;
+      DoubleMatrix2D A = F2.make(k, k);
+      for (int j = 0; j < k-1; j++) {
+         A.setQuick(j, j, -lambda[j]*x);
+         A.setQuick(j, j + 1, lambda[j]*x);
+      }
+      A.setQuick(k-1, k-1, -lambda[k-1]*x);
+      return A;
+   }
+
+
+   private static class myFunc implements MathFunction {
+      // For inverseF
+      private double[] m_lam;
+      private double m_u;
+
+      public myFunc (double[] lam, double u) {
+         m_lam = lam;
+         m_u = u;
+      }
+
+      public double evaluate (double x) {
+         return m_u - HypoExponentialDist.cdf(m_lam, x);
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public HypoExponentialDist (double[] lambda)\begin{hide} {
+      setLambda (lambda);
+  }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{HypoExponentialDist} object,
+with rates $\lambda_i = $ \texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+\end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (m_lambda, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (m_lambda, x);
+   }
+
+   public double barF (double x) {
+      return barF (m_lambda, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (m_lambda, u);
+   }
+
+   public double getMean() {
+      return getMean (m_lambda);
+   }
+
+   public double getVariance() {
+      return getVariance (m_lambda);
+   }
+
+   public double getStandardDeviation() {
+      return getStandardDeviation (m_lambda);
+   }\end{hide}
+
+   public static double density (double[] lambda, double x)\begin{hide} {
+      testLambda (lambda);
+      if (x < 0)
+         return 0;
+      DoubleMatrix2D Ax = buildMatrix (lambda, x);
+	   DoubleMatrix2D M = DMatrix.expBidiagonal(Ax);
+
+      int k = lambda.length;
+      return lambda[k-1]*M.getQuick(0, k-1);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function $f(x)$, with $\lambda_i = $
+\texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+\end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \param{x}{value at which the density is evaluated}
+   \return{density at $x$}
+\end{htmlonly}
+\begin{code}
+
+   public static double cdf (double[] lambda, double x)\begin{hide} {
+      return 1.0 - barF(lambda, x);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the  distribution function $F(x)$, with $\lambda_i = $
+\texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+ \end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \param{x}{value at which the distribution is evaluated}
+   \return{distribution at $x$}
+\end{htmlonly}
+\begin{code}
+
+   public static double barF (double[] lambda, double x)\begin{hide} {
+      testLambda (lambda);
+      if (x <= 0.0)
+         return 1.0;
+      if (x >= Double.MAX_VALUE)
+         return 0.0;
+      DoubleMatrix2D M = buildMatrix (lambda, x);
+      M = DMatrix.expBidiagonal(M);
+
+      // prob is first row of final matrix
+      int k = lambda.length;
+      double sum = 0;
+      for (int j = 0; j < k; j++)
+         sum += M.getQuick(0, j);
+      return sum;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the complementary distribution $\bar F(x)$,
+with $\lambda_i = $ \texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+ \end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \param{x}{value at which the complementary distribution is evaluated}
+   \return{complementary distribution at $x$}
+\end{htmlonly}
+\begin{code}
+
+   public static double inverseF (double[] lambda, double u)\begin{hide} {
+      testLambda (lambda);
+      if (u < 0.0 || u > 1.0)
+          throw new IllegalArgumentException ("u not in [0,1]");
+      if (u >= 1.0)
+          return Double.POSITIVE_INFINITY;
+      if (u <= 0.0)
+          return 0.0;
+
+      final double EPS = 1.0e-12;
+      myFunc fonc = new myFunc (lambda, u);
+      double x1 = getMean (lambda);
+      double v = cdf (lambda, x1);
+      if (u <= v)
+         return RootFinder.brentDekker (0, x1, fonc, EPS);
+
+      // u > v
+      double x2 = 4.0*x1 + 1.0;
+      v = cdf (lambda, x2);
+      while (v < u) {
+         x1 = x2;
+         x2 = 4.0*x2;
+         v = cdf (lambda, x2);
+      }
+      return RootFinder.brentDekker (x1, x2, fonc, EPS);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+ Computes the inverse distribution function $F^{-1}(u)$,
+with $\lambda_i = $ \texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+It uses a root-finding method and is very slow.
+\end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \param{u}{value at which the inverse distribution is evaluated}
+   \return{inverse distribution at $u$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double[] lambda)\begin{hide} {
+      testLambda (lambda);
+      int k = lambda.length;
+      double sum = 0;
+      for (int j = 0; j < k; j++)
+         sum += 1.0 / lambda[j];
+      return sum;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean, $E[X] = \sum_{i=1}^k 1/\lambda_i$,
+   of the hypoexponential distribution with rates $\lambda_i = $
+\texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+\end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \return{mean of the hypoexponential distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double[] lambda)\begin{hide} {
+      testLambda (lambda);
+      int k = lambda.length;
+      double sum = 0;
+      for (int j = 0; j < k; j++)
+         sum += 1.0 / (lambda[j]*lambda[j]);
+      return sum;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the variance,
+$\mbox{Var}[X] = \sum_{i=1}^k 1/\lambda_i^2$,
+of the hypoexponential distribution with rates $\lambda_i = $
+\texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+\end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \return{variance of the hypoexponential distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double[] lambda)\begin{hide} {
+      double s = getVariance (lambda);
+      return Math.sqrt(s);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the standard deviation
+of the hypoexponential distribution  with rates $\lambda_i = $
+\texttt{lambda[$i-1$]}, $i = 1,\ldots,k$.
+\end{tabb}
+\begin{htmlonly}
+   \param{lambda}{rates of the hypoexponential distribution}
+   \return{standard deviation of the hypoexponential distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getLambda()\begin{hide} {
+      return m_lambda;
+   }
+\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $\lambda_i$ for this object.
+ \end{tabb}
+\begin{code}
+
+   public void setLambda (double[] lambda)\begin{hide} {
+      testLambda (lambda);
+      int k = lambda.length;
+      m_lambda = new double[k];
+      System.arraycopy (lambda, 0, m_lambda, 0, k);
+      supportA = 0.0;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Sets the value of $\lambda_i = $\texttt{lambda[$i-1$]},
+ $i = 1,\ldots,k$ for this object.
+ \end{tabb}
+\begin{code}
+
+   public double[] getParams()\begin{hide} {
+      return m_lambda;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Same as \method{getLambda}{}.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      StringBuilder sb = new StringBuilder();
+      Formatter formatter = new Formatter(sb, Locale.US);
+      formatter.format(getClass().getSimpleName() + " : lambda = {" +
+           PrintfFormat.NEWLINE);
+      int k = m_lambda.length;
+      for(int i = 0; i < k; i++) {
+         formatter.format("   %f%n", m_lambda[i]);
+      }
+      formatter.format("}%n");
+      return sb.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current
+  distribution.
+\end{tabb}
+\end{hide}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}
+

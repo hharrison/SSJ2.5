@@ -1,0 +1,490 @@
+\defclass {HypergeometricDist}
+
+Extends the class \class{DiscreteDistributionInt} for
+the {\em hypergeometric\/} distribution \cite[page 101]{rGEN98a} with
+$k$ elements chosen among $l$, $m$ being
+of one type, and $l-m$ of the other.
+The parameters $m$, $k$ and $l$ are positive integers
+where $1\le m\le l$ and $1\le k\le l$.
+Its mass function is given by
+\begin{htmlonly}
+\eq
+    p(x) =
+            \mbox{nCr}(m, x) \mbox{nCr}(l - m, k-x)/\mbox{nCr}(l, k),
+ \qquad \mbox{for } \max(0,k-l+m)\le x\le \min(k, m),
+\endeq
+where nCr is defined in \class{BinomialDist}.
+\end{htmlonly}
+\begin{latexonly}
+\eq
+    p(x) =
+            \frac{ \binom{m}{x} \binom{l - m}{k-x}}{\binom{l}{k}}
+ \qquad \mbox{for } \max(0,k-l+m)\le x\le \min(k, m).  \eqlabel{eq:fheperg}
+\endeq
+\end{latexonly}
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HypergeometricDist
+ * Description:  hypergeometric distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+\end{hide}
+
+public class HypergeometricDist extends DiscreteDistributionInt\begin{hide} {
+
+   private int m;
+   private int l;
+   private int k;
+   private double p0;
+\end{hide}\end{code}\begin{code}\end{code}
+
+\unmoved\begin{detailed}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constant}
+\begin{code}
+
+   public static double MAXN = 100000;
+\end{code}
+ \begin{tabb}
+  If the number of integers in the interval $[$max$(0,k-l+m),\,$min$(k,m)]$
+  is larger than this constant, the tables will {\em not\/}
+  be precomputed by the constructor.
+\end{tabb}
+\end{detailed}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructor}
+\begin{code}
+
+   public HypergeometricDist (int m, int l, int k)\begin{hide} {
+      setParams (m, l, k);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs an hypergeometric distribution with parameters
+   $m$, $l$ and $k$.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double prob (int x) {
+      if (x < supportA || x > supportB)
+         return 0.0;
+      if (pdf == null || x < xmin || x > xmax)
+         return prob (m, l, k, x);
+      return pdf[x - xmin];
+   }
+
+   public double cdf (int x) {
+      if (x < supportA)
+         return 0.0;
+      if (x >= supportB)
+         return 1.0;
+      if (cdf != null) {
+         if (x >= xmax)
+            return 1.0;
+         if (x < xmin)
+            return cdf (m, l, k, x);
+         if (x <= xmed)
+            return cdf[x - xmin];
+         else
+            // We keep the complementary distribution in the upper part of cdf
+            return 1.0 - cdf[x + 1 - xmin];
+      }
+      else
+         return cdf (m, l, k, x);
+   }
+
+   public double barF (int x) {
+      if (x <= supportA)
+         return 1.0;
+      if (x > supportB)
+         return 0.0;
+      if (cdf != null) {
+         if (x > xmax)
+            return barF (m, l, k, x);
+         if (x <= xmin)
+            return 1.0;
+         if (x > xmed)
+           // We keep the complementary distribution in the upper part of cdf
+           return cdf[x - xmin];
+         else
+            return 1.0 - cdf[x - 1 - xmin];
+      }
+      else
+         return barF (m, l, k, x);
+   }
+
+   public int inverseFInt (double u) {
+      if (u < 0 || u > 1)
+         throw new IllegalArgumentException ("u is not in [0,1]");
+      if (u <= 0.0)
+         return Math.max (0, k - l + m);
+      if (u >= 1.0)
+         return Math.min (k, m);
+      double p = p0;
+     // Empirical correction, the original algorithm sets x=0.
+     int x = Math.max (0, k - l + m);
+     if (u <= p) return x;
+     do {
+        u = u - p;
+        p = p*(m - x)*(k - x)/((x+1)*(l - m - k + 1.0 + x));
+        x++;
+     } while (u > p);
+     return x;
+   }
+
+   public double getMean() {
+      return HypergeometricDist.getMean (m, l, k);
+   }
+
+   public double getVariance() {
+      return HypergeometricDist.getVariance (m, l, k);
+   }
+
+   public double getStandardDeviation() {
+      return HypergeometricDist.getStandardDeviation (m, l, k);
+   }\end{hide}
+
+   public static double prob (int m, int l, int k, int x)\begin{hide} {
+      final int SLIM = 70;
+      final double MAXEXP = (Num.DBL_MAX_EXP - 1)*Num.LN2;// To avoid overflow
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1 <= m < l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1 <= k < l");
+      if (x < Math.max (0, k - l + m) || x > Math.min (k, m))
+         return 0;
+
+      if (l <= SLIM)
+         return Num.combination (m, x)
+            * Num.combination (l - m, k - x)/Num.combination (l, k);
+      else {
+         double res =
+             Num.lnFactorial (m) + Num.lnFactorial (l-m) - Num.lnFactorial (l)
+           - Num.lnFactorial (x) - Num.lnFactorial (k - x) + Num.lnFactorial (k)
+           - Num.lnFactorial (m - x) - Num.lnFactorial (l - m - k + x)
+           + Num.lnFactorial (l - k);
+         if (res >= MAXEXP)
+            throw new IllegalArgumentException ("term overflow");
+         return Math.exp (res);
+      }
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Computes the hypergeometric probability
+   $p(x)$\latex{ given by (\ref{eq:fheperg})}.
+ \end{tabb}
+\begin{code}
+
+   public static double cdf (int m, int l, int k, int x)\begin{hide} {
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1 <= m < l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1 <= k < l");
+      int imin = Math.max (0, k - l + m);
+      int imax = Math.min (k, m);
+      if (x < imin)
+         return 0.0;
+      if (x >= imax)
+         return 1.0;
+      // Very inefficient
+      double res = 0.0;
+      for (int i = imin; i <= x; i++)
+         res += prob (m, l, k, i);
+      if (res >= 1.0)
+         return 1.0;
+      return res;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Computes the distribution function $F(x)$.
+  \end{tabb}
+\begin{code}
+
+   public static double barF (int m, int l, int k, int x)\begin{hide} {
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1 < =m < l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1 < =k < l");
+      int imin = Math.max (0, k - l + m);
+      int imax = Math.min (k, m);
+      if (x <= imin)
+         return 1.0;
+      if (x > imax)
+         return 0.0;
+      // Very inefficient
+      double res = 0.0;
+      for (int i = imax; i >= x; i--)
+         res += prob (m, l, k, i);
+      if (res >= 1.0)
+         return 1.0;
+      return res;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the complementary distribution function.
+\emph{WARNING:} The complementary distribution function is defined as
+$\bar F(x) = P[X \ge x]$.
+\end{tabb}
+\begin{code}
+
+   public static int inverseF (int m, int l, int k, double u)\begin{hide} {
+      // algo hin dans Kachitvichyanukul
+      if (u < 0 || u >= 1)
+         throw new IllegalArgumentException ("u is not in [0,1]");
+      if (u <= 0.0)
+         return Math.max (0, k - l + m);
+      if (u >= 1.0)
+         return Math.min (k, m);
+      double p = 0;
+      if (k < l - m)
+          p = Math.exp (Num.lnFactorial (l - m) + Num.lnFactorial (l - k)
+                       -Num.lnFactorial (l) - Num.lnFactorial (l - m - k));
+      else
+          p = Math.exp (Num.lnFactorial (m) + Num.lnFactorial (k)
+                      -Num.lnFactorial (k- l + m) - Num.lnFactorial (l));
+
+     // Empirical correction, the original algorithm sets x=0.
+     int x = Math.max (0, k - l + m);
+     if (u <= p) return x;
+
+     do {
+         u = u - p;
+         p = p*(m - x)*(k - x)/((x+1)*(l - m - k + 1.0 + x));
+         x++;
+     } while (u > p && p > 0);
+     return x;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes $F^{-1}(u)$ for the hypergeometric distribution without
+  using precomputed tables.  The inversion is computed
+  using the chop-down algorithm \cite{sKAC85a}.
+\end{tabb}
+\begin{code}
+
+   public static double getMean (int m, int l, int k)\begin{hide} {
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1<=m<l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1<=k<l");
+
+      return ((double) k *  (double) m / (double) l);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = km/l$
+   of the Hypergeometric distribution with parameters $m$, $l$ and $k$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the hypergeometric distribution $E[X] = km / l$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int m, int l, int k)\begin{hide} {
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1<=m<l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1<=k<l");
+
+      return (((double) k * (double) m / (double) l) *
+              ( 1 - ((double) m / (double) l)) * ((double) l - (double) k) /
+              ((double) l - 1));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+\begin{latexonly}
+   $\mbox{Var}[X] = \frac{(km/l)(1 - m/l)(l - k)}{l - 1}$
+\end{latexonly}
+   of the hypergeometric distribution with parameters $m$, $l$ and $k$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Hypergeometric distribution
+    $\mbox{Var}[X] = (km / l)(1 - m / l)(l - k) / (l - 1)$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int m, int l, int k)\begin{hide} {
+      return Math.sqrt (HypergeometricDist.getVariance (m, l, k));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the hypergeometric distribution
+   with parameters $m$, $l$ and $k$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the hypergeometric distribution}
+\end{htmlonly}
+\begin{code}
+
+   public int getM()\begin{hide} {
+      return m;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $m$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public int getL()\begin{hide} {
+      return l;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $l$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public int getK()\begin{hide} {
+      return k;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $k$ associated with this object.
+\end{tabb}
+\begin{code}\begin{hide}
+   private void setHypergeometric() {
+      int imin = Math.max (0, k - l + m);
+      int imax = Math.min (k, m);
+      supportA = imin;
+      supportB = imax;
+      int ns = imax - imin + 1;
+      if (ns > MAXN) {
+         pdf = null;
+         cdf = null;
+         return;
+      }
+
+      int offset = imin;
+      imin = 0;
+      imax -= offset;
+      double[] P = new double[ns];
+      double[] F = new double[ns];
+
+      // Computes the mode (taken from UNURAN)
+      int mode = (int)((k + 1.0)*(m + 1.0)/(l + 2.0));
+      int imid = mode - offset;
+
+      P[imid] = prob (m, l, k, mode);
+
+      int i = imid;
+      while (i > imin && Math.abs (P[i]) > EPSILON) {
+         P[i-1] = P[i]*(i + offset)/(m-i-offset+1)
+                  * (l - m - k + i + offset)/(k - i - offset + 1);
+         i--;
+      }
+      imin = i;
+
+      i = imid;
+      while (i < imax && Math.abs (P[i]) > EPSILON) {
+         P[i+1] = P[i]*(m - i - offset)/(i + offset + 1)
+                  * (k - i - offset)/(l - m - k + i + offset + 1);
+         i++;
+      }
+      imax = i;
+
+      F[imin] = P[imin];
+      i = imin;
+      while (i < imax && F[i] < 0.5) {
+         i++;
+         F[i] = F[i-1] + P[i];
+      }
+      xmed = i;
+
+      F[imax] = P[imax];
+      i = imax - 1;
+      while (i > xmed) {
+         F[i] = P[i] + F[i + 1];
+         i--;
+      }
+
+       xmin = imin + offset;
+       xmax = imax + offset;
+       xmed += offset;
+       pdf  = new double[imax + 1 - imin];
+       cdf  = new double[imax + 1 - imin];
+       System.arraycopy (P, imin, pdf, 0, imax+1-imin);
+       System.arraycopy (F, imin, cdf, 0, imax+1-imin);
+   }
+\end{hide}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {m, l, k};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$m$, $l$, $k$].
+\end{tabb}
+\begin{code}
+
+   public void setParams (int m, int l, int k)\begin{hide} {
+      if (l <= 0)
+         throw new IllegalArgumentException ("l must be greater than 0");
+      if (m <= 0 || m > l)
+         throw new IllegalArgumentException ("m is invalid: 1 <= m < l");
+      if (k <= 0 || k > l)
+         throw new IllegalArgumentException ("k is invalid: 1 <= k < l");
+      this.m = m;
+      this.l = l;
+      this.k = k;
+      setHypergeometric();
+      if (k < l - m)
+          p0 = Math.exp (Num.lnFactorial (l - m) + Num.lnFactorial (l - k)
+                               -Num.lnFactorial (l) - Num.lnFactorial (l - m - k));
+      else
+          p0 = Math.exp (Num.lnFactorial (m) + Num.lnFactorial (k)
+                               -Num.lnFactorial (k- l + m) - Num.lnFactorial (l));
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+    Resets the parameters of this object to $m$, $l$ and $k$.
+ \end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : m = " + m + ", l = " + l + ", k = " + k;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}\end{code}
+

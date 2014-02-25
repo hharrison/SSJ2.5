@@ -1,0 +1,173 @@
+\defclass{CachedPointSet}
+
+This container class caches a point set by precomputing
+and storing its points locally in an array.
+This can be used to speed up computations when using
+a small low-dimensional point set more than once.
+
+\begin{detailed} %%
+After the points are stored in the array, this class uses
+the default methods and the default iterator type provided by
+the base class \class{PointSet}{}.
+This is one of the rare cases where direct use of the
+\method{getCoordinate}{} method is efficient.
+\pierre {We could also implement an iterator that directly returns
+  \texttt{x[i][j]} instead of calling \texttt{getCoordinate}, for slightly
+  better efficiency.  On the other hand, even better efficiency can
+  be achieved by getting an entire point at a time in an array.
+} However, it might require too much memory for a large point set.
+\end{detailed} %%
+
+% No array index range check is performed in this class,
+% neither for the dimension nor for the number of points.
+% However, this is done by Java.
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        CachedPointSet
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+    import umontreal.iro.lecuyer.rng.RandomStream;
+
+
+public class CachedPointSet extends PointSet \begin{hide} {
+   protected PointSet P;        // Original PointSet which is cached here.
+   protected double x[][];      // Cached points.
+   protected CachedPointSet() {}
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+\begin{code}
+
+   public CachedPointSet (PointSet P, int n, int dim) \begin{hide} {
+      if (P.getNumPoints() < n)
+         throw new IllegalArgumentException(
+            "Cannot cache more points than in point set P.");
+      if (P.getDimension() < dim)
+         throw new IllegalArgumentException(
+            "Cannot cache points with more coordinates than the dimension.");
+      numPoints = n;
+      this.dim = dim;
+      this.P = P;
+      init ();
+   }
+
+   protected void init () {
+      PointSetIterator itr = P.iterator();
+      x = new double[numPoints][dim];
+      for (int i = 0; i < numPoints; i++)
+         itr.nextPoint (x[i], dim);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Creates a new \texttt{PointSet} object that contains an array storing
+   the first \texttt{dim} coordinates of the first \texttt{n} points of \texttt{P}.
+   The original point set \texttt{P} itself is not modified.
+%, except for its point and coordinate iterators.
+ \end{tabb}
+\begin{htmlonly}
+   \param{P}{point set to be cached}
+   \param{n}{number of points}
+   \param{dim}{number of dimensions of the points}
+\end{htmlonly}
+\begin{code}
+
+   public CachedPointSet (PointSet P) \begin{hide} {
+      numPoints = P.getNumPoints();
+      dim = P.getDimension();
+      if (numPoints == Integer.MAX_VALUE)
+         throw new IllegalArgumentException(
+            "Cannot cache infinite number of points");
+      if (dim == Integer.MAX_VALUE)
+         throw new IllegalArgumentException(
+            "Cannot cache infinite dimensional points");
+      this.P = P;
+      init ();
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Creates a new \texttt{PointSet} object that contains an array storing
+   the points of \texttt{P}.
+   The number of points and their dimension are the same as in the
+   original point set.  Both must be finite.
+%  The point set \texttt{P} itself is not modified.
+ \end{tabb}
+\begin{htmlonly}
+   \param{P}{point set to be cached}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+\begin{code}
+
+   public void addRandomShift(int d1, int d2, RandomStream stream)\begin{hide} {
+        P.addRandomShift(d1, d2, stream);
+        init();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Add the shift to the contained point set and recaches the points. See the doc of the
+overridden method \externalmethod{umontreal.iro.lecuyer.hups}{PointSet}{addRandomShift}{(int, int, RandomStream)}\texttt{(d1, d2, stream)} in \class{PointSet}.
+\end{tabb}
+\begin{code}
+
+   public void randomize (PointSetRandomization rand)\begin{hide} {
+      P.randomize(rand);
+      init();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Randomizes the underlying point set using \texttt{rand} and
+recaches the points.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public String toString() {
+     StringBuffer sb = new StringBuffer ("Cached point set" +
+          PrintfFormat.NEWLINE);
+     sb.append (super.toString());
+     sb.append (PrintfFormat.NEWLINE + "Cached point set information {"
+                + PrintfFormat.NEWLINE);
+     sb.append (P.toString());
+     sb.append (PrintfFormat.NEWLINE + "}");
+     return sb.toString();
+   }
+
+   public double getCoordinate (int i, int j) {
+      return x[i][j];
+   }
+
+}
+\end{hide}
+\end{code}

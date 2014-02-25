@@ -1,0 +1,146 @@
+\defclass {WeibullGen}
+
+This class implements random variate generators for the 
+{\em Weibull\/} distribution. Its density is
+\eq
+   f(x) = \alpha\lambda^{\alpha} (x - \delta)^{\alpha - 1}
+            \exp[-(\lambda(x-\delta))^\alpha] 
+          \qquad\mbox{ for }  x>\delta,   \eqlabel{eq:weibull}
+\endeq
+and $f(x)=0$ elsewhere, where $\alpha > 0$, and $\lambda > 0$.
+
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        WeibullGen
+ * Description:  Weibull random number generator
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class WeibullGen extends RandomVariateGen \begin{hide} {
+   private double alpha = -1.0;
+   private double lambda = -1.0;
+   private double delta = -1.0;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public WeibullGen (RandomStream s, double alpha, double lambda,
+                                      double delta) \begin{hide} {
+      super (s, new WeibullDist(alpha, lambda, delta));
+      setParams (alpha, lambda, delta);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a Weibull random variate generator with parameters
+ $\alpha =$ \texttt{alpha}, $\lambda $ = \texttt{lambda} and $\delta$ =
+  \texttt{delta}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public WeibullGen (RandomStream s, double alpha) \begin{hide} {
+      this (s, alpha, 1.0, 0.0);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a Weibull random variate generator with parameters
+ $\alpha =$ \texttt{alpha}, $\lambda = 1$ and $\delta = 0$, using stream
+ \texttt{s}. 
+\end{tabb}
+\begin{code}
+   
+   public WeibullGen (RandomStream s, WeibullDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getLambda(), dist.getDelta());
+   } \end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the Weibull distribution \texttt{dist}
+   and stream \texttt{s}. 
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+   
+   public static double nextDouble (RandomStream s, double alpha,
+                                    double lambda, double delta) \begin{hide} {
+       return WeibullDist.inverseF (alpha, lambda, delta, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} 
+   Uses inversion to generate a new variate from the Weibull
+   distribution with parameters $\alpha = $~\texttt{alpha},
+   $\lambda = $~\texttt{lambda}, and $\delta = $~\texttt{delta}, using
+   stream \texttt{s}.
+\end{tabb}
+\begin{code}      
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Returns the parameter $\alpha$.
+\end{tabb}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Returns the parameter $\lambda$.
+\end{tabb}
+\begin{code}
+
+   public double getDelta()\begin{hide} {
+      return delta;
+   }\end{hide}
+\end{code} 
+\begin{tabb} Returns the parameter $\delta$.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public void setParams (double alpha, double lambda, double delta) {
+      if (alpha <= 0.0)
+        throw new IllegalArgumentException ("alpha <= 0");
+      if (lambda <= 0.0)
+        throw new IllegalArgumentException ("lambda <= 0");
+      this.alpha  = alpha;
+      this.lambda = lambda;
+      this.delta  = delta;
+   }
+\end{code} 
+\begin{tabb} Sets the parameters $\alpha$, $\lambda$ and $\delta$ for this
+   object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

@@ -1,0 +1,46 @@
+\begin{thebibliography}{1}
+
+\bibitem{fGLA04a}
+P.~Glasserman.
+\newblock {\em Monte {C}arlo Methods in Financial Engineering}.
+\newblock Springer-Verlag, New York, 2004.
+
+\bibitem{iHOS04a}
+Wolfgang Hoschek.
+\newblock {\em The Colt Distribution: Open Source Libraries for High
+  Performance Scientific and Technical Computing in Java}.
+\newblock CERN, Geneva, 2004.
+\newblock Available at \url{http://dsd.lbl.gov/~hoschek/colt/}.
+
+\bibitem{iMOR80a}
+{J. J. Mor\'e and B. S. Garbow and K. E. Hillstrom}.
+\newblock {\em User Guide for MINPACK-1, Report ANL-80-74}.
+\newblock Argonne, Illinois, USA, 1980.
+\newblock See
+  \url{http://www-fp.mcs.anl.gov/otc/Guide/softwareGuide/Blurbs/minpack.html}.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{sLEC02a}
+P.~L'Ecuyer, L.~Meliani, and J.~Vaucher.
+\newblock {SSJ}: A framework for stochastic simulation in {J}ava.
+\newblock In E.~Y\"ucesan, C.-H. Chen, J.~L. Snowdon, and J.~M. Charnes,
+  editors, {\em Proceedings of the 2002 Winter Simulation Conference}, pages
+  234--242. {IEEE} Press, 2002.
+
+\bibitem{iLEY02a}
+J.~Leydold and W.~H\"ormann.
+\newblock {\em {UNURAN}---A Library for Universal Non-Uniform Random Number
+  Generators}, 2002.
+\newblock Available at \url{http://statistik.wu-wien.ac.at/unuran}.
+
+\bibitem{iSCHa}
+R.~B. Schnabel.
+\newblock {\em {UNCMIN}---Unconstrained Optimization Package, FORTRAN}.
+\newblock University of Colorado at Boulder.
+\newblock See \url{http://www.ici.ro/camo/unconstr/uncmin.htm}.
+
+\end{thebibliography}

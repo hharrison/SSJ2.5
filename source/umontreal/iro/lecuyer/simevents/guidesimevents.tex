@@ -1,0 +1,52 @@
+\documentclass [twoside,12pt]{article}
+\usepackage{amssymb}
+\usepackage{ssj}
+
+% This could confuse LaTeX2HTML
+%begin{latexonly}
+%%%%%%%%%%%%%%
+\def\fiverm {}
+\input prepictex.tex  \input pictex.tex  \input postpictex.tex
+\valuestolabelleading = -0.1\baselineskip
+%end{latexonly}
+
+% \dateheadtrue
+
+% \includeonly {exemples/Atelier}
+% \includeonly {Process}
+
+% \fulltrue   %%  Writes all the hidden code.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\include{title}
+\pagenumbering{roman}
+\tableofcontents
+% \include{avantpro}
+%
+\pagenumbering{arabic}
+%\include{intro}
+\include{overview}
+
+%\include{events}
+\include{Sim}
+\include{Simulator}
+\include{Event}
+\include{Continuous}
+\include{ContinuousState}
+\include{ListWithStat}
+\include{LinkedListStat}
+\include{Accumulate}
+
+%\include{eventlists}
+\include{eventlist/EventList}
+\include{eventlist/DoublyLinked}
+\include{eventlist/SplayTree}
+\include{eventlist/BinaryTree}
+\include{eventlist/Henriksen}
+\include{eventlist/RedblackTree}
+
+\bibliography{simul,random,ift,stat,prob}  %,temp2}  % Dans texmac.
+\bibliographystyle{plain}
+
+\end{document}

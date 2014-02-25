@@ -1,0 +1,203 @@
+\defclass {EventList}
+
+An interface for implementations of event lists.
+Different implementations are provided in SSJ:
+doubly-linked list, splay tree, Henricksen's method, etc.
+The {\em events\/} in the event list are objects of the class
+\externalclass{umontreal.iro.lecuyer.simevents}{Event}.
+The method \clsexternalmethod{umontreal.iro.lecuyer.simevents}{Sim}{init}{EventList}
+permits one to select
+the actual implementation used in a simulation \cite{sKIN85a}.
+
+To allow the user to print the event list, the 
+\externalmethod{java.lang}{Object}{toString}{} method
+from the \class{Object} class should be reimplemented in all {\tt EventList}
+implementations.  It will return a string in the following format:
+``{\tt Contents of the event list }\emph{event list class}{\tt :}'' for the first line and
+each subsequent line has format 
+``\emph{scheduled event time}{\tt , }\emph{event priority}~{\tt :}~\emph{event string}''.
+The \emph{event string} is obtained by calling the
+{\tt toString} method of the event objects.
+The string should not end with the end-of-line character.
+
+The following example is the event list of the bank example,
+printed at 10h30.  See {\tt examples.pdf} for more information.
+
+\begin{verbatim}
+Contents of the event list SplayTree:
+   10.51,        1 : BankEv$Arrival@cfb549
+   10.54,        1 : BankEv$Departure@8a7efd
+      11,        1 : BankEv$3@86d4c1
+      14,        1 : BankEv$4@f9f9d8
+      15,        1 : BankEv$5@820dda
+\end{verbatim}
+%$  Without that, Emacs believes we are in math mode.
+
+% The event time (obtained by calling the
+% \clsexternalmethod{}{Event}{time}{}) must not be modified
+% by implementations of this interface because the \class{Event} class
+% already takes care of that.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        EventList
+ * Description:  interface for implementations of event lists
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simevents.eventlist; \begin{hide}
+
+import java.util.ListIterator; 
+import umontreal.iro.lecuyer.simevents.Event;
+\end{hide}
+
+public interface EventList extends Iterable<Event>\begin{hide} {
+\end{hide}
+ 
+   public boolean isEmpty();
+\end{code}
+ \begin{tabb}  Returns {\tt true} if and only if the event list is empty
+   (no event is scheduled).
+ \end{tabb}
+\begin{htmlonly}
+   \return{{\tt true} if the event list is empty}
+\end{htmlonly}
+\begin{code}
+
+   public void clear();
+\end{code}
+ \begin{tabb}  Empties the event list, i.e., cancels all events.
+ \end{tabb}
+\begin{code}
+
+   public void add (Event ev);
+\end{code}
+ \begin{tabb}  Adds a new event in the event list, according to
+  the time of {\tt ev}.
+  If the event list contains events scheduled to happen at the same time as
+  {\tt ev}, {\tt ev} must be added after all these events.
+ \end{tabb}
+\begin{htmlonly}
+   \param{ev}{event to be added}
+\end{htmlonly}
+\begin{code}
+
+   public void addFirst (Event ev);
+\end{code}
+ \begin{tabb}  Adds a new event at the beginning of the event list.  The given
+   event {\tt ev} will occur at the current simulation time.
+ \end{tabb}
+\begin{htmlonly}
+   \param{ev}{event to be added}
+\end{htmlonly}
+\begin{code}
+
+   public void addBefore (Event ev, Event other);
+\end{code}
+ \begin{tabb}  Same as \method{add}{}, but adds the new event {\tt ev}
+  immediately before the event {\tt other} in the list.
+ \end{tabb}
+\begin{htmlonly}
+   \param{ev}{event to be added}
+   \param{other}{reference event before which {\tt ev} will be added}
+\end{htmlonly}
+\begin{code}
+
+   public void addAfter (Event ev, Event other);
+\end{code}
+ \begin{tabb}  Same as \method{add}{}, but adds the new event {\tt ev}
+  immediately after the event {\tt other} in the list.
+ \end{tabb}
+\begin{htmlonly}
+   \param{ev}{event to be added}
+   \param{other}{reference event after which {\tt ev} will be added}
+\end{htmlonly}
+\begin{code}
+
+   public Event getFirst();
+\end{code}
+ \begin{tabb} Returns the first event in the event list.
+ If the event list is empty, returns {\tt null}.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the first event in the event list, or {\tt null} if the list is empty}
+\end{htmlonly}
+\begin{code}
+
+   public Event getFirstOfClass (String cl);
+\end{code}
+ \begin{tabb} Returns the first event of the class {\tt cl} (a subclass of
+  {\tt Event}) in the event list.  If no such event is found, returns
+  {\tt null}.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the first event of class {\tt cl}, or {\tt null} if no such event exists in the list}
+\end{htmlonly}
+\begin{code}
+
+   public <E extends Event> E getFirstOfClass (Class<E> cl);
+\end{code}
+ \begin{tabb} Returns the first event of the class {\tt E} (a subclass of
+  {\tt Event}) in the event list. If no such event is found, returns
+  {\tt null}.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the first event of class {\tt cl}, or {\tt null} if no such event exists in the list}
+\end{htmlonly}
+\begin{code}
+
+   public ListIterator<Event> listIterator();
+\end{code}
+\begin{tabb}
+   Returns a list iterator over the elements of the class {\tt Event} in this list.
+\end{tabb}
+\begin{htmlonly}
+   \return{a list iterator over the elements of the class {\tt Event} in this list}
+\end{htmlonly}
+\begin{code}
+
+   public boolean remove (Event ev);
+\end{code}
+ \begin{tabb}  Removes the event {\tt ev} from the event list (cancels this event).
+ Returns {\tt true} if and only if the event removal has succeeded.
+ \end{tabb}
+\begin{htmlonly}
+   \param{ev}{event to be removed}
+   \return{{\tt true} if the event was successfully removed from the list}
+\end{htmlonly}
+\begin{code}
+
+   public Event removeFirst();
+\end{code}
+ \begin{tabb}  Removes the first event from the event list (to cancel or
+    execute this event).  Returns the removed event.  If the list is empty,
+    then {\tt null} is returned.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the first event removed from the list, or {\tt null} if the list is empty}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

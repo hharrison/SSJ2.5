@@ -1,0 +1,69 @@
+\defclass {LognormalSpecialGen}
+
+Implements methods for generating random variates from the 
+{\em lognormal\/} distribution using an arbitrary normal random 
+variate generator.
+The (non-static) \texttt{nextDouble} method calls the \texttt{nextDouble} 
+method of the normal generator and takes the exponential of the result.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LognormalSpecialGen
+ * Description:  random variates from the lognormal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+\end{hide}
+
+public class LognormalSpecialGen extends RandomVariateGen \begin{hide} {
+
+   NormalGen myGen;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+
+\begin{code}
+   public LognormalSpecialGen (NormalGen g) \begin{hide} {
+      // Necessary to compile, but we do not want to use stream and dist
+      super (g.stream, null);
+      stream = null;
+      myGen = g;
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Create a lognormal random variate generator 
+   using the normal generator \texttt{g} and with the same parameters.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+% \subsubsection* {Methods}
+\begin{code}\begin{hide} 
+
+   public double nextDouble() {
+      return Math.exp (myGen.nextDouble());
+   }\end{hide}
+\begin{hide}
+}\end{hide}
+\end{code}

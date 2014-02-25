@@ -1,0 +1,91 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+\latex{\label {sec:overview}}
+
+Process-oriented simulation is managed through this package.  
+A \emph{Process} can be seen as an \emph{active object} whose behavior in
+time is described by a method called \texttt{actions()}.
+Each process must extend the
+\externalclass{umontreal.iro.lecuyer.simprocs}{SimProcess} class and
+must implement this \texttt{actions()} method.
+Processes are created and can be scheduled to start at a given 
+simulation time just like events.
+In contrast with the corresponding \texttt{actions()} method of events,
+the method of processes is generally not executed instantaneously in the 
+simulation time frame.
+At any given simulation time, at most one process can be \emph{active}, 
+i.e., executing its \texttt{actions()} method.
+The active process may create and schedule new processes,
+kill suspended processes, and suspend itself.  A process is suspended
+for a fixed delay or until a resource becomes available, or a condition
+becomes true.  When a process is suspended or finishes its execution,
+another process usually starts or resumes.
+
+These processes may represent ``autonomous'' objects 
+such as machines and robots in a factory, 
+customers in a retail store, 
+vehicles in a transportation or delivery system, etc.
+The process-oriented paradigm is a natural way of describing complex
+systems \cite{sFRA77a,sBIR86a,sKRE86a,sLAW00a} and often leads to more 
+compact code than the event-oriented view.
+However, it is often preferred to use events only, because this gives a faster
+simulation program, by avoiding the process-synchronization overhead.
+Most complex discrete-event systems are quite conveniently modeled only 
+with events.
+In SSJ, events and processes can be mixed freely.
+The processes actually use events for their synchronization.
+
+The classes \externalclass{umontreal.iro.lecuyer.simprocs}{Resource},
+\externalclass{umontreal.iro.lecuyer.simprocs}{Bin}, and
+\externalclass{umontreal.iro.lecuyer.simprocs}{Condition}
+provide additional mechanisms for process synchronization.  
+A \externalclass{umontreal.iro.lecuyer.simprocs}{Resource} corresponds
+to a facility with limited capacity and a waiting queue.
+A process can request an arbitrary number of units of a resource,
+may have to wait until enough units are available,
+can use the resource for a certain time, and eventually releases it.
+A \externalclass{umontreal.iro.lecuyer.simprocs}{Bin} supports
+producer/consumer relationships between processes.
+It corresponds essentially to a pile of free tokens and a queue of 
+processes waiting for the tokens.
+A \emph{producer} adds tokens to the pile whereas a
+\emph{consumer} (a process) can ask for tokens.
+When not enough tokens are available, the consumer is blocked 
+and placed in the queue.
+The class \externalclass{umontreal.iro.lecuyer.simprocs}{Condition}
+supports the concept of processes waiting
+for a certain boolean condition to be true before continuing their execution.
+
+Two different implementations of processes are available in SSJ, each
+one corresponding to a subclass of \texttt{ProcessSimulator}.
+The first one, called \texttt{ThreadProcessSimulator}, uses Java
+threads as described in Section~4 of \cite{sLEC02a}.
+The second one, \texttt{DSOLProcessSimulator}, is taken from DSOL
+\cite{iJAC05a,sJAC04a} and was 
+provided to us by Peter Jacobs.
+Unfortunately, none of these two implementations is fully satisfactory.
+
+Java threads are designed for \emph{real parallelism}, not for the kind of
+\emph{simulated} parallelism required in process-oriented simulation.
+In the Java Development Kit (JDK) 1.3.1 and earlier, \emph{green threads}
+supporting simulated parallelism were available and our original 
+implementation of processes\latex{ described in \cite{sLEC02a}} 
+is based on them.
+But green threads are no longer supported in recent Java runtime 
+environments.  
+True (native) threads from the operating system are used instead. 
+This adds significant overhead and prevents the use of a large number
+of processes in the simulation.
+\emph{This implementation of processes with threads can be used safely only
+with the JDK versions~1.3.1 or earlier}.
+A program using the thread-based process view can easily be 10 to 20 
+times slower than a similar program using the event view only
+(see \cite{sLEC05a} for an example).
+
+%%%  D-SOL.
+The second implementation, made by P.{} Jacobs, stays away from threads.
+It uses a Java reflection mechanism that interprets the code of processes
+at runtime and transforms everything into events.
+A program using the process view implemented with the DSOL interpreter
+can be 500 to 1000 times slower than the corresponding event-based program
+but the number of processes is limited only by the available memory.
+

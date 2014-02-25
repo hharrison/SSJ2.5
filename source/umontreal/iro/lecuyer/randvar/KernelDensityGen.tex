@@ -1,0 +1,209 @@
+\defclass{KernelDensityGen}
+
+This class implements random variate generators for distributions
+obtained via \emph{kernel density estimation} methods from a set of
+$n$ individual observations $x_1,\dots,x_n$
+\cite{tDEV85a,rDEV86a,rHOR00a,rHOR04a,tSIL86a}. 
+The basic idea is to center a copy of the same symmetric density 
+at each observation and take an equally weighted mixture of the $n$
+copies as an estimator of the density from which the observations come.
+The resulting kernel density has the general form
+\begin{latexonly}
+\eq
+ f_n(x) = \frac{1}{nh} \sum_{i=1}^n k((x-x_i)/h),
+\endeq
+\end{latexonly}%
+\begin{htmlonly}
+\eq
+ f_n(x) = (1/nh) \sum_{i=1}^n k((x-x_i)/h),
+\endeq
+\end{htmlonly}%
+where $k$ is a fixed pre-selected density called the {\em kernel\/} 
+and $h$ is a positive constant called the \emph{bandwidth} or
+\emph{smoothing factor}.
+A difficult practical issue is the selection of $k$ and $h$.
+Several approaches have been proposed for that; see, e.g., 
+\cite{tBER94a,tCAO94a,rHOR04a,tSIL86a}.
+
+The constructor of a generator from a kernel density requires a
+random stream $s$, the $n$ observations in the form of an empirical
+distribution, a random variate generator for the kernel density $k$,
+and the value of the bandwidth $h$.
+The random variates are then generated as follows:
+select an observation $x_I$ at random, by inversion, using stream $s$,
+then generate random variate $Y$ with the generator provided for
+the density $k$, and return $x_I + hY$.
+
+A simple formula for the bandwidth, suggested in \cite{tSIL86a,rHOR04a},
+is $h = \alpha_k h_0$, where
+\eq
+ h_0 = 1.36374 \min(s_n, q / 1.34) n^{-1/5}, \label{eq:bandwidth0}
+\endeq
+$s_n$ and $q$ are the empirical standard deviation and the 
+interquartile range of the $n$ observations,
+and $\alpha_k$ is a constant that depends on the type of kernel $k$.
+It is defined by
+\eq
+ \alpha_k = \left(\sigma_k^{-4} \int_{-\infty}^\infty k(x)dx \right)^{1/5} 
+\endeq
+where $\sigma_k$ is the standard deviation of the density $k$.
+The static method \method{getBaseBandwidth}{} permits one to compute $h_0$ 
+for a given empirical distribution.
+
+\begin{table}[hb]
+\centering
+\caption{Some suggested kernels} 
+\label{tab:kernels}
+\begin{tabular}{llccc}
+\hline
+ name & constructor & $\alpha_k$ & $\sigma_k^2$ & efficiency \\
+\hline
+ Epanechnikov &\texttt{BetaSymmetricalDist(2, -1, 1)} & 1.7188 & 1/5 & 1.000\\
+ triangular   &\texttt{TriangularDist(-1, 1, 0)}      & 1.8882 & 1/6 & 0.986\\
+ Gaussian     &\texttt{NormalDist()}                  & 0.7764 & 1   & 0.951\\
+ boxcar       &\texttt{UniformDist(-1, 1)}            & 1.3510 & 1/3 & 0.930\\
+ logistic     &\texttt{LogisticDist()}                & 0.4340 &3.2899& 0.888\\
+ Student-t(3) &\texttt{StudentDist(3)}                & 0.4802 & 3   & 0.674\\
+\hline
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:kernels} gives the precomputed values of $\sigma_k$ and
+$\alpha_k$ for selected (popular) kernels.
+The values are taken from \cite{rHOR04a}.
+The second column gives the name of a function (in this package)
+that constructs the corresponding distribution.
+The \emph{efficiency} of a kernel is defined as the ratio of its
+mean integrated square error over that of the Epanechnikov kernel,
+which has optimal efficiency and corresponds to the beta distribution
+with parameters $(2,2)$ over the interval $(-1,1)$.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        KernelDensityGen
+ * Description:  random variate generators for distributions obtained via
+                 kernel density estimation methods
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.probdist.*;
+import umontreal.iro.lecuyer.rng.RandomStream;\end{hide}
+
+public class KernelDensityGen extends RandomVariateGen\begin{hide} {
+
+   protected RandomVariateGen kernelGen;
+   protected double bandwidth;
+   protected boolean positive;   // If we want positive reflection.
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public KernelDensityGen (RandomStream s, EmpiricalDist dist,
+                            RandomVariateGen kGen, double h)\begin{hide} {
+      super (s, dist);
+      if (h < 0.0)
+         throw new IllegalArgumentException ("h < 0");
+      if (kGen == null)
+         throw new IllegalArgumentException ("kGen == null");
+      kernelGen = kGen;
+      bandwidth = h;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new generator for a kernel density estimated 
+    from the observations given by the empirical distribution \texttt{dist},
+    using stream \texttt{s} to select the observations,
+    generator \texttt{kGen} to generate the added noise from the kernel
+    density, and bandwidth \texttt{h}.
+  \end{tabb}
+\begin{code}
+
+   public KernelDensityGen (RandomStream s, EmpiricalDist dist,
+                            NormalGen kGen)\begin{hide} {
+      this (s, dist, kGen, 0.77639 * getBaseBandwidth (dist));
+   }\end{hide}
+\end{code}
+  \begin{tabb}  
+    This constructor uses a gaussian kernel and the default 
+    bandwidth $h = \alpha_k h_0$ with the $\alpha_k$ 
+    suggested in Table~\ref{tab:kernels} for the gaussian distribution.
+    This kernel has an efficiency of 0.951.
+  \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Kernel selection and parameters}
+\begin{code}
+
+   public static double getBaseBandwidth (EmpiricalDist dist)\begin{hide} {
+      double r = dist.getInterQuartileRange() / 1.34;
+      double sigma = dist.getSampleStandardDeviation();
+      if (sigma < r) r = sigma;
+      return (1.36374 * r / Math.exp (0.2 * Math.log (dist.getN())));
+   }\end{hide}
+\end{code}
+\begin{tabb}  
+  Computes and returns the value of $h_0$ in (\ref{eq:bandwidth0}).
+\end{tabb}
+\begin{code}
+
+   public void setBandwidth (double h)\begin{hide} {
+      if (h < 0)
+         throw new IllegalArgumentException ("h < 0");
+      bandwidth = h;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Sets the bandwidth to \texttt{h}.
+\end{tabb}
+\begin{code}
+
+   public void setPositiveReflection (boolean reflect)\begin{hide} {
+      positive = reflect;
+   }\end{hide}
+\end{code}
+\begin{tabb}  After this method is called with \texttt{true},
+  the generator will produce only positive values, by using 
+  the \emph{reflection method}: replace all negative values by their
+  \emph{absolute values}.
+  That is, \method{nextDouble}{} will return $|x|$ if $x$ is the 
+  generated variate.  The mecanism is disabled when the method is
+  called with \texttt{false}.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public double nextDouble() {
+      double x = (dist.inverseF (stream.nextDouble())
+                  + bandwidth * kernelGen.nextDouble());
+      if (positive)
+         return Math.abs (x);
+      else
+         return x;
+   }
+}\end{hide}
+\end{code}

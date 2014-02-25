@@ -1,0 +1,56 @@
+#!/bin/csh
+
+setenv TCODEHOME <TCode home path>/tcode
+setenv SSJHOME <SSJ home path>/ssj-2
+
+# For the LaTex documentation of package charts, packages tikz and pgf
+setenv PGFLIBRARY <path to pgf>/tex/pgf-2.00
+
+if ( ! $?TCODEHOME ) then
+    echo "You must set TCODEHOME before calling this script."
+    exit
+endif
+
+# source $TCODEHOME/Tcoderc
+
+if ( ! $?SSJHOME ) then
+    echo "You must set SSJHOME before calling this script."
+    exit
+endif
+
+if ( ! $?LIBRARY_PATH ) then
+    setenv LIBRARY_PATH
+endif
+if ( ! $?CLASSPATH ) then
+    setenv CLASSPATH
+endif
+if ( ! $?LD_LIBRARY_PATH ) then
+    setenv LD_LIBRARY_PATH
+endif
+if ( ! $?TEXINPUTS ) then
+   setenv TEXINPUTS
+endif
+
+setenv CLASSPATH .:$SSJHOME/lib/ssj.jar:$SSJHOME/lib/colt.jar:$SSJHOME/lib/tcode.jar:$CLASSPATH
+
+setenv SSJSRC $SSJHOME/source/umontreal/iro/lecuyer
+
+setenv TEXINPUTS .:$SSJHOME/source:$PGFLIBRARY//:$TEXINPUTS
+
+switch ( "`uname -m`" )
+   case 'i686':
+   setenv LD_LIBRARY_PATH $SSJHOME/lib:$LD_LIBRARY_PATH
+   breaksw
+
+   case 'x86_64':
+   setenv LD_LIBRARY_PATH $SSJHOME/lib64:$LD_LIBRARY_PATH
+   breaksw
+endsw
+
+alias ssjant 'ant -Dbasedir=$SSJHOME -f $SSJHOME/build.xml'
+alias cdssj 'cd $SSJHOME/\!*'
+alias cdssjsrc 'cd $SSJHOME/source/umontreal/iro/lecuyer/\!*'
+alias cdj 'cd $SSJHOME'
+alias cdjj 'cd $SSJHOME/source/umontreal/iro/lecuyer'
+
+# perl $SSJHOME/setl2hinit.pl $SSJHOME/source

@@ -1,0 +1,206 @@
+\defclass {LinkedListStat}
+
+This class extends \class{ListWithStat}, and
+uses a linked list as the internal data structure.
+
+%The iterators returned by the \method{listIterator()}{} method are
+%{\em fail-fast}: if
+%the list is structurally modified at any time after the iterator is created,
+%in any way except through the iterator's own
+%\externalmethod{java.util}{ListIterator}{remove}{} or
+%\externalmethod{java.util}{ListIterator}{add}{}
+%methods, the iterator will throw a \class{ConcurrentModificationException}.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LinkedListStat
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simevents;
+\begin{hide}
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+public class LinkedListStat<E> extends ListWithStat<E>\begin{hide} {
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public LinkedListStat()\begin{hide} {
+      super (Simulator.getDefaultSimulator(), new LinkedList<Node<E>>());
+   } \end{hide}
+\end{code}
+\begin{tabb} Constructs a new list, initially empty.
+\end{tabb}
+\begin{code}
+
+   public LinkedListStat(Simulator inSim)\begin{hide} {
+      super (inSim, new LinkedList<Node<E>>());
+   } \end{hide}
+\end{code}
+\begin{tabb} Constructs a new list, initially empty, and using the default simulator.
+\end{tabb}
+\begin{htmlonly}
+   \param{inSim}{Simulator associate to the current variable.}
+\end{htmlonly}
+\begin{code}
+
+   public LinkedListStat (Collection<? extends E> c)\begin{hide} {
+      super (Simulator.getDefaultSimulator(), new LinkedList<Node<E>>(), c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a list containing the elements of the specified
+   collection, using the default simulator.
+\end{tabb}
+\begin{htmlonly}
+   \param{c}{collection containing elements to fill in this list with}
+\end{htmlonly}
+\begin{code}
+
+   public LinkedListStat (Simulator inSim, Collection<? extends E> c)\begin{hide} {
+      super (inSim, new LinkedList<Node<E>>(), c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a list containing the elements of the specified
+   collection.
+\end{tabb}
+\begin{htmlonly}
+   \param{inSim}{Simulator associate to the current variable.}
+   \param{c}{collection containing elements to fill in this list with}
+\end{htmlonly}
+\begin{code}
+
+   public LinkedListStat (String name)\begin{hide} {
+      super (Simulator.getDefaultSimulator(), new LinkedList<Node<E>>(), name);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new list with name \texttt{name}, using the default simulator.
+   This name can be used to identify the list in traces and reports.
+\end{tabb}
+\begin{htmlonly}
+   \param{name}{name for the list object}
+\end{htmlonly}
+\begin{code}
+
+   public LinkedListStat (Simulator inSim, String name)\begin{hide} {
+      super (inSim, new LinkedList<Node<E>>(), name);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new list with name \texttt{name}.
+   This name can be used to identify the list in traces and reports.
+\end{tabb}
+\begin{htmlonly}
+   \param{inSim}{Simulator associate to the current variable.}
+   \param{name}{name for the list object}
+\end{htmlonly}
+\begin{code}
+
+   public LinkedListStat (Collection<? extends E> c, String name)\begin{hide} {
+      super (Simulator.getDefaultSimulator(), new LinkedList<Node<E>>(), c, name);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new list containing the elements of the
+   specified collection \texttt{c} and with name \texttt{name}, using the default simulator.
+   This name can be used to identify the list in traces and reports.
+\end{tabb}
+\begin{htmlonly}\
+   \param{c}{collection containing elements to fill in this list with}
+   \param{name}{name for the list object}
+\end{htmlonly}
+\begin{code}
+
+   public LinkedListStat (Simulator inSim, Collection<? extends E> c,
+                          String name)\begin{hide} {
+      super (inSim, new LinkedList<Node<E>>(), c, name);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a new list containing the elements of the
+   specified collection \texttt{c} and with name \texttt{name}.
+   This name can be used to identify the list in traces and reports.
+\end{tabb}
+\begin{htmlonly}
+   \param{inSim}{Simulator associate to the current variable.}
+   \param{c}{collection containing elements to fill in this list with}
+   \param{name}{name for the list object}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {\texttt{LinkedList} methods}
+
+See the JDK documentation for more information about these methods.
+
+\begin{code}
+
+   public void addFirst (E obj)\begin{hide} {
+      add (0, obj);
+   }\end{hide}
+\end{code}
+\begin{code}
+
+   public void addLast (E obj)\begin{hide} {
+      add (size(), obj);
+   }\end{hide}
+\end{code}
+\begin{code}
+
+   public E getFirst()\begin{hide} {
+      if (isEmpty())
+         throw new NoSuchElementException();
+      return get (0);
+    }\end{hide}
+\end{code}
+\begin{code}
+
+   public E getLast()\begin{hide} {
+      if (isEmpty())
+         throw new NoSuchElementException();
+      return get (size() - 1);
+   }\end{hide}
+\end{code}
+\begin{code}
+
+   public E removeFirst()\begin{hide} {
+      if (isEmpty())
+         throw new NoSuchElementException();
+      return remove (0);
+   }\end{hide}
+\end{code}
+\begin{code}
+
+   public E removeLast() \begin{hide} {
+      if (isEmpty())
+         throw new NoSuchElementException();
+      return remove (size() - 1);
+   }
+}\end{hide}
+\end{code}

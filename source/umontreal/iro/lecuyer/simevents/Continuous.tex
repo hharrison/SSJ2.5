@@ -1,0 +1,303 @@
+\defclass {Continuous}
+
+Represents a variable in a continuous-time simulation.
+This abstract class provides the basic structures and tools
+for continuous-time simulation, where certain variables evolve 
+continuously in time, according to differential equations.
+Such continuous variables can be mixed with events and processes.
+
+Each type of continuous-time variable should be defined as a 
+subclass of \texttt{Continuous}.
+The instances of these subclasses are the actual continuous-time
+variables.  Each subclass must implement the method
+\method{derivative}{} which returns its derivative with respect to time.
+The trajectory of this variable is determined by integrating this
+derivative.
+The subclass may also reimplement the method \method{afterEachStep}{}, 
+which is executed immediately after each integration step.
+\hpierre {It would probably be better if we could change this method
+  when calling \texttt{StartInteg}, as in SIMOD....}
+By default (in the class \texttt{Continuous}), this method does nothing.
+This method could, for example, verify if the variable has reached
+a given threshold, or update a graphical illustration of the variable
+trajectory.
+
+When creating a class representing a continuous variable,
+the \method{toString}{} method can be overridden to display
+information about the continuous variable.  This information will
+be displayed when formating the event list as a string.
+
+Each continuous variable has a linked simulator represented by an instance of the
+\class{Simulator} class.
+If no simulator is provided explicitly when constructing a variable,
+the default simulator returned by
+\texttt{Simulator.getDefaultSimulator} is used.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Continuous
+ * Description:  provides the basic structures and tools for 
+                 continuous-time simulation
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simevents;
+
+public abstract class Continuous \begin{hide} {
+
+   // Private variables:
+
+   boolean active; // This variable is currently being integrated.
+   double  value;  // Current value of the variable.
+   Event  ev;      // Event to be executed after each integ. step,
+
+   //String name;
+   double phi;
+   double pi;
+   double buffer;
+   double sum;
+
+   private Simulator sim;
+  
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public Continuous() \begin{hide} {
+      active = false;
+      this.sim = Simulator.getDefaultSimulator();
+   } \end{hide}
+\end{code}
+   \begin{tabb} Constructs a new continuous-time variable 
+   linked to the default simulator, {\em without\/} initializing it.
+   \end{tabb}
+\begin{code}
+
+   public Continuous (Simulator sim) \begin{hide} {
+       if (sim == null)
+          throw new NullPointerException();
+      active = false;
+      this.sim = sim;
+   } \end{hide}
+\end{code}
+   \begin{tabb} Constructs a new continuous-time variable linked to
+     the given simulator, {\em without\/}
+    initializing it.
+   \end{tabb}
+\begin{htmlonly}
+   \param{sim}{the simulator associated to this variable.}
+\end{htmlonly}
+%%%%%%%%%%%%
+\begin{comment}
+\begin{vcode}
+
+   public Continuous (String name) \begin{hide} {
+      this();
+      this.name = name;
+   } \end{hide}
+\end{vcode}
+   \begin{tabb} Constructs a new continuous-time variable 
+    (same as \texttt{Continuous()}) with name  \texttt{name} 
+    and linked to the default simulator.
+    This name can be used to identify the \texttt{Continuous}
+    variable  in traces and reports.
+   \end{tabb}
+%\begin{htmlonly}
+%   \param{name}{name associated to this variable}
+%\end{htmlonly}
+\begin{vcode}
+
+   public Continuous (Simulator sim, String name) \begin{hide} {
+      this(sim);
+      this.name = name;
+   } \end{hide}
+\end{vcode}
+   \begin{tabb} Constructs a new continuous-time variable 
+    (same as \texttt{Continuous(sim)}) with name  \texttt{name}.
+    This name can be used to identify the \texttt{Continuous}
+    variable  in traces and reports.
+   \end{tabb}
+%\begin{htmlonly}
+%   \param{name}{name associated to this variable}
+%   \param{sim}{simulator associated to this variable}
+%\end{htmlonly}
+\end{comment}
+%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public void init (double val) \begin{hide} {
+      value = val;
+   } \end{hide}
+\end{code}
+ \begin{tabb}   Initializes or reinitializes the continuous-time variable
+   to \texttt{val}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{val}{initial value of the variable}
+\end{htmlonly}
+\begin{code}
+
+   public double value() \begin{hide} {
+      return value;
+   } \end{hide}
+\end{code}
+ \begin{tabb}   Returns the current value of this continuous-time variable.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the current value of the variable}
+\end{htmlonly}
+\begin{code}
+
+   public Simulator simulator() \begin{hide} {
+      return sim;
+   } \end{hide}
+\end{code}
+ \begin{tabb}   Returns the simulator linked to this continuous-time variable.
+ \end{tabb}
+\begin{htmlonly}
+   \return{the current simulator of the variable}
+\end{htmlonly}
+\begin{code}
+
+   public void setSimulator(Simulator sim) \begin{hide} {
+       if (sim == null)
+          throw new NullPointerException();
+      this.sim = sim;
+   } \end{hide}
+\end{code}
+ \begin{tabb}   Sets the simulator linked to this continuous-time variable.
+   This method should not be called while this variable is active.
+ \end{tabb}
+\begin{htmlonly}
+   \param{sim}{the simulator of the current variable}
+\end{htmlonly}
+\begin{code}
+
+   public void startInteg() \begin{hide} {
+      sim.continuousState().startInteg(this);
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Starts the integration process that will change the state of
+  this variable at each integration step.
+ \end{tabb}
+\begin{code}
+
+   public void startInteg (double val) \begin{hide} {
+      init (val);   startInteg();
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Same as \method{startInteg}{}, after initializing the variable 
+   to \texttt{val}.
+ \end{tabb}
+\begin{htmlonly}
+   \param{val}{initial value to start integration from}
+\end{htmlonly}
+\begin{code}
+
+   public void stopInteg() \begin{hide} {
+      sim.continuousState().stopInteg(this);
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Stops the integration process for this continuous variable.
+  The variable keeps the value it took at the last integration step
+  before calling \texttt{stopInteg}.
+ \end{tabb}
+\begin{code}
+
+   public abstract double derivative (double t);
+\end{code}
+  \begin{tabb}  This method should return the derivative of this variable
+   with respect to time, at time $t$.
+   Every subclass of \texttt{Continuous} that is to be instantiated 
+   must implement it.
+   If the derivative does not depend explicitly on time, $t$ becomes
+   a dummy parameter.  Internally, the method is used with $t$ not
+   necessarily equal to the current simulation time.
+  \end{tabb}
+\begin{htmlonly}
+   \param{t}{time at which the derivative must be computed}
+\end{htmlonly}
+\begin{code}
+
+   public void afterEachStep() \begin{hide} {
+   } \end{hide}
+\end{code}
+  \begin{tabb}  This method is executed after each integration step
+   for this \texttt{Continuous} variable.
+   Here, it does nothing, but every subclass of \texttt{Continuous} may
+   reimplement it.
+  \end{tabb}
+\begin{code}
+
+   public static void selectEuler(double h) \begin{hide} {
+      Simulator.getDefaultSimulator().continuousState().selectEuler(h);
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Selects the Euler method as the integration method,
+  with the integration step size \texttt{h}, in time units, for the default simulator.
+  The non-static method \method{selectEuler}{} in \class{ContinuousState}
+  can be used to set the integration method for any given simulator.
+  This method appears here only to keep compatibility with older versions of SSJ; using
+  a non-static \class{Simulator} instance rather than the default simulator is recommended.
+  \end{tabb}
+\begin{htmlonly}
+   \param{h}{integration step, in simulation time units}
+\end{htmlonly}
+\begin{code}
+
+   public static void selectRungeKutta4(double h) \begin{hide} {
+      Simulator.getDefaultSimulator().continuousState().selectRungeKutta4(h);
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Selects a Runge-Kutta method of order~4 as the integration
+  method to be used, with step size \texttt{h}.
+  The non-static method \method{selectRungeKutta4}{} in \class{ContinuousState}
+  can be used to set the integration method for any given simulator.
+  This method appears here only to keep compatibility with older versions of SSJ; using
+  a non-static \class{Simulator} instance rather than the default simulator is recommended.
+  \end{tabb}
+\begin{code}
+
+   public static void selectRungeKutta2(double h) \begin{hide} {
+      Simulator.getDefaultSimulator().continuousState().selectRungeKutta2(h);
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Selects a Runge-Kutta method of order~2 as the integration
+  method to be used, with step size \texttt{h}.
+  The non-static method \method{selectRungeKutta2}{} in \class{ContinuousState}
+  can be used to set the integration method for any given simulator.
+  This method appears here only to keep compatibility with older versions of SSJ; using
+  a non-static \class{Simulator} instance rather than the default simulator is recommended.
+  \end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

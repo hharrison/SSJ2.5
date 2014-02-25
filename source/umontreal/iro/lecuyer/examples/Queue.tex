@@ -1,0 +1,464 @@
+\section {A single-server queue}
+\label {sec:queue}
+
+Our first example is a {\em single-server queue}, where customers
+arrive randomly and are served one by one in their order of arrival,
+i.e., {\em first in, first out\/} (FIFO).
+We suppose that the times between successive arrivals are exponential
+random variables with mean 10 minutes, that the service times are exponential
+random variables with mean 9 minutes, and that all these random variables are 
+mutually independent.
+The customers arriving while the server is busy must join the queue.
+The system initially starts empty.  We want to simulate the first 1000
+minutes of operation and compute statistics such as the mean waiting time
+per customer, the mean queue length, etc.
+
+This simple model is well-known in queuing theory: It is called
+an $M/M/1$ queue.  Simple formulas are available for this model to
+compute the average waiting time per customer, average queue length,
+etc., over an {\em infinite\/} time horizon \cite{pKLE75a}.
+When the time horizon is finite, these expectations can also
+be computed by numerical methods.  The fact that we use this model 
+to give a first tasting of SSJ should not be interpreted to mean that 
+simulation is necessarily the best tool for it.
+
+We give three examples of simulation programs for the $M/M/1$ queue:
+The first one is event-oriented, the second one is process-oriented,
+and the third one uses a simple recurrence.
+The first program is longer and more complicated than the other two;
+it shows how things work at a lower level.
+
+
+%%%%%%%%%%%%%
+\subsection {Event-oriented program}
+
+\lstinputlisting[label=lst:QueueEv,caption={Event-oriented simulation of an $M/M/1$ queue},lineskip=-1pt]{QueueEv.java}
+
+Listing~\ref{lst:QueueEv} gives an event-oriented simulation program,
+where a subclass of the class \texttt{Event} is defined for each type
+of event that can occur in the simulation:
+arrival of a customer (\texttt{Arrival}),
+departure of a customer (\texttt{Departure}),
+and end of the simulation (\texttt{EndOfSim}).
+Each event {\em instance\/} is inserted into the {\em event list\/}
+upon its creation, with a scheduled time of occurrence, and is
+{\em executed\/} when the simulation clock reaches this time.
+Executing an event means invoking its \texttt{actions} method.
+Each event subclass must implement this method.
+The simulation clock and the event list (i.e., the list of events 
+scheduled to occur in the future) are maintained behind the
+scenes by the class \texttt{Sim} of package \texttt{simevents}.
+
+When \texttt{QueueEv} is instantiated  by the \texttt{main} method, 
+the program creates
+two streams of random numbers,
+two random variate generators, two
+lists, and two statistical probes (or collectors).
+The random number streams can be
+viewed as virtual random number generators that generate random
+numbers in the interval $[0,1)$ according to the uniform probability
+distribution.  These streams are attached to random variate generators
+\texttt{genArr} and \texttt{genServ} which are used to generate the times
+between successive arrivals and the service times, respectively.
+We can use such an attached generator because the means (parameters)
+do not change during simulation.
+The lists \texttt{waitList} and \texttt{servList} contain the customers
+waiting in the queue and the customer in service (if any), respectively.
+Maintaining a list for the customer in service may seem exaggerated,
+because this list never contains more than one object, but the current
+design has the advantage of working with very little change if the
+queuing model has more than one server, and in other more general 
+situations.
+Note that we could use the class \texttt{List} from package 
+\texttt{simevents} instead of \texttt{java.util.LinkedList}.
+However, with our current implementation,
+the automatic statistical collection in that \texttt{List} 
+class would not count the customers whose waiting time is zero, because
+they are never placed in the list.
+\begin{comment}
+Here we use the class \texttt{List} from package \texttt{simevents}.
+This class is equivalent to the standard class \texttt{java.util.LinkedList}, 
+except that its implementation is more efficient than the current one
+in JDK and it can also collect statistics automatically.
+However, the automatic statistical collection on \texttt{waitList} 
+would not count the customers whose waiting time is zero, because
+they are never placed in this list, so we do not use this facility.
+\end{comment}
+
+The statistical probe \texttt{custWaits} collects statistics on the
+customer's waiting times.  It is of the class \texttt{Tally}, which 
+is appropriate when the statistical data of interest is  a sequence 
+of observations $X_1, X_2, \dots$ of which we might want to compute 
+the sample mean, variance, and so on.
+A new observation is given to this probe by the \texttt{add} method
+each time a customer starts its service.
+Every \texttt{add} to a \texttt{Tally} probe brings a new observation $X_i$,
+which corresponds here to a customer's waiting time in the queue.
+The other statistical probe, \texttt{totWait}, is of the class
+\texttt{Accumulate}, which means that it computes the integral
+(and, eventually, the time-average) of a continuous-time
+stochastic process with piecewise-constant trajectory.
+Here, the stochastic process of interest is the length of the queue
+as a function of time.  One must call \texttt{totWait.update} whenever 
+there is a change in the queue size, to update the (hidden)
+{\em accumulator\/} that keeps the current value of the integral
+of the queue length.  This integral is equal, after each update,
+to the total waiting time in the queue, for all the customers,
+since the beginning of the simulation.  
+
+Each customer is an object with two fields: \texttt{arrivTime}
+memorizes this customer's arrival time to the system, and
+\texttt{servTime} memorizes its service time.
+This object is created, and its fields are initialized, 
+when the customer arrives.
+
+The method \texttt{Sim.init}, invoked in the constructor \texttt{QueueEv},
+initializes the clock and the event list, 
+whereas \texttt{Sim.start} actually starts the simulation 
+by advancing the clock to the time of
+the first event in the event list, removing this event
+from the list, and executing it.  This is repeated until either
+\texttt{Sim.stop} is called or the event list becomes empty.
+\texttt{Sim.time} returns the current time on the simulation clock.
+Here, two events are scheduled before starting the simulation:
+the end of the simulation at time 1000, and the
+arrival of the first customer at a random time that has the exponential
+distribution with mean 10 (or \emph{rate} $\lambda=1/10$), 
+generated by \texttt{genArr} using inversion and its attached random stream.
+The method \texttt{genArr.nextDouble} returns this exponential random variate.
+
+The method \texttt{actions} of the class \texttt{Arrival} describes what happens
+when an arrival occurs.  
+Arrivals are scheduled by a domino effect: 
+the first action of each arrival event schedules the next event in
+a random number of time units, generated from the exponential distribution
+with mean 10.
+Then, the newly arrived customer is created,
+its arrival time is set to the current simulation time,
+and its service time is generated from the exponential
+distribution with mean 9, using the random variate generator \texttt{genServ}.
+If the server is busy, this customer is inserted at the end of the
+queue (the list \texttt{waitList}) and the statistical probe 
+\texttt{totWait}, that keeps track of the size of the queue, is updated.
+Otherwise, the customer is inserted in the server's list \texttt{servList},
+its departure is scheduled to happen in a number of time units 
+equal to its service time, and a new observation of 0.0 is given to the
+statistical probe \texttt{custWaits} that collects the waiting times.
+
+When a \texttt{Departure} event occurs, the customer in service is 
+removed from the list (and disappears).
+If the queue is not empty, the first customer is removed from
+the queue (\texttt{waitList}) and inserted in the server's list,
+and its departure is scheduled.
+The waiting time of that customer (the current time minus its
+arrival time) is given as a new observation to the probe
+\texttt{custWaits}, and the probe \texttt{totWait} is also updated
+with the new (reduced) size of the queue.
+
+The event \texttt{EndOfSim} calculates and
+prints statistical reports for
+the two probes and stops the simulation.  
+The program prints the results shown in Figure~\ref{fig:quresEv}.
+When calling \texttt{report} on an \texttt{Accumulate} object, an implicit
+update is done using the current simulation time and the last
+value given to \texttt{update}.  In this example, this ensures
+that the end time of the \texttt{Accumulate} will always be 1000,
+otherwise it would be a random number.
+
+\setbox4=\vbox{\hsize=5.8in
+\begin{verbatim}
+REPORT on Tally stat. collector ==> Waiting times
+  min        max       average      standard dev   nb. obs.
+   0       113.721      49.554         22.336         97
+
+REPORT on Accumulate stat. collector ==> Size of queue
+
+  From time  To time     Min        Max         Average 
+    0          1000       0          12          4.85
+\end{verbatim}
+}
+
+\begin{figure}[htb]
+\centerline {\boxit{\box4}}
+\caption {Results of the program \texttt{QueueEv}.}
+\label {fig:quresEv}
+\end{figure}
+
+%%%%%%%%%%%%%
+\clearpage
+\subsection {Process-oriented program}
+
+\lstinputlisting[label=lst:QueueProc,caption={Process-oriented simulation of an $M/M/1$ queue}]{QueueProc.java}
+
+\clearpage 
+Typical simulation languages offer higher-level constructs than those used
+in the program of Listing~\ref{lst:QueueEv}, and so does SSJ.
+This is illustrated by our second implementation of the single-server
+queue model, in Listing~\ref{lst:QueueProc}, based on a
+paradigm called the {\em process-oriented\/} approach.
+% initiated in the early sixties by the GPSS language (\cite {sSCH90a}).
+
+In the event-oriented implementation, each customer was a {\em passive\/}
+object, storing two real numbers, and performing no action by itself.
+In the process-oriented implementation given in Listing~\ref{lst:QueueProc},
+each customer (instance of the class \texttt{Customer}) is a
+\emph{process} whose activities are described by its \texttt{actions} method.
+This is implemented by associating a Java \texttt{Thread} to each 
+\texttt{SimProcess}.
+The server is an object of the class \texttt{Resource}, created when
+\texttt{QueueProc} is instantiated by \texttt{main}.
+It is a {\em passive\/} object, in the sense that it executes no code. 
+Active resources, when needed, can be implemented as processes.
+
+When it starts executing its actions, a customer first schedules
+the arrival of the next customer, as in the event-oriented case.
+(Behind the scenes, this effectively schedules an event, in the
+event list, that will start a new customer instance.
+The class \texttt{SimProcess} contains all scheduling facilities of {\tt
+  Event}, which permits one
+to schedule processes just like events.)
+The customer then requests the server by invoking \texttt{server.request}.
+If the server is free, the customer gets it and can continue its
+execution immediately.  Otherwise, the customer is automatically 
+(behind the scenes) placed in the server's queue, is suspended, 
+and resumes its execution only when it obtains the server.
+When its service can start, the customer invokes \texttt{delay} to 
+freeze itself for a duration equal to its service time, which is
+again generated from the exponential distribution with mean 9
+using the random variate generator \texttt{genServ}.  
+After this delay has elapsed, the customer
+releases the server and ends its life.
+Invoking \texttt{delay(d)} can be interpreted as scheduling an event that
+% (behind the scenes)
+will resume the execution of the process in \texttt{d} units of time.
+Note that several distinct customers can 
+co-exist in the simulation at any given point in time, and
+be at different phases of their \texttt{actions} method.
+However, only one process is executing at a time.
+
+The constructor \texttt{QueueProc} initializes the simulation,
+invokes \texttt{setStatCollecting (true)} to specify that detailed statistical
+collection must be performed automatically for the resource \texttt{server}, 
+schedules an event \texttt{EndOfSim} at time 1000,
+schedules the first customer's arrival, and starts the simulation.
+The \texttt{EndOfSim} event prints a detailed statistical report on 
+the resource \texttt{server}.
+
+It should be pointed out that in the \texttt{QueueProc} program,
+the service time of a customer is generated
+only when the customer starts its service, whereas for \texttt{QueueEv},
+it was generated at customer's arrival.
+For this particular model, it turns out that this makes no difference 
+in the results, because the customers are served in a FIFO order
+and because one random number stream is dedicated to the generation
+of service times. 
+However, this may have an impact in other situations.
+
+The process-oriented program here is more compact and
+more elegant than its event-oriented counterpart.
+This tends to be often true: Process-oriented programming 
+frequently gives less cumbersome and better looking programs.
+On the other hand, the process-oriented implementations also tend to
+execute more slowly, because they involve more overhead.
+For example, the process-driven single-server queue simulation
+is two to three times slower than its event-driven counterpart.
+In fact, process management is done via the event list:
+processes are started, suspended, reactivated, and so on, 
+by hidden events.
+If the execution speed of a simulation program is really important,
+it may be better to stick to an event-oriented implementation.
+
+%%%%%%%%%%%%%%%
+%\subsection {Simulation results for the single-server queue}
+
+\setbox5=\vbox{\hsize=5.8in
+\begin{verbatim}
+REPORT ON RESOURCE : Server
+  From time : 0.0    to time : 1000.0
+                 min          max      average    Std. Dev.  num.obs.
+  Capacity        1            1          1
+  Utilisation     0            1         0.999
+  Queue Size      0           12         4.85
+  Wait            0         113.721     49.554     22.336      97
+  Service        0.065       41.021     10.378     10.377      96
+  Sojourn       12.828      124.884     60.251     21.352      96
+
+\end{verbatim}
+}
+
+\begin{figure}[htb]
+\centerline {\boxit{\box5}}
+\caption {Results of the program \texttt{QueueProc}.}
+\label {fig:quresProc}
+\end{figure}
+
+
+Figure~\ref{fig:quresProc} shows the output of the program \texttt{QueueProc}.
+It contains more information than the output of \texttt{QueueEv}.
+It gives statistics on the server utilization, queue size, 
+waiting times, service times, and sojourn times in the system.
+(The sojourn time of a customer is its waiting time plus its service time.)
+
+We see that by time $T =1000$, 97 customers have completed their waiting
+and 96 have completed their service.
+The maximal length of the queue has been 12 and its average length
+between time 0 and time 1000 was 4.85.
+The waiting times were in the range from 0 to 113.721, with an average of 49.554,
+while the service times were from 0.065 to 41.021, with an average of 10.378
+(recall that the theoretical mean service time is 9.0).
+Clearly, the largest waiting time and largest service time
+belong to different customers.
+The average waiting and service times do not sum up to
+the average sojourn time because there is one more observation for the
+waiting times.
+
+The report also gives the empirical standard deviations of the waiting,
+service, and sojourn times.  It is important to note that these
+standard deviations should {\em not\/} be used to compute confidence 
+intervals for the expected average waiting times or sojourn times
+in the standard way, because the observations here (e.g., the successive
+waiting times) are strongly dependent, and also not identically distributed.
+Appropriate techniques for computing confidence intervals in this type of
+situation are described, e.g., in \cite{sFIS96a,sLAW00a}.
+
+
+%%%%%%%%%%%%%
+\subsection {A simpler program based on Lindley's recurrence}
+
+The aim of the previous programs was
+to illustrate the notions of events and processes by a simple example.
+However, for a single-server queue, 
+if $W_i$ and $S_i$ are the waiting time and service time of the
+$i$th customer, and $A_i$ is the time between the arrivals of
+the $i$th and $(i+1)$th customers, we have $W_1=0$ and the $W_i$ 
+follow the recurrence
+\eq
+  W_{i+1} = \max(0,\; W_i + S_i - A_i),               \label {eq:lindley}
+\endeq
+known as Lindley's equation \cite {pKLE75a}.
+
+The program of Listing~\ref{lst:QueueLindley} exploits (\ref{eq:lindley})
+to compute the average waiting time of the first $100$ customers.
+This is different than for the previous programs, because we now fix
+the total number of customers instead of fixing the time horizon.
+For a change, the random variates are generated by static methods
+instead of via a \texttt{RandomVariateGen} object.
+The instruction ``\texttt{Wi += \dots}'' could also be replaced by the
+one that is commented out, and which directly implements inversion 
+of the exponential distribution.
+This illustrates various ways of doing the same thing.
+
+
+\bigskip
+\lstinputlisting[label=lst:QueueLindley,caption={A simulation based on Lindley's recurrence}]{QueueLindley.java}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Using the observer design pattern}
+
+Listing~\ref{lst:QueueObs} adds a few ingredients to the program
+\texttt{QueueLindley}, in order to illustrate the \emph{observer}
+design pattern implemented in package \texttt{stat}.  
+This mechanism permits one to separate data generation from data 
+processing.  It can be very helpful in large simulation programs or 
+libraries, where different objects may need to process the same data 
+in different ways.  These objects may have the task of storing observations
+or displaying statistics in different formats, for example, and they are
+not necessarily fixed in advance.
+
+The \emph{observer} pattern, supported by the \texttt{Observable}
+class and \texttt{Observer} interface in Java,
+offers the appropriate flexibility for that kind of situation.
+An \texttt{Observable} object acts in a sense like a \emph{broadcasting}
+\emph{distribution agency} that maintains a list of registered 
+\texttt{Observer} objects, and send information to all its registered
+observers whenever appropriate.
+
+\texttt{StatProbe} in package \texttt{stat}, as well as its subclasses
+\texttt{Tally} and \texttt{Accumulate}, extend the \texttt{Observable} class.  
+Whenever they receive a new statistical observation, e.g.,  via
+\texttt{Tally.add} or \texttt{Accumulate.update}, they send the new value
+to all registered observers.
+To register as an observer, an object must implement the interface
+\texttt{Observer}. 
+This implies that it must provide an implementation of the method
+\texttt{update}, whose purpose is to recover the information
+that the object has registered for.
+
+In the example, the statistical collector \texttt{waitingTimes} 
+is the \texttt{Observable} object that transmits to all its registered 
+listeners each new statistical observation that it receives via
+its \texttt{add} method.
+More specifically, each call to \texttt{waitingTimes.add(x)} generates 
+in the background a call to \texttt{o.update(waitingTimes, dx)},
+where \texttt{dx} is a \texttt{Double} object that contains the value of \texttt{x},
+for all registered observers \texttt{o}.
+
+\begin{comment}
+The method \texttt{notifyObs} is used to
+turn the tally into such an agency.  In fact, the collector is both a
+tally and a distribution agency, but its tally functionality can be
+disabled using the \texttt{stopCollectStat} method.  This can be useful when
+the registered observers already perform statistical collection.
+\end{comment}
+
+The single observer that registers to receive observations from 
+\texttt{waitingTimes} in the example is an anonymous object of class 
+\texttt{ObservationTrace}.  The task of this observer is to
+print the waiting times $W_5$, $W_{10}$, $W_{15}$, \dots
+The statistical collector \texttt{waitingTimes} himself also stores
+appropriate information to be able to provide a statistical report
+when asked.
+The \texttt{ObservationTrace} object gets informed of any new observation 
+$W_i$ via its \texttt{update} method.
+The \texttt{Observer} interfaces specifies that \texttt{update} must have two
+formal parameters, of classes \texttt{Observable} and \texttt{Object}, respectively. 
+A \texttt{StatProbe} always passes \texttt{Double} wrapper object as the 
+second parameter of \texttt{update}, so this second parameter is normally
+type-casted to a \texttt{Double} inside the \texttt{update} method,
+before the observation can be extracted.
+In the case where the observer registers to several \texttt{Observable}
+objects, the first parameter of \texttt{update} tells him which one
+is sending the information and can behave accordingly.
+
+\bigskip
+\lstinputlisting[label=lst:QueueObs,caption={A simulation of Lindley's
+  recurrence using observers}]{QueueObs.java}
+
+
+\begin{comment}
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Classes implementing data generation facilities use
+the statistical probes as usual but turn on the observation
+notification.  In more complex situations, the data generating class
+could itself implement \texttt{Observable} to broadcast some custom
+observation types, such as calls in a call center simulation program. 
+It is a good practice to offer a public access to the statistical
+collectors to allow observer registration from other classes.
+Here, the only collector used is the \texttt{waitingTimes}.
+In the case of a program that also keeps track of the waiting queue
+(as in \texttt{QueueEv}), we could also use
+a second collector for the queue size.
+The \texttt{QueueObs} is the only data generator of the program.
+In more complex examples, we could have several data generators,
+each with their own properties.
+
+The data processing portion of the simulation program comprises classes
+implementing the \texttt{Observer} interface.  These
+observers can put data in collectors, in files for later plotting, etc.
+In our example, we register one listener for the waiting times.
+One can also register observers with the \texttt{Accumulate} class.
+However, note that the \texttt{QueueObs} simulation
+logic does not know anything about the observation trace.
+The \texttt{ObservationTrace}, is a user-defined
+class that prints waiting times of some customers.  The output
+is only for demonstration purposes, it is not suited for passing
+to a plotting program, but it could easily be modified to do so.
+Such a listener could also collect waiting times greater or equal
+to a certain threshold, use other statistical collection facilities, etc.
+The user can implement data processing tools that
+the simulation library developers did not think about.
+
+\end{comment}
+

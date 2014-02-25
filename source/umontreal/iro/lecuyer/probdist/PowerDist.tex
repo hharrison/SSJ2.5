@@ -1,0 +1,399 @@
+\defclass {PowerDist}
+
+Extends the class \class{ContinuousDistribution} for 
+the {\em power\/} distribution
+\cite[page 161]{tEVA00a} with shape parameter
+$c > 0$, over the interval $[a,b]$, where $a < b$.
+\begin{htmlonly}
+It has density 
+\eq
+  f(x) = c(x - a)^{c - 1}/(b - a)^{c}
+\endeq
+for $a < x < b$, and 0 elsewhere.  It has distribution function
+\eq
+    F(x) = (x - a)^{c}/(b - a)^{c}
+           \qquad  \mbox{for } a \le x \le b,
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+This distribution has density 
+\eq 
+  f(x) = \frac{c(x-a)^{c - 1}} {(b - a)^{c}},
+            \qquad  \mbox{for } a \le x \le b,  \eqlabel{eq:fpower}
+\endeq
+and  $f(x) = 0$  elsewhere. Its distribution function is
+\eq
+    F(x) = \frac {(x - a)^{c}} {(b - a)^{c}}, 
+            \qquad  \mbox{for } a \le x \le b,     \eqlabel{eq:Fpower}
+\endeq
+\end{latexonly}
+with $F(x) = 0$ for $x \le a$ and  $F(x) = 1$ for $x \ge b$.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        PowerDist
+ * Description:  power distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.Num;
+\end{hide}
+public class PowerDist extends ContinuousDistribution\begin{hide} {
+   private double a;
+   private double b;
+   private double c;
+
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public PowerDist (double a, double b, double c)\begin{hide} {
+      setParams (a, b, c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{PowerDist} object with parameters 
+     $a =$ \texttt{a}, $b =$ \texttt{b} and $c =$ \texttt{c}.
+ \end{tabb}
+\begin{code}
+
+   public PowerDist (double b, double c)\begin{hide} {
+      setParams (0.0, b, c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{PowerDist} object with parameters 
+     $a = 0$, $b =$ \texttt{b} and $c =$ \texttt{c}.
+ \end{tabb}
+\begin{code}
+
+   public PowerDist (double c)\begin{hide} {
+      setParams (0.0, 1.0, c);
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a \texttt{PowerDist} object with parameters 
+     $a = 0$, $b =1$ and $c =$ \texttt{c}.
+ \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (a, b, c, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (a, b, c, x);
+   }
+
+   public double barF (double x) {
+      return barF (a, b, c, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (a, b, c, u);
+   }
+
+   public double getMean() {
+      return PowerDist.getMean (a, b, c);
+   }
+
+   public double getVariance() {
+      return PowerDist.getVariance (a, b, c);
+   }
+
+   public double getStandardDeviation() {
+      return PowerDist.getStandardDeviation (a, b, c);
+   }\end{hide}
+
+   public static double density (double a, double b, double c, double x)\begin{hide} {
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (x <= a)
+         return 0.0;
+      if (x >= b)
+         return 0.0;
+      double z = (x-a)/(b-a);
+      return c*Math.pow(z, c-1.0) / (b-a);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function (\ref{eq:fpower}).
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+   \param{x}{the value at which the density is evaluated}
+   \return{returns the density function}
+\end{htmlonly}
+\begin{code}
+
+   public static double cdf (double a, double b, double c, double x)\begin{hide} {
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (x <= a)
+         return 0.0;
+      if (x >= b)
+         return 1.0;
+      return Math.pow((x-a)/(b-a), c);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the distribution function (\ref{eq:Fpower}).
+ \end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+   \param{x}{the value at which the distribution is evaluated}
+   \return{returns the distribution function}
+\end{htmlonly}
+\begin{code}
+
+   public static double barF (double a, double b, double c, double x)\begin{hide} {
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (x <= a)
+         return 1.0;
+      if (x >= b)
+         return 0.0;
+      return 1.0 - Math.pow((x-a)/(b-a),c);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+ Computes  the complementary distribution function.
+ \end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+   \param{x}{the value at which the complementary distribution is evaluated}
+   \return{returns the complementary distribution function}
+\end{htmlonly}
+\begin{code}
+
+   public static double inverseF (double a, double b, double c, double u)\begin{hide} {
+      if (c <= 0.0)
+         throw new IllegalArgumentException ("c <= 0");
+      if (u < 0.0 || u > 1.0)
+          throw new IllegalArgumentException ("u not in [0, 1]");
+      if (u == 0.0)
+         return a;
+      if (u == 1.0)
+         return b;
+
+      return a + (b-a) * Math.pow(u,1.0/c);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes  the inverse of the distribution function.
+ \end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+   \param{u}{the value at which the inverse distribution is evaluated}
+   \return{returns the inverse of the distribution function}
+\end{htmlonly}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n, double a, double b)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      double d = b - a;
+      double somme = 0;
+      for (int i = 0 ; i < n ; ++i) somme += Math.log((x[i] - a)/d);
+
+      double [] parametres = new double [1];
+      parametres[0] = -1.0 / (somme/n);
+      return parametres;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ Estimates the parameter $c$ of the power distribution from the $n$
+   observations $x[i]$, $i = 0, 1, \ldots, n-1$, using the maximum
+   likelihood method and assuming that $a$ and $b$ are known. 
+   The estimate is returned in a one-element array: [$c$].
+   \begin{detailed}
+   The maximum likelihood estimator is the value
+   $\hat{c}$ that satisfies the equation
+   \begin{eqnarray*}
+     \frac1{\hat c} =  -\frac1n \sum_{i=1}^{n} \ln\left(\frac{x_i - a}{b - a}
+    \right)
+   \end{eqnarray*}
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \return{returns the shape parameter [$\hat{c}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static PowerDist getInstanceFromMLE (double[] x, int n,
+                                               double a, double b)\begin{hide} {
+      double parameters[] = getMLE (x, n, a, b);
+      return new PowerDist (a, b, parameters[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a power distribution with parameters $a$ and $b$,
+   with $c$ estimated using the maximum likelihood method based on the 
+   $n$ observations $x[i]$, $i = 0, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double a, double b, double c)\begin{hide} {
+      return a + (b-a) * c / (c+1.0);
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean $a + (b-a)c/(c+1)$ of the power distribution
+with parameters  $a$, $b$ and $c$.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+   \return{returns the mean}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double a, double b, double c)\begin{hide} {
+      return (b-a)*(b-a)*c / ((c+1.0)*(c+1.0)*(c+2.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance $(b-a)^2 c / [(c+1)^2(c+2)]$
+   of the power distribution with parameters $a$, $b$ and $c$.
+\end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+   \return{returns the variance}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double a, double b, double c)\begin{hide} {
+      return Math.sqrt (PowerDist.getVariance (a, b, c));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the power distribution with parameters $a$, $b$ and $c$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the power distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code} 
+  \begin{tabb} Returns the parameter $a$.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the left limit of interval $a$}
+\end{htmlonly}
+\begin{code}
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code} 
+  \begin{tabb} Returns the parameter $b$.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the right limit of interval $b$}
+\end{htmlonly}
+\begin{code}
+
+   public double getC()\begin{hide} {
+      return c;
+   }\end{hide}
+\end{code} 
+  \begin{tabb} Returns the parameter $c$.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the shape parameter $c$}
+\end{htmlonly}
+\begin{code}
+
+   public void setParams (double a, double b, double c)\begin{hide} {
+      this.a  = a;
+      this.b  = b;
+      this.c  = c;
+   }\end{hide}
+\end{code} 
+  \begin{tabb} Sets the parameters $a$, $b$ and $c$ for this object.
+  \end{tabb}
+\begin{htmlonly}
+   \param{a}{left limit of interval}
+   \param{b}{right limit of interval}
+   \param{c}{shape parameter}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {a, b, c};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$a$, $b$, $c$].
+\end{tabb}
+\begin{htmlonly}
+   \return{[$a$, $b, $c]}
+\end{htmlonly}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : a = " + a + " : b = " + b + " : c = " + c;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}
+\begin{htmlonly}
+   \return{a \texttt{String} containing information about the current distribution}
+\end{htmlonly}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

@@ -1,0 +1,14 @@
+\latex{\section*{Overview}\addcontentsline{toc}{subsection}{Overview}}
+% \latex{\section*{Overview}}
+
+This package provides classes to define stochastic processes 
+$\{X(t),\, t\ge 0\}$, and to simulate their sample paths at a finite 
+number of (discrete) observation times $t_0 \le t_1 \le \cdots \le t_d$.
+The observation of the generated path is thus the vector
+$(X(t_0),X(t_1),\dots,X(t_d))$.
+
+The observation times $t_0, \dots, t_d$ can be specified (or changed) 
+after defining the process, with the method \texttt{setObservationTimes}.
+The random stream used to generate the sample path can also be changed,
+using \texttt{setStream}.
+

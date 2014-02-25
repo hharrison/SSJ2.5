@@ -1,0 +1,124 @@
+\defclass {ChiSquareNoncentralGen}
+
+This class implements random variate generators for the
+{\em noncentral chi square\/} distribution with $\nu > 0$ degrees of freedom
+and noncentrality parameter $\lambda > 0$. See the definition in
+ \externalclass{umontreal.iro.lecuyer.probdist}{ChiSquareNoncentralDist}.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ChiSquareNoncentralGen
+ * Description:  random variate generators for the noncentral chi square distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class ChiSquareNoncentralGen extends RandomVariateGen \begin{hide} {
+   protected double nu = -1.0;
+   protected double lambda = -1.0;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public ChiSquareNoncentralGen (RandomStream s, double nu, double lambda) \begin{hide} {
+      super (s, new ChiSquareNoncentralDist(nu, lambda));
+      setParams (nu, lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a \emph{noncentral chi square}  random variate generator
+ with \texttt{nu} $=\nu>0$ degrees of freedom and noncentrality parameter 
+\texttt{lambda} $= \lambda>0$,
+ using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public ChiSquareNoncentralGen (RandomStream s,
+                                  ChiSquareNoncentralDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getNu (), dist.getLambda());
+   }\end{hide}
+\end{code}
+\begin{tabb}  Create a new generator for the distribution \texttt{dist}
+    and stream \texttt{s}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s,
+                                    double nu, double lambda) \begin{hide} {
+      return ChiSquareNoncentralDist.inverseF (nu, lambda, s.nextDouble());
+   }
+\end{hide}
+\end{code}
+\begin{tabb} Generates a new variate from the noncentral chi square
+distribution with \texttt{nu} = $\nu$ degrees of freedom and noncentrality 
+parameter \texttt{lambda} $=\lambda$,
+ using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public double getNu()\begin{hide} {
+      return nu;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the value of  $\nu$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Returns the value of $\lambda$ for this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double nu, double lambda) {
+      if (nu <= 0.0)
+         throw new IllegalArgumentException ("nu <= 0");
+      if (lambda < 0.0)
+         throw new IllegalArgumentException ("lambda < 0");
+      this.nu = nu;
+      this.lambda = lambda;
+   }
+\end{code}
+\begin{tabb} Sets the parameters $\nu =$ \texttt{nu} and $\lambda = $
+  \texttt{lambda} of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

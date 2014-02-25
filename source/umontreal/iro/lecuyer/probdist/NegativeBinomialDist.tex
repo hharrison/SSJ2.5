@@ -1,0 +1,895 @@
+\defclass {NegativeBinomialDist}
+
+Extends the class \class{DiscreteDistributionInt} for
+the \emph{negative binomial\/} distribution
+\cite[page 324]{sLAW00a} with real
+parameters $n$ and $p$, where $n > 0$ and $0\le p\le 1$.
+Its mass function is
+\begin{htmlonly}
+\eq
+   p(x) = \Gamma (n + x) / (\Gamma (n)\: x!) p^n (1 - p)^x,
+    \qquad\mbox{for } x = 0, 1, 2, \ldots\label{eq:fmass-negbin}
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+   p(x) = \frac{\Gamma(n + x)}{\Gamma (n)\; x!} p^n (1 - p)^x,
+    \qquad\mbox{for } x = 0, 1, 2, \ldots \label{eq:fmass-negbin}
+\endeq
+\end{latexonly}
+where $\Gamma(x)$ is the gamma function.
+
+If $n$ is an integer, $p(x)$ can be interpreted as the probability
+of having $x$ failures before the $n$-th success in a sequence of
+independent Bernoulli trials with  probability of success $p$. This special
+case is implemented as the Pascal distribution (see \class{PascalDist}).
+% For $n=1$, this gives the \emph{geometric} distribution.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NegativeBinomialDist
+ * Description:  negative binomial distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+import optimization.*;
+\end{hide}
+
+public class NegativeBinomialDist extends DiscreteDistributionInt\begin{hide} {
+   protected double n;
+   protected double p;
+   private static final double EPS2 = 1000.0*EPSILON;
+
+   private static class Func1 implements MathFunction {
+      protected int m;
+      protected int[] x;
+      protected double p;
+
+      public Func1 (double p, int[] x, int m) {
+         this.p = p;
+         this.m = m;
+         this.x = x;
+      }
+
+      public double evaluate (double gam) {
+         if (gam <= 0 ) return 1.0e100;
+
+         double sum = 0.0;
+         for (int j = 0; j < m; j++)
+            sum += Num.digamma (gam + x[j]);
+         return sum/m + Math.log (p) - Num.digamma (gam);
+      }
+   }
+
+
+   private static class Function implements MathFunction {
+      protected int m;
+      protected int max;
+      protected double mean;
+      protected int[] Fj;
+
+      public Function (int m, int max, double mean, int[] Fj) {
+         this.m = m;
+         this.max = max;
+         this.mean = mean;
+         this.Fj = new int[Fj.length];
+         System.arraycopy(Fj, 0, this.Fj, 0, Fj.length);
+      }
+
+      public double evaluate (double s) {
+         if (s <= 0 ) return 1.0e100;
+         double sum = 0.0;
+         double p = s / (s + mean);
+
+         for (int j = 0; j < max; j++)
+            sum += Fj[j] / (s + (double) j);
+
+         return sum + m * Math.log (p);
+      }
+   }
+
+/*
+   // Class Optim seems to be useless
+   private static class Optim implements Lmder_fcn
+   {
+      private double mean;
+      private int N;
+      private int max;
+      private int [] Fj;
+
+      public Optim (int N, int max, double mean, int[] Fj)
+      {
+         this.N = N;
+         this.max = max;
+         this.mean = mean;
+         this.Fj = new int[max];
+         System.arraycopy (Fj, 0, this.Fj, 0, max);
+      }
+
+      public void fcn (int m, int n, double[] x, double[] fvec, double[][] fjac,
+                       int iflag[])
+      {
+         if (x[1] <= 0.0 || x[2] <= 0.0 || x[2] >= 1.0) {
+             final double BIG = 1.0e100;
+             fvec[1] = BIG;
+             fvec[2] = BIG;
+             fjac[1][1] = BIG;
+             fjac[1][2] = 0.0;
+             fjac[2][1] = 0.0;
+             fjac[2][2] = BIG;
+             return;
+         }
+
+         double trig;
+         if (iflag[1] == 1)
+         {
+            double sum = 0.0;
+            for (int j = 0; j < max; j++)
+               sum += Fj[j] / (x[1] + j);
+            fvec[1] = x[2] * mean  - x[1] * (1.0 - x[2]);
+            fvec[2] =  N * Math.log (x[2]) + sum;
+
+         } else if (iflag[1] == 2) {
+
+            fjac[1][1] = x[2] - 1.0;
+            fjac[1][2] = mean + x[1];
+            double sum = 0.0;
+            for (int j = 0; j < max; j++)
+               sum += Fj[j] / ((x[1] + j)*(x[1] + j));
+            fjac[2][1] = -sum;
+            fjac[2][2] = N / x[2];
+         }
+      }
+   }
+*/
+\end{hide}
+\end{code}
+\begin{detailed}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\unmoved\subsubsection* {Constant}
+
+\begin{code}
+   public static double MAXN = 100000;
+\end{code}
+ \begin{tabb} If the maximum term is greater than this constant,
+   then the tables will {\em not\/} be precomputed.
+\end{tabb}
+\end{detailed}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}
+\begin{hide}
+   protected NegativeBinomialDist() {}
+
+\end{hide}
+
+   public NegativeBinomialDist (double n, double p)\begin{hide} {
+      setParams (n, p);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Creates an object that contains the probability
+   terms (\ref{eq:fmass-negbin}) and the distribution function for
+   the negative binomial distribution with parameters $n$ and $p$.
+ \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+   public double prob (int x) {
+      if (x < 0)
+         return 0.0;
+
+      if (p == 0.0)
+         return 0.0;
+
+      if (p == 1.0) {
+         if (x > 0)
+            return 0.0;
+         else
+            return 1.0;
+      }
+
+      if (pdf == null)
+         return prob (n, p, x);
+
+      if (x > xmax || x < xmin)
+         return prob (n, p, x);
+
+      return pdf[x - xmin];
+   }
+
+   public double cdf (int x) {
+      if (x < 0)
+         return 0.0;
+      if (p >= 1.0)    // In fact, p == 1
+         return 1.0;
+      if (p <= 0.0)    // In fact, p == 0
+         return 0.0;
+
+      if (cdf != null) {
+         if (x >= xmax)
+            return 1.0;
+         if (x < xmin)
+            return cdf (n, p, x);
+         if (x <= xmed)
+            return cdf[x - xmin];
+         else
+            // We keep the complementary distribution in the upper part of cdf
+            return 1.0 - cdf[x + 1 - xmin];
+
+      }
+      else
+         return cdf (n, p, x);
+   }
+
+   public double barF (int x) {
+      if (x < 1)
+         return 1.0;
+      if (p >= 1.0)   // In fact, p == 1
+         return 0.0;
+      if (p <= 0.0)   // In fact, p == 0
+         return 1.0;
+
+      if (cdf == null)
+         //return BinomialDist.cdf (x - 1 + n, p, n - 1);
+         return BetaDist.barF (n, x, 15, p);
+
+      if (x > xmax)
+         //return BinomialDist.cdf (x - 1 + n, p, n - 1);
+         return BetaDist.barF (n, x, 15, p);
+
+      if (x <= xmin)
+         return 1.0;
+      if (x > xmed)
+         // We keep the complementary distribution in the upper part of cdf
+         return cdf[x - xmin];
+      else
+         return 1.0 - cdf[x - 1 - xmin];
+   }
+
+   public int inverseFInt (double u) {
+      if ((cdf == null) || (u <= EPS2))
+         return inverseF (n, p, u);
+      else
+         return super.inverseFInt (u);
+   }
+
+   public double getMean() {
+      return NegativeBinomialDist.getMean (n, p);
+   }
+
+   public double getVariance() {
+      return NegativeBinomialDist.getVariance (n, p);
+   }
+
+   public double getStandardDeviation() {
+      return NegativeBinomialDist.getStandardDeviation (n, p);
+   }\end{hide}
+
+   public static double prob (double n, double p, int x)\begin{hide} {
+      final int SLIM = 15;           // To avoid overflow
+      final double MAXEXP = (Num.DBL_MAX_EXP - 1)*Num.LN2;// To avoid overflow
+      final double MINEXP = (Num.DBL_MIN_EXP - 1)*Num.LN2;// To avoid underflow
+      double y;
+
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+      if (n <= 0.0)
+         throw new IllegalArgumentException ("n <= 0.0");
+      if (x < 0)
+         return 0.0;
+      if (p >= 1.0) {                // In fact, p == 1
+         if (x == 0)
+            return 1.0;
+         else
+            return 0.0;
+      }
+      if (p <= 0.0)                  // In fact, p == 0
+         return 0.0;
+
+      y = Num.lnGamma (n + x) - (Num.lnFactorial (x) + Num.lnGamma (n))
+          + n * Math.log (p) + x * Math.log1p (-p) ;
+
+      if (y >= MAXEXP)
+         throw new IllegalArgumentException ("term overflow");
+      return Math.exp (y);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+   Computes  the probability $p(x)$%
+\latex{ defined in (\ref{eq:fmass-negbin})}.
+  \end{tabb}
+\begin{code}
+
+   public static double cdf (double n, double p, int x)\begin{hide} {
+      final double EPSILON = DiscreteDistributionInt.EPSILON;
+      final int LIM1 = 100000;
+      double sum, term, termmode;
+      int i, mode;
+      final double q = 1.0 - p;
+
+      if (p < 0.0 || p > 1.0)
+        throw new IllegalArgumentException ("p not in [0, 1]");
+      if (n <= 0.0)
+        throw new IllegalArgumentException ("n <= 0.0");
+
+      if (x < 0)
+         return 0.0;
+      if (p >= 1.0)                  // In fact, p == 1
+         return 1.0;
+      if (p <= 0.0)                  // In fact, p == 0
+         return 0.0;
+
+      // Compute the maximum term
+      mode = 1 + (int) Math.floor ((n*q - 1.0)/p);
+      if (mode < 0)
+          mode = 0;
+      else if (mode > x)
+         mode = x;
+
+      if (mode <= LIM1) {
+         sum = term = termmode = prob (n, p, mode);
+         for (i = mode; i > 0; i--) {
+            term *= i/(q*(n + i - 1.0));
+            if (term < EPSILON)
+               break;
+            sum += term;
+         }
+
+         term = termmode;
+         for (i = mode; i < x; i++) {
+            term *= q*(n + i)/(i + 1);
+            if (term < EPSILON)
+               break;
+            sum += term;
+         }
+         if (sum <= 1.0)
+            return sum;
+         else
+            return 1.0;
+      }
+      else
+         //return 1.0 - BinomialDist.cdf (x + n, p, n - 1);
+         return BetaDist.cdf (n, x + 1.0, 15, p);
+    }\end{hide}
+\end{code}
+  \begin{tabb} Computes the distribution function.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double n, double p, int x)\begin{hide} {
+      return 1.0 - cdf (n, p, x - 1);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns $\bar F(x) = P[X \ge x]$, the complementary
+   distribution function.
+\end{tabb}
+\begin{code}
+
+   public static int inverseF (double n, double p, double u)\begin{hide} {
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u is not in [0,1]");
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+      if (n <= 0.0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (p >= 1.0)                  // In fact, p == 1
+         return 0;
+      if (p <= 0.0)                  // In fact, p == 0
+         return 0;
+      if (u <= prob (n, p, 0))
+         return 0;
+      if (u >= 1.0)
+         return Integer.MAX_VALUE;
+
+      double sum, term, termmode;
+      final double q = 1.0 - p;
+
+      // Compute the maximum term
+      int mode = 1 + (int) Math.floor ((n * q - 1.0) / p);
+      if (mode < 0)
+         mode = 0;
+      int i = mode;
+      term = prob (n, p, i);
+      while ((term >= u) && (term > Double.MIN_NORMAL)) {
+         i /= 2;
+         term = prob (n, p, i);
+      }
+
+      if (term <= Double.MIN_NORMAL) {
+         i *= 2;
+         term = prob (n, p, i);
+         while (term >= u && (term > Double.MIN_NORMAL)) {
+            term *= i / (q * (n + i - 1.0));
+            i--;
+         }
+      }
+
+      mode = i;
+      sum = termmode = prob (n, p, i);
+
+      for (i = mode; i > 0; i--) {
+         term *= i / (q * (n + i - 1.0));
+         if (term < EPSILON)
+            break;
+         sum += term;
+      }
+
+      term = termmode;
+      i = mode;
+      double prev = -1;
+      if (sum < u) {
+         // The CDF at the mode is less than u, so we add term to get >= u.
+         while ((sum < u) && (sum > prev)){
+            term *= q * (n + i) / (i + 1);
+            prev = sum;
+            sum += term;
+            i++;
+         }
+      } else {
+         // The computed CDF is too big so we substract from it.
+         sum -= term;
+         while (sum >= u) {
+            term *= i / (q * (n + i - 1.0));
+            i--;
+            sum -= term;
+         }
+      }
+      return i;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the inverse function without precomputing tables.
+%%  If the mode is too large, it will
+%%    use the fact that $F_{n,p}(x)=B_{x+n,p}(n-1)$, where $B_{x+n,p}$ is the
+%%    distribution function of a binomial variable with parameters $(x+n, p)$,
+%%    to perform linear search.
+%%    The latter case is not efficient and therefore should be avoided.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (int[] x, int m, double n)\begin{hide} {
+      if (m <= 0)
+         throw new IllegalArgumentException ("m <= 0");
+      double mean = 0.0;
+      for (int i = 0; i < m; i++) {
+         mean += x[i];
+      }
+      mean /= (double) m;
+      double[] param = new double[1];
+      param[0] = n / (n + mean);
+      return param;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $p$ of the negative binomial distribution
+   using the maximum likelihood method, from the $m$ observations
+   $x[i]$, $i = 0, 1, \ldots, m-1$. The parameter
+   $n$ is assumed known.
+   The estimate $\hat{p}$ is returned in element 0
+   of the returned array.
+   The maximum likelihood estimator $\hat{p}$ satisfies the equation
+   $\hat{p} = n /(n + \bar{x}_m)$,
+   where  $\bar{x}_m$ is the average of $x[0], \ldots, x[m-1]$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{m}{the number of observations used to evaluate parameters}
+   \param{n}{the first parameter of the negative binomial}
+   \return{returns the parameters [$\hat{p}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static NegativeBinomialDist getInstanceFromMLE (int[] x, int m,
+                                                          double n)\begin{hide} {
+      double parameters[] = getMLE (x, m, n);
+      return new NegativeBinomialDist (n, parameters[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a negative binomial distribution with parameters
+  $n$ given and $\hat{p}$ estimated using the maximum
+   likelihood method, from the $m$ observations $x[i]$,
+   $i = 0, 1, \ldots, m-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{m}{the number of observations to use to evaluate parameters}
+   \param{n}{the first parameter of the negative binomial}
+\end{htmlonly}
+\begin{code}
+
+   public static double[] getMLE1 (int[] x, int m, double p)\begin{hide} {
+      if (m <= 0)
+         throw new IllegalArgumentException ("m <= 0");
+      double mean = 0.0;
+      for (int i = 0; i < m; i++)
+         mean += x[i];
+      mean /= m;
+
+      double gam0 = mean*p/(1.0 - p);
+      double[] param = new double[1];
+      Func1 f = new Func1 (p, x, m);
+      param[0] = RootFinder.brentDekker (gam0/10.0, 10.0*gam0, f, 1e-5);
+      return param;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $n$ of the negative binomial distribution
+   using the maximum likelihood method, from the $m$ observations
+   $x[i]$, $i = 0, 1, \ldots, m-1$. The parameter $p$ is assumed known.
+   The estimate $\hat{n}$ is returned in element 0 of the returned array.
+\begin{detailed}
+   The maximum likelihood estimator $\hat{p}$ satisfies the equation
+ \[
+  \frac1m\sum_{j=0}^{m-1} \psi(n +x_j) = \psi(n) - \ln(p)
+ \]
+   where $\psi(x)$ is the digamma function, i.e. the logarithmic derivative
+  of the Gamma function $\psi(x) = \Gamma^\prime(x)/\Gamma(x)$.
+ \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{m}{the number of observations used to evaluate parameters}
+   \param{p}{the second parameter of the negative binomial}
+   \return{returns the parameters [$\hat{n}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static NegativeBinomialDist getInstanceFromMLE1 (int[] x, int m,
+                                                           double p)\begin{hide} {
+      double param[] = getMLE1 (x, m, p);
+      return new NegativeBinomialDist (param[0], p);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a negative binomial distribution with parameters
+  $p$ given and $\hat{n}$ estimated using the maximum
+   likelihood method, from the $m$ observations $x[i]$,
+   $i = 0, 1, \ldots, m-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{m}{the number of observations to use to evaluate parameters}
+   \param{p}{the second parameter of the negative binomial}
+\end{htmlonly}
+\begin{code}
+
+   public static double[] getMLE (int[] x, int m)\begin{hide} {
+      double estimGamma;
+      if (m <= 0)
+         throw new IllegalArgumentException ("m<= 0");
+
+      double sum = 0.0;
+      double max = Integer.MIN_VALUE;
+      for (int i = 0; i < m; i++)
+      {
+         sum += x[i];
+         if (x[i] > max)
+            max = x[i];
+      }
+      double mean = (double) sum / (double) m;
+
+      double var = 0.0;
+      for (int i = 0; i < m; i++)
+         var += (x[i] - mean) * (x[i] - mean);
+      var /= (double) m;
+
+      if (mean >= var)
+          throw new UnsupportedOperationException("mean >= variance");
+
+      estimGamma = (mean * mean) / ( var - mean );
+
+      int[] Fj = new int[(int) max];
+      for (int j = 0; j < max; j++)
+      {
+         int prop = 0;
+         for (int i = 0; i < m; i++)
+            if (x[i] > j)
+               prop++;
+
+         Fj[j] = prop;
+      }
+
+      double[] param = new double[3];
+      Function f = new Function (m, (int) max, mean, Fj);
+      param[1] = RootFinder.brentDekker (estimGamma/10, estimGamma*10, f, 1e-5);
+
+      param[2] = param[1] / (param[1] + mean);
+
+/* Seems to be useless
+      Optim system = new Optim (m, (int) max, mean, Fj);
+      double[] fvec = new double [3];
+      double[][] fjac = new double[3][3];
+      int[] iflag = new int[2];
+      int[] info = new int[2];
+      int[] ipvt = new int[3];
+
+      Minpack_f77.lmder1_f77 (system, 2, 2, param, fvec, fjac, 1e-5, info, ipvt);
+*/
+      double parameters[] = new double[2];
+      parameters[0] = param[1];
+      parameters[1] = param[2];
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $(n, p)$ of the negative binomial distribution
+   using the maximum likelihood method, from the $m$ observations
+   $x[i]$, $i = 0, 1, \ldots, m-1$. The estimates are returned in a two-element
+    array, in regular order: [$n$, $p$].
+   \begin{detailed}
+   The maximum likelihood estimators are the values $(\hat{n}$, $\hat{p})$
+   satisfying the equations
+   \begin{eqnarray*}
+      \frac{\hat{n}(1 - \hat{p})}{\hat{p}} & = & \bar{x}_m\\
+     \sum_{j=1}^{\infty} \frac{F_j}{(\hat{n} + j - 1)}  & = & -m\ln (\hat{p})
+   \end{eqnarray*}
+   where  $\bar x_m$ is the average of $x[0],\dots,x[m-1]$, and
+   $F_j = \sum_{i=j}^{\infty} f_i$ = number of $x_i \ge j$ (see
+   \cite[page 132]{tJOH69a}).
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{m}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{n}$, $\hat{p}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static NegativeBinomialDist getInstanceFromMLE (int[] x, int m)\begin{hide} {
+      double parameters[] = getMLE (x, m);
+      return new NegativeBinomialDist (parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a negative binomial distribution with
+   parameters $n$ and $p$ estimated using the maximum likelihood method
+   based on the $m$ observations $x[i]$,   $i = 0, 1, \ldots, m-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{m}{the number of observations used to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double n, double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+      if (n <= 0.0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      return (n * (1 - p) / p);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = n(1 - p)/p$
+    of the negative binomial distribution with parameters $n$ and $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the negative binomial distribution
+    $E[X] = n(1 - p) / p$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double n, double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+      if (n <= 0.0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      return (n * (1 - p) / (p * p));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance $\mbox{Var}[X] = n(1
+- p)/p^2$
+   of the negative binomial distribution with parameters $n$ and $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the negative binomial distribution
+$\mbox{Var}[X] = n(1 - p) / p^2$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double n, double p)\begin{hide} {
+      return Math.sqrt (NegativeBinomialDist.getVariance (n, p));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation of the negative
+   binomial distribution with parameters $n$ and $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the negative binomial distribution}
+\end{htmlonly}
+\begin{hide}\begin{code}
+
+   @Deprecated
+   public double getGamma() {
+      return n;
+   }
+\end{code}
+\begin{tabb} Returns the parameter $n$ of this object.
+\end{tabb}\end{hide}
+\begin{code}
+
+   public double getN()\begin{hide} {
+      return n;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $n$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double getP()\begin{hide} {
+      return p;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $p$ of this object.
+\end{tabb}
+\begin{code}
+
+   public void setParams (double n, double p)\begin{hide} {
+      /**
+      *  Compute all probability terms of the negative binomial distribution;
+      *  start at the mode, and calculate probabilities on each side until they
+      *  become smaller than EPSILON. Set all others to 0.
+      */
+      supportA = 0;
+      int i, mode, Nmax;
+      int imin, imax;
+      double sum;
+      double[] P;     // Negative Binomial mass probabilities
+      double[] F;     // Negative Binomial cumulative
+
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+      if (n <= 0.0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      this.n  = n;
+      this.p  = p;
+
+      // Compute the mode (at the maximum term)
+      mode = 1 + (int) Math.floor((n*(1.0 - p) - 1.0)/p);
+
+      /**
+       For mode > MAXN, we shall not use pre-computed arrays.
+       mode < 0 should be impossible, unless overflow of long occur, in
+       which case mode will be = LONG_MIN.
+      */
+
+      if (mode < 0.0 || mode > MAXN) {
+         pdf = null;
+         cdf = null;
+         return;
+      }
+
+      /**
+        In theory, the negative binomial distribution has an infinite range.
+        But for i > Nmax, probabilities should be extremely small.
+        Nmax = Mean + 16 * Standard deviation.
+      */
+
+      Nmax = (int)(n*(1.0 - p)/p + 16*Math.sqrt (n*(1.0 - p)/(p*p)));
+      if (Nmax < 32)
+         Nmax = 32;
+      P = new double[1 + Nmax];
+
+      double epsilon = EPSILON/prob (n, p, mode);
+
+      // We shall normalize by explicitly summing all terms >= epsilon
+      sum = P[mode] = 1.0;
+
+      // Start from the maximum and compute terms > epsilon on each side.
+      i = mode;
+      while (i > 0 && P[i] >= epsilon) {
+         P[i - 1] = P[i]*i/((1.0 - p)*(n + i - 1));
+         i--;
+         sum += P[i];
+      }
+      imin = i;
+
+      i = mode;
+      while (P[i] >= epsilon) {
+         P[i + 1] = P[i]*(1.0 - p)*(n + i)/(i + 1);
+         i++;
+         sum += P[i];
+         if (i == Nmax - 1) {
+            Nmax *= 2;
+            double[] nT = new double[1 + Nmax];
+            System.arraycopy (P, 0, nT, 0, P.length);
+            P = nT;
+         }
+      }
+      imax = i;
+
+      // Renormalize the sum of probabilities to 1
+      for (i = imin; i <= imax; i++)
+         P[i] /= sum;
+
+      // Compute the cumulative probabilities for F and keep them in the
+      // lower part of CDF.
+      F = new double[1 + Nmax];
+      F[imin] = P[imin];
+      i = imin;
+      while (i < imax && F[i] < 0.5) {
+         i++;
+         F[i] = F[i - 1] + P[i];
+      }
+
+      // This is the boundary between F (i <= xmed) and 1 - F (i > xmed) in
+      // the array CDF
+      xmed = i;
+
+      // Compute the cumulative probabilities of the complementary
+      // distribution 1 - F and keep them in the upper part of the array
+      F[imax] = P[imax];
+      i = imax - 1;
+      do {
+         F[i] = P[i] + F[i + 1];
+         i--;
+      } while (i > xmed);
+
+     xmin = imin;
+     xmax = imax;
+     pdf = new double[imax + 1 - imin];
+     cdf = new double[imax + 1 - imin];
+     System.arraycopy (P, imin, pdf, 0, imax + 1 - imin);
+     System.arraycopy (F, imin, cdf, 0, imax + 1 - imin);
+
+   }\end{hide}
+\end{code}
+\begin{tabb} Sets the parameter $n$ and $p$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {n, p};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$n$, $p$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : n = " + n + ", p = " + p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

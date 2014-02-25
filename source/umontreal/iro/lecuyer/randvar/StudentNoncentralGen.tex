@@ -1,0 +1,109 @@
+\defclass {StudentNoncentralGen}
+
+This class implements random variate generators for the 
+\emph{noncentral Student-t} distribution with $n>0$ degrees of freedom and
+noncentrality parameter $\delta$. If $X$ is distributed according to a 
+normal distribution with mean  $\delta$ and variance 1, and $Y$ (statistically
+independent of $X$) is distributed according to a chi-square distribution 
+with $n$ degrees of freedom, then
+\begin{latexonly}%
+\[
+             T{'} = \frac{X}{\sqrt{Y/n}}
+\]
+\end{latexonly}%
+\begin{htmlonly}%
+\[
+             T\,' = {X} / {\sqrt{Y/n}}
+\]
+\end{htmlonly}%
+has a noncentral $t$-distribution with $n$ degrees of freedom and 
+noncentrality parameter  $\delta$.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        StudentNoncentralGen
+ * Description:  random variate generator for the noncentral Student-t distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class StudentNoncentralGen extends RandomVariateGen \begin{hide} {
+   private NormalGen normgen;
+   private ChiSquareGen chigen;
+   private int n;   // degrees of freedom of chi-square
+
+   public double nextDouble()  {
+      double x = normgen.nextDouble();
+      double y = chigen.nextDouble();
+      return x / Math.sqrt(y/n);
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public StudentNoncentralGen (NormalGen ngen, ChiSquareGen cgen) \begin{hide} {
+      super (null, null);
+      setNormalGen (ngen);
+      setChiSquareGen (cgen);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a \emph{noncentral-t} random variate generator
+ using normal generator \texttt{ngen} and chi-square generator \texttt{cgen}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public void setNormalGen (NormalGen ngen)\begin{hide} {
+      if (1.0 != ngen.getSigma())
+         throw new IllegalArgumentException ("   variance of normal must be 1");
+      normgen = ngen;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the normal generator to \texttt{ngen}.
+ \end{tabb}
+\begin{code}
+
+   public void setChiSquareGen (ChiSquareGen cgen)\begin{hide} {
+      chigen = cgen;
+      n = cgen.getN();
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the chi-square generator to \texttt{cgen}.
+ \end{tabb}
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

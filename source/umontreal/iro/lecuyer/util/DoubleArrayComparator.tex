@@ -1,0 +1,86 @@
+\defclass{DoubleArrayComparator}
+
+An implementation of \class{java.util.Comparator} which compares two
+\texttt{double} arrays by comparing their \texttt{i}-\emph{th} element,
+where \texttt{i} is given in the constructor.
+Method \texttt{compare(d1, d2)} returns $-1$, $0$, or $1$ depending on
+whether \texttt{d1[i]} is less than, equal to, or greater than
+\texttt{d2[i]}.
+
+\bigskip\hrule
+
+\begin{code}\begin{hide}
+/*
+ * Class:        DoubleArrayComparator
+ * Description:  Compares two double's arrays
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util;
+\begin{hide}
+import java.util.Comparator;
+\end{hide}
+
+public class DoubleArrayComparator implements Comparator<double[]> \begin{hide} {
+   private int i;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}
+
+   public DoubleArrayComparator (int i) \begin{hide} {
+      this.i = i;
+   }
+\end{hide}\end{code}
+\begin{tabb}
+ Constructs a comparator, where \texttt{i} is the index
+ used for the comparisons.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{index used for comparison}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public int compare (double[] d1, double[] d2) \begin{hide} {
+      if (i >= d1.length || i >= d2.length)
+         throw new IllegalArgumentException("Comparing in a"+
+                    "dimension larger than arary dimension");
+      return (d1[i]< d2[i] ? -1 : (d1[i] > d2[i] ? 1 : 0));
+   } \end{hide}
+\end{code}
+\begin{tabb}
+Returns $-1$, $0$, or $1$ depending on
+whether  \texttt{d1[i]} is less than, equal
+to, or greater than \texttt{d2[i]}.
+\end{tabb}
+\begin{htmlonly}
+   \param{d1}{first array}
+   \param{d2}{second array}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

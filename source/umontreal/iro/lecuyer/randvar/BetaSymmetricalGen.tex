@@ -1,0 +1,79 @@
+\defclass {BetaSymmetricalGen}
+
+This class implements random variate generators with the 
+\emph{symmetrical beta} distribution with shape parameters  $\alpha = \beta$,
+over the interval  $(0,1)$. 
+% It uses inversion
+% by expanding the distribution in a series around 0 and inverts using
+% Newton's method for the solution of non-linear equations.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BetaSymmetricalGen
+ * Description:  random variate generators for the symmetrical beta distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class BetaSymmetricalGen extends BetaGen \begin{hide} {
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public BetaSymmetricalGen (RandomStream s, double alpha) \begin{hide} {
+      this (s, new BetaSymmetricalDist (alpha));
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new symmetrical beta generator with parameters $\alpha =$ 
+  \texttt{alpha}, over the interval $(0,1)$, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public BetaSymmetricalGen (RandomStream s, BetaSymmetricalDist dist) \begin{hide} {
+      super (s, dist);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha)\begin{hide} {
+      return BetaSymmetricalDist.inverseF (alpha, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

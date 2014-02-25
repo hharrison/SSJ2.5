@@ -1,0 +1,340 @@
+\defclass{TextDataWriter}
+
+Text data writer. Writes fields as columns or as rows in a text file.
+
+\bigskip\hrule
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        TextDataWriter
+ * Description:  Text data writer
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       David Munger 
+ * @since        August 2009
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util.io;
+\begin{hide}
+import java.io.*;
+import java.lang.reflect.Array;
+\end{hide}
+
+public class TextDataWriter extends CachedDataWriter \begin{hide} {
+\end{hide}
+\end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Fields}
+
+\begin{code}
+   public final String DEFAULT_COLUMN_SEPARATOR = "\t";
+\end{code}
+\begin{tabb}
+Default value for the column separator.
+\end{tabb}
+\begin{code}
+
+   public final String DEFAULT_HEADER_PREFIX = "";
+\end{code}
+\begin{tabb}
+Default value for the header prefix.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   protected BufferedWriter out;
+
+   protected Format format;
+   protected boolean withHeaders;
+
+   protected String columnSeparator = DEFAULT_COLUMN_SEPARATOR;
+   protected String headerPrefix = DEFAULT_HEADER_PREFIX;
+   
+   protected String floatFormatString = null;
+
+
+   /**
+    * Returns the maximum field length.
+    *
+    */
+   protected int getMaxFieldLength() {
+      int nRows = 0;      
+      for (DataField f : super.getFields()) {
+         if (f.isArray())
+            nRows = Math.max(nRows, f.getArrayLength());
+      }
+      return nRows;
+   }
+
+   /**
+    * Outputs fields as columns.
+    *
+    */
+   protected void outputAsColumns() throws IOException {
+      
+      if (withHeaders) {
+         // output field headers
+         out.write(headerPrefix);
+         int iAnonymous = 0;
+         boolean firstColumn = true;
+         for (DataField f : super.getFields()) {
+            // separator
+            if (!firstColumn)
+               out.write(columnSeparator);
+            else
+               firstColumn = false;
+
+            if (f.getLabel() == null)
+               // anonymous field
+               out.write(String.format("_data%02d_", ++iAnonymous));
+            else
+               // named field
+               out.write(f.getLabel());
+         }
+         out.write("\n");
+      }
+
+      int nRows = getMaxFieldLength();
+
+      for (int iRow = 0; iRow < nRows; iRow++) {
+         boolean firstColumn = true;
+         for (DataField f : super.getFields()) {
+
+            // separator
+            if (!firstColumn)
+               out.write(columnSeparator);
+            else
+               firstColumn = false;
+
+            // output field data
+            if (f.isArray()) {
+               // field is an array, output its current entry
+               if (iRow < f.getArrayLength())
+                  writeFormat(Array.get(f.asObject(), iRow));
+            }
+            else {
+               // field is not an array, output only in first row
+               if (iRow == 0)
+                  writeFormat(f.asObject());
+            }
+         }
+         out.write("\n");
+      }
+   }
+ 
+   
+   /**
+    * Outputs fields as rows.
+    *
+    */
+   protected void outputAsRows() throws IOException {
+
+      int iAnonymous = 0;
+
+      for (DataField f : super.getFields()) {
+
+         // output field header
+         if (withHeaders) {
+            if (f.getLabel() == null)
+               // anonymous field
+               out.write(String.format("_data%02d_", ++iAnonymous));
+            else
+               // named field
+               out.write(f.getLabel());            
+
+            out.write(columnSeparator);
+         }
+         
+         // output field data
+
+         if (f.isArray()) {
+
+            int nCols = f.getArrayLength();
+
+            for (int iCol = 0; iCol < nCols; iCol++) {
+
+               // separator
+               if (iCol > 0)
+                  out.write(columnSeparator);
+               
+               writeFormat(Array.get(f.asObject(), iCol));
+            }
+         }
+         else {
+            writeFormat(f.asObject());
+         }
+         
+         out.write("\n");
+
+      }
+   }
+   
+   /**
+    * Formats the object in accordance with the current format strings settings.
+    *
+    */
+   protected void writeFormat(Object o) throws IOException {
+      String s = null;
+      if (floatFormatString != null && (o instanceof Double || o instanceof Float))
+         s = String.format((java.util.Locale)null, floatFormatString, o); // pass null to avoid localization
+      else
+         s = o.toString();
+      out.write(s);
+   }\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Enums}
+\begin{code}
+
+   public enum Format { COLUMNS, ROWS }
+\end{code}
+\begin{tabb}
+Output format: organize fields as columns or as rows.
+\end{tabb}
+   
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+
+   public TextDataWriter (String filename, Format format, boolean withHeaders)
+         throws IOException \begin{hide} {
+      this.out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename)));
+      this.format = format;
+      this.withHeaders = withHeaders;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Class constructor. Truncates any existing file with the specified name.
+\end{tabb}
+\begin{htmlonly}
+\param{filename}   {name of the file to write to}
+\param{format}     {organize fields as columns if set to \texttt{COLUMNS} or as rows if set to \texttt{ROWS}}
+\param{withHeaders}{output headers or not}
+\end{htmlonly}
+\begin{code}
+   
+   public TextDataWriter (File file, Format format, boolean withHeaders)
+         throws IOException \begin{hide} {
+      this.out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+      this.format = format;
+      this.withHeaders = withHeaders;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Class constructor. Truncates any conflicting file.
+\end{tabb}
+\begin{htmlonly}
+\param{file}       {file to write to}
+\param{format}     {organize fields as columns if set to \texttt{COLUMNS} or as rows if set to \texttt{ROWS}}
+\param{withHeaders}{output headers or not}
+\end{htmlonly}
+\begin{code}
+   
+   public TextDataWriter (OutputStream outputStream, Format format,
+                          boolean withHeaders)
+         throws IOException \begin{hide} {
+      this.out = new BufferedWriter(new OutputStreamWriter(outputStream));
+      this.format = format;
+      this.withHeaders = withHeaders;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Class constructor.
+\end{tabb}
+\begin{htmlonly}
+\param{outputStream}{output stream to write to}
+\param{format}      {organize fields as columns if set to \texttt{COLUMNS} or as rows if set to \texttt{ROWS}}
+\param{withHeaders} {output headers or not}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+   
+\begin{code}
+   public void setFormat (Format format) \begin{hide} {
+      this.format = format;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Changes the output format.
+\end{tabb}
+\begin{htmlonly}
+\param{format}      {organize fields as columns if set to \texttt{COLUMNS} or as rows if set to \texttt{ROWS}}
+\end{htmlonly}
+\begin{code}
+
+   public void setFloatFormatString (String formatString) \begin{hide} {
+      this.floatFormatString = formatString;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Sets the format string used to output  floating point numbers.
+\end{tabb}
+\begin{htmlonly}
+\param{formatString}{format string (e.g., \texttt{\%.4g})}
+\end{htmlonly}
+\begin{code}
+
+   public void setColumnSeparator (String columnSeparator) \begin{hide} {
+      this.columnSeparator = columnSeparator;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Changes the column separator.
+\end{tabb}
+\begin{code}
+
+   public void setHeaderPrefix (String headerPrefix) \begin{hide} {
+      this.headerPrefix = headerPrefix;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Changes the header prefix (a string that indicates the beginning of the header line for the \texttt{COLUMNS} format).
+\end{tabb}
+\begin{code}
+
+   public void close() throws IOException \begin{hide} {
+      if (format == Format.COLUMNS)
+         outputAsColumns();
+      else if (format == Format.ROWS)
+         outputAsRows();
+      out.close();
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+Flushes any pending data and closes the file or stream.
+\end{tabb}
+
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

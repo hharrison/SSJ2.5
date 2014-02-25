@@ -1,0 +1,107 @@
+\defclass{NameConflictException}
+
+This exception is thrown by a \class{ClassFinder}
+when two or more fully qualified class names can be
+associated with a simple class name.
+
+\bigskip\hrule
+\begin{code}\begin{hide}
+/*
+ * Class:        NameConflictException
+ * Description:  An exception 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */\end{hide}
+package umontreal.iro.lecuyer.util;
+
+
+public class NameConflictException extends Exception\begin{hide} {
+   private static final long serialVersionUID = -5124156035520217708L;
+   private ClassFinder finder;
+   private String name;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code} 
+
+   public NameConflictException()\begin{hide} {}\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new name conflict exception.
+\end{tabb}
+\begin{code}
+
+   public NameConflictException (String message)\begin{hide} {
+      super (message);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new name conflict exception with
+ message \texttt{message}.
+\end{tabb}
+\begin{htmlonly}
+   \param{message}{the error message.}
+\end{htmlonly}
+\begin{code}
+
+   public NameConflictException (ClassFinder finder, String name,
+                                 String message)\begin{hide} {
+      super (message);
+      this.finder = finder;
+      this.name = name;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new name conflict exception with class
+ finder \texttt{finder}, simple name \texttt{name},
+ and message \texttt{message}.
+\end{tabb}
+\begin{htmlonly}
+   \param{finder}{the class finder in which the name conflict occurred.}
+   \param{name}{the simple conflicting name.}
+   \param{message}{the message describint the conflict.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public ClassFinder getClassFinder()\begin{hide} {
+      return finder;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the class finder associated with
+ this exception.
+\end{tabb}
+\begin{htmlonly}
+   \return{the associated class finder.}
+\end{htmlonly}
+\begin{code}
+
+   public String getName()\begin{hide} {
+      return name;
+   }
+}\end{hide}
+\end{code}
+\begin{tabb}   Returns the simple name associated with
+ this exception.
+\end{tabb}
+\begin{htmlonly}
+   \return{the associated simple name.}
+\end{htmlonly}

@@ -1,0 +1,216 @@
+\defclass{ContainerPointSet}
+
+This acts as a generic base class for all \emph{container
+classes} that contain a point set and apply some kind of
+transformation to the coordinates to define a new point set.
+One example of such transformation is the \emph{antithetic} map,
+applied by the container class \class{AntitheticPointSet},
+where each output coordinate $u_{i,j}$ is transformed into $1-u_{i,j}$.
+Another example is \class{RandShiftedPointSet}.
+
+The class implements a specialized type of iterator for container
+point sets.  This type of iterator contains itself an iterator for
+the contained point set and uses it to access the points and coordinates
+internally, instead of maintaining itself indices for the current point
+and current coordinate.
+
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ContainerPointSet
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+
+import umontreal.iro.lecuyer.util.PrintfFormat;
+import umontreal.iro.lecuyer.rng.RandomStream;
+\end{hide}
+
+public abstract class ContainerPointSet extends PointSet \begin{hide} {
+   protected PointSet P;                 // contained point set
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsubsection*{Constructor}
+\begin{code}
+
+   protected void init (PointSet P0) \begin{hide} {
+      P = P0;
+//      this.dim = P.getDimension();
+//      this.numPoints = P.getNumPoints();
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Initializes the container point set which will contain point set \texttt{P0}.
+   This method must be called by the constructor of any class inheriting from
+   \class{ContainerPointSet}.
+ \hpierre{Since this is an abstract class, this constructor should be
+  replaced by a method \texttt{init()}, if really needed.}
+ \end{tabb}
+\begin{htmlonly}
+   \param{P}{contained point set}
+\end{htmlonly}
+\begin{code}
+
+   public PointSet getOriginalPointSet() \begin{hide} {
+      return P;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the (untransformed) point set inside this container.
+\end{tabb}
+\begin{htmlonly}
+   \return{the point set inside this container}
+\end{htmlonly}
+\begin{code}
+
+   public int getDimension() \begin{hide} {
+      return P.getDimension();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the dimension of the contained point set.
+\end{tabb}
+\begin{htmlonly}
+   \return{the dimension of the contained point set}
+\end{htmlonly}
+\begin{code}
+
+   public int getNumPoints()\begin{hide} {
+      return P.getNumPoints();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the number of points of the contained point set.
+\end{tabb}
+\begin{htmlonly}
+   \return{the number of points of the contained point set}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public double getCoordinate(int i, int j) {
+      return P.getCoordinate (i, j);
+   }
+
+   public PointSetIterator iterator(){
+      return new ContainerPointSetIterator();
+   }\end{hide}
+
+   public void randomize (PointSetRandomization rand) \begin{hide} {
+       P.randomize(rand);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Randomizes the contained point set using \texttt{rand}.
+\end{tabb}
+\begin{htmlonly}
+   \param{rand}{\class{PointSetRandomization} to use}
+\end{htmlonly}
+\begin{code}
+
+   public void addRandomShift (int d1, int d2, RandomStream stream)\begin{hide} {
+      P.addRandomShift (d1, d2, stream);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Calls \texttt{addRandomShift(d1, d2, stream)} of the contained point set.
+\end{tabb}
+\begin{htmlonly}
+   \param{d1}{lower dimension of the random shift}
+   \param{d2}{upper dimension of the random shift}
+   \param{stream}{the random stream}
+\end{htmlonly}
+\begin{code}
+
+   public void addRandomShift (RandomStream stream)\begin{hide} {
+      P.addRandomShift (stream);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Calls \texttt{addRandomShift(stream)} of the contained point set.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{the random stream}
+\end{htmlonly}
+\begin{code}
+
+   public void clearRandomShift()\begin{hide} {
+      P.clearRandomShift ();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Calls \texttt{clearRandomShift()} of the contained point set.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public String toString() {
+      return "Container point set of: {" + PrintfFormat.NEWLINE
+              + P.toString() + PrintfFormat.NEWLINE + "}";
+   }
+
+
+   // ********************************************************
+   protected class ContainerPointSetIterator extends DefaultPointSetIterator {
+
+      protected PointSetIterator innerIterator = P.iterator();
+
+      public void setCurCoordIndex (int j) {
+         innerIterator.setCurCoordIndex (j);
+      }
+
+      public void resetCurCoordIndex() {
+         innerIterator.resetCurCoordIndex();
+      }
+
+      public boolean hasNextCoordinate() {
+         return innerIterator.hasNextCoordinate();
+      }
+
+      public double nextCoordinate() {
+         return innerIterator.nextCoordinate();
+      }
+
+      public void setCurPointIndex (int i) {
+         innerIterator.setCurPointIndex(i);
+      }
+
+      public void resetCurPointIndex() {
+         innerIterator.resetCurPointIndex();
+      }
+
+      public int resetToNextPoint() {
+         return innerIterator.resetToNextPoint();
+      }
+
+      public boolean hasNextPoint() {
+        return innerIterator.hasNextPoint();
+      }
+
+   }
+}\end{hide}
+\end{code}

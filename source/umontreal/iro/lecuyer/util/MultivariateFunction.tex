@@ -1,0 +1,107 @@
+\defclass{MultivariateFunction}
+
+Represents a function of multiple variables.
+This interface specifies a method \texttt{evaluate} that computes
+a $g(\mathbf{x})$ function, where $\mathbf{x}=(x_0,\ldots,x_{d-1})\in\RR^d$.  It also specifies
+a method \texttt{evaluateGradient} for computing
+its gradient $\nabla g(\mathbf{x})$.
+
+The dimension $d$ can be fixed or variable.  When $d$ is fixed, the
+methods specified by this interface always take the same number of
+arguments.  This is the case, for example, with a ratio of two
+variables.
+When $d$ is variable, the implementation can compute the
+function for a vector $\mathbf{x}$ of any length.  This can happen for a
+product or sum of variables.
+
+The methods of this interface take a variable number of arguments to
+accomodate the common case of fixed dimension with more convenience;
+the programmer can call the method without creating an array.
+For the generic case, however, one can replace the arguments with an
+array.
+
+\bigskip\hrule
+
+\begin{code}\begin{hide}
+/*
+ * Class:        MultivariateFunction
+ * Description:  Represents a function of multiple variables.
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.util;
+
+
+public interface MultivariateFunction\begin{hide} {\end{hide}
+
+   public int getDimension();
+\end{code}
+\begin{tabb} Returns $d$, the dimension of the function computed
+   by this implementation.  If the dimension is not fixed,
+   this method must return a negative value.
+\end{tabb}
+\begin{htmlonly}
+   \return{the dimension.}
+\end{htmlonly}
+\begin{code}
+
+   public double evaluate (double... x);
+\end{code}
+\begin{tabb}   Computes the function $g(\mathbf{x})$
+ for the vector \texttt{x}.  The length of the
+ given array must correspond to the dimension of
+ this function.  The method must compute and return the result
+ of the function without modifying the elements
+ in \texttt{x} since the array can be reused for
+ further computation.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{a vector $\mathbf{x}$.}
+   \return{the value of $g(\mathbf{x})$.}
+   \exception{NullPointerException}{if \texttt{x} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if \texttt{x.length}
+    does not correspond to the dimension of this function.}
+\end{htmlonly}
+\begin{code}
+
+   public double evaluateGradient (int i, double... x);\end{code}
+\begin{tabb}   Computes $\partial g(\mathbf{x})/\partial x_i$,
+ the derivative of $g(\mathbf{x})$
+ with respect to $x_i$.    The length of the
+ given array must correspond to the dimension of
+ this function.  The method must compute and return the result
+ of the derivative without modifying the elements
+ in \texttt{x} since the array can be reused for
+ further computations, e.g., the gradient $\nabla g(\mathbf{x})$.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the variable to derive with respect to.}
+   \param{x}{a vector $\mathbf{x}$.}
+   \return{the value of the partial derivative.}
+   \exception{NullPointerException}{if \texttt{x} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if \texttt{x.length}
+    does not correspond to the dimension of this function.}
+   \exception{IndexOutOfBoundsException}{if \texttt{i} is negative
+    or greater than or equal to the dimension of this function.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

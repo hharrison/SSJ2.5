@@ -1,0 +1,348 @@
+\defclass {FisherFDist}
+
+Extends the class \class{ContinuousDistribution} for
+the \emph{Fisher F} distribution with $n_1$ and $n_2$
+degrees of freedom, where $n_1$ and $n_2$ are positive integers.
+Its density is
+\begin{htmlonly}
+\eq
+   f(x) = \Gamma((n_1 + n_2) / 2)n_1^{n_1/2}n_2^{n_2/2} / [\Gamma(n_1/2)\Gamma(n_2/2)]
+          x^{(n_1 - 2) / 2} / (n_2 + n_1x)^{(n_1 + n_2)/2},
+\qquad\mbox{ for } x > 0.
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+ f(x) = \frac{\Gamma(\frac{n_1 + n_2}{2})n_1^{\frac{n_1}{2}}n_2^{\frac{n_2}{2}}}{\Gamma(\frac{n_1}{2})\Gamma(\frac{n_2}{2})}
+        \frac{x^{\frac{n_1 - 2}{2}}}{(n_2 + n_1x)^{\frac{n_1 + n_2}{2}}},
+\qquad\mbox {for } x > 0
+\eqlabel{eq:FisherF}
+\endeq
+\end{latexonly}%
+where $\Gamma(x)$ is the gamma function defined in
+\latex{(\ref{eq:Gamma})}\html{\class{GammaDist}}.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FisherFDist
+ * Description:  Fisher F-distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.probdist.BetaDist;
+import umontreal.iro.lecuyer.util.*;\end{hide}
+
+public class FisherFDist extends ContinuousDistribution\begin{hide} {
+   protected int n1;
+   protected int n2;
+   protected double C1;
+   private static final int DECPREC = 15;    // decimal precision
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public FisherFDist (int n1, int n2)\begin{hide} {
+      setParams (n1, n2);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a Fisher $F$ distribution with \texttt{n1} and \texttt{n2} degrees of freedom.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      if (x <= 0.0)
+         return 0.0;
+      return Math.exp (C1 + 0.5 * (n1 - 2) * Math.log (x) -
+           (0.5 * (n1 + n2) * Math.log (n2 + n1 * x)));
+   }
+
+   public double cdf (double x) {
+      return FisherFDist.cdf (n1, n2, x);
+   }
+
+   public double barF (double x) {
+      return FisherFDist.barF (n1, n2, x);
+   }
+
+   public double inverseF (double u) {
+      return FisherFDist.inverseF (n1, n2, u);
+   }
+
+   public double getMean() {
+      return FisherFDist.getMean (n1, n2);
+   }
+
+   public double getVariance() {
+      return FisherFDist.getVariance (n1, n2);
+   }
+
+   public double getStandardDeviation() {
+      return FisherFDist.getStandardDeviation (n1, n2);
+   }\end{hide}
+
+   public static double density (int n1, int n2, double x)\begin{hide} {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 0)
+         throw new IllegalArgumentException ("n2 <= 0");
+      if (x <= 0.0)
+         return 0.0;
+
+      return Math.exp (((n1/2.0) * Math.log (n1) + (n2/2.0) * Math.log(n2) +
+          ((n1 - 2) / 2.0) * Math.log (x)) -
+          (Num.lnBeta (n1/2.0, n2/2.0) + 
+          ((n1 + n2) / 2.0) * Math.log (n2 + n1 * x)));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function (\ref{eq:FisherF}) for a Fisher
+$F$ distribution with \texttt{n1} and \texttt{n2} degrees of freedom,
+ evaluated at $x$.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   @Deprecated
+   public static double cdf (int n1, int n2, int d, double x) {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 0)
+         throw new IllegalArgumentException ("n2 <= 0");
+      if (x <= 0.0)
+         return 0.0;
+      return BetaDist.cdf (n1/2.0, n2/2.0, d, (n1*x)/(n1*x + n2));
+   }
+\end{code}
+\begin{tabb}
+Computes the distribution function of the Fisher $F$ distribution with 
+parameters \texttt{n1} and \texttt{n2}, evaluated at $x$, with roughly $d$
+ decimal digits of precision.
+ \end{tabb}\end{hide}
+\begin{code}
+
+   public static double cdf (int n1, int n2, double x)\begin{hide} {
+       return cdf (n1, n2, DECPREC, x);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Computes the distribution function of the Fisher $F$ distribution with 
+parameters \texttt{n1} and \texttt{n2}, evaluated at $x$.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   @Deprecated
+   public static double barF (int n1, int n2, int d, double x) {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 0)
+         throw new IllegalArgumentException ("n2 <= 0");
+      if (x <= 0.0)
+         return 1.0;
+      return BetaDist.barF (n1/2.0, n2/2.0, d, (n1 * x) / (n1 * x + n2));
+   }
+\end{code}
+\begin{tabb}
+Computes the complementary distribution function of the Fisher $F$ distribution
+with parameters \texttt{n1} and \texttt{n2}, evaluated at $x$, with roughly
+ $d$ decimal digits of precision.
+\end{tabb}\end{hide}
+\begin{code}
+
+   public static double barF (int n1, int n2, double x)\begin{hide} {
+       return barF (n1, n2, DECPREC, x);      
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Computes the complementary distribution function of the Fisher $F$ distribution
+with parameters \texttt{n1} and \texttt{n2}, evaluated at $x$.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   @Deprecated
+   public static double inverseF (int n1, int n2, int d, double u) {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 0)
+         throw new IllegalArgumentException ("n2 <= 0");
+      if (u > 1.0 || u < 0.0)
+         throw new IllegalArgumentException ("u < 0 or u > 1");
+      if (u <= 0.0)
+         return 0.0;
+      if (u >= 1.0)
+         return Double.POSITIVE_INFINITY;
+
+      double z = BetaDist.inverseF (n1 / 2.0, n2 / 2.0, d, u);
+      return ((n2 * z) / (n1 * (1 - z)));
+   }
+\end{code}
+\begin{tabb}
+Computes the inverse of the Fisher $F$ distribution with parameters \texttt{n1}
+ and \texttt{n2}, evaluated at $u$, with roughly $d$ decimal digits of
+ precision.
+\end{tabb}\end{hide}
+\begin{code}
+
+   public static double inverseF (int n1, int n2, double u)\begin{hide} {
+       return inverseF (n1, n2, DECPREC, u);      
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Computes the inverse of the Fisher $F$ distribution with parameters \texttt{n1}
+ and \texttt{n2}, evaluated at $u$.
+\end{tabb}
+\begin{code}
+
+   public static double getMean (int n1, int n2)\begin{hide} {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 2)
+         throw new IllegalArgumentException ("n2 <= 2");
+
+      return (n2 / (n2 - 2.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = n_2 / (n_2 - 2)$ of the
+Fisher $F$ distribution with parameters \texttt{n1} and \texttt{n2} $=n_2$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the Fisher $F$ distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (int n1, int n2)\begin{hide} {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 4)
+         throw new IllegalArgumentException ("n2 <= 4");
+
+      return ((2.0 * n2 * n2 * (n2 + n1 - 2)) / (n1 * (n2 - 2.0) * (n2 - 2.0) * (n2 - 4.0)));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+\begin{latexonly}
+$$\mbox{Var}[X] = \frac{2n_2^{2} (n_2 + n_1 - 2)}{n_1 (n_2 - 2)^{2} (n_2 - 4)}$$
+\end{latexonly}
+of the Fisher $F$ distribution with parameters \texttt{n1} $=n_1$
+ and \texttt{n2} $=n_2$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Fisher $F$ distribution
+   $\mbox{Var}[X] = (2n2^2 (n2 + n1 - 2)) / (n1 (n2 - 2)^2 (n2 - 4))$
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (int n1, int n2)\begin{hide} {
+      return Math.sqrt (FisherFDist.getVariance (n1, n2));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the Fisher $F$ distribution with parameters \texttt{n1} and \texttt{n2}.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the Fisher $F$ distribution}
+\end{htmlonly}
+\begin{hide}\begin{code}
+
+   @Deprecated
+   public int getN()\begin{hide} {
+      return n1;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter \texttt{n1} of this object.
+ \end{tabb}
+\begin{code}
+
+   @Deprecated
+   public int getM()\begin{hide} {
+      return n2;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter \texttt{n2} of this object.
+ \end{tabb}\end{hide}
+\begin{code}
+
+   public int getN1()\begin{hide} {
+      return n1;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter \texttt{n1} of this object.
+ \end{tabb}
+\begin{code}
+
+   public int getN2()\begin{hide} {
+      return n2;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter \texttt{n2} of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (int n1, int n2)\begin{hide} {
+      if (n1 <= 0)
+         throw new IllegalArgumentException ("n1 <= 0");
+      if (n2 <= 0)
+         throw new IllegalArgumentException ("n2 <= 0");
+
+      this.n1 = n1;
+      this.n2 = n2;
+      supportA = 0;
+      C1 = (n1 / 2.0) * Math.log (n1) + (n2 / 2.0) * Math.log (n2) -
+           Num.lnBeta (n1 / 2.0, n2 / 2.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters \texttt{n1} and \texttt{n2} of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {n1, n2};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [\texttt{n1}, \texttt{n2}].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : n1 = " + n1 + ", n2 = " + n2;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

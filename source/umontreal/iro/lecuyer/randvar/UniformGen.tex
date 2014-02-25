@@ -1,0 +1,130 @@
+\defclass {UniformGen}
+
+This class implements random variate generators for
+the (continuous) {\em uniform\/} distribution over the interval $(a,b)$,
+where $a$ and $b$ are real numbers with $a < b$.
+The density is 
+\eq
+  f(x) = 1/(b - a) \qquad\mbox{ for }a\le x\le b.
+                                          \eqlabel{eq:funiform} 
+\endeq
+
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        UniformGen
+ * Description:  random variate generators for the uniform distribution over the reals
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class UniformGen extends RandomVariateGen \begin{hide} {
+   private double a;
+   private double b;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public UniformGen (RandomStream s, double a, double b) \begin{hide} {
+      super (s, new UniformDist(a, b));
+      setParams (a, b);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a uniform random variate generator over the interval
+  $($\texttt{a}, \texttt{b}$)$, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public UniformGen (RandomStream s) \begin{hide} {
+      this (s, 0.0, 1.0);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a uniform random variate generator over the interval
+  $(0, 1)$, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+ 
+   public UniformGen (RandomStream s, UniformDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getA(), dist.getB());
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a new generator for the uniform distribution \texttt{dist}
+   and stream \texttt{s}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   static public double nextDouble (RandomStream s, double a, double b) \begin{hide} {
+      return UniformDist.inverseF (a, b, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} 
+  Generates a uniform random variate over the interval 
+  $($\texttt{a}, \texttt{b}$)$ by inversion, using stream \texttt{s}.
+\end{tabb}
+\begin{code}      
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $a$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $b$ for this object.
+ \end{tabb}
+\begin{hide}\begin{code}      
+
+   private void setParams (double a, double b) {
+      if (b <= a)
+         throw new IllegalArgumentException ("b <= a");
+      this.a = a;
+      this.b = b;
+   }
+\end{code}
+\begin{tabb}
+  Sets the value of the parameters $a$ and $b$ for this object.
+\end{tabb}
+\begin{code}      
+}
+\end{code}
+\end{hide}

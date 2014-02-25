@@ -1,0 +1,659 @@
+
+\section {Some Elementary Examples}
+\label {sec:simple}
+
+We start with elementary examples that illustrate how to
+generate uniform and nonuniform random numbers,
+construct probability distributions,
+collect elementary statistics,
+and compute confidence intervals,
+compare similar systems,
+and use randomized quasi-Monte Carlo point sets,
+with SSJ.
+
+The models considered here are quite simple and some of the
+performance measures can be computed by (more accurate) numerical
+methods rather than by simulation.
+The fact that we use these models to give a first tasting of SSJ
+should not be interpreted to mean that
+simulation is necessarily the best tool for them.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Collisions in a hashing system}
+\label{sec:collision}
+
+% In this small example,
+We want to estimate the expected number of collisions in a hashing system.
+There are $k$ locations (or addresses) and $m$ distinct items.
+Each item is assigned a random location, independently of the other items.
+A \emph{collision} occurs each time an item is assigned a location already
+occupied.  Let $C$ be the number of collisions.
+We want to estimate $\mathbb{E}[C]$, the expected number of collisions, by simulation.
+A theoretical result states that when $k\to\infty$ while $\lambda = m^2/(2k)$ is fixed,
+$C$ converges in distribution to a Poisson random variable with mean $\lambda$.
+For finite values of $k$ and $m$, we may want to approximate the distribution of $C$
+by the Poisson distribution with mean $\lambda$, and
+use Monte Carlo simulation to assess the quality of this approximation.
+To do that, we can generate $n$ independent realizations of $C$, say $C_1,\dots,C_n$,
+compute their empirical distribution and empirical mean, and compare with the
+Poisson distribution.
+
+The Java program in Listing~\ref{lst:Collision} simulates $C_1,\dots,C_n$
+and computes a 95\%{} confidence interval on $\mathbb{E}[C]$.
+The results for $k = 10000$, $m = 500$, and $n = 100000$, are in Listing~\ref{res:Collision}.
+The reported confidence interval is $(12.25,\, 12.29)$, whereas $\lambda = 12.5$.
+This indicates that the asymptotic result underestimates $\mathbb{E}[C]$ by nearly 2\%.
+
+
+The Java program imports the SSJ packages \texttt{rng} and \texttt{stat}.
+It uses only two types of objects from SSJ:
+a \texttt{RandomStream} object, defined in the \texttt{rng} package,
+that generates a stream of independent random numbers from the uniform distribution,
+and a \texttt{Tally} object, from the \texttt{stat} package,
+to collect statistical observations and produce the report.
+In SSJ, \texttt{RandomStream} is actually just an interface that specifies all
+the methods that must be provided by its different implementations, which
+correspond to different brands of random streams (i.e., different types of
+uniform random number generators).
+The class \texttt{MRG32k3a}, whose constructor is invoked in the main program,
+is one such implementation of \texttt{RandomStream}.  This is the one we use here.
+The class \texttt{Tally} provides the simplest type of statistical collector.
+It receives observations one by one, and after each new observation,
+it updates the number, average,
+variance, minimum, and maximum of the observations.
+At any time, it can return these statistics or compute a confidence interval
+for the theoretical mean of these observations, assuming that they are
+independent and identically distributed with the normal distribution.
+Other types of collectors that memorize the observations are also available in SSJ.
+
+
+\lstinputlisting[label=lst:Collision,
+caption={Simulating the number of collisions in a hashing system},%
+lineskip=-1pt,%
+emph={generateC,simulateRuns,main}
+]
+{Collision.java}
+
+The class \texttt{Collision} offers the facilities to simulate copies of $C$.
+Its constructor specifies $k$ and $m$, computes $\lambda$, and constructs
+a boolean array of size $k$ to memorize the locations used so far,
+in order to detect the collisions.
+The method \texttt{generateC} initializes the boolean array to \texttt{false},
+generates the $m$ locations, and computes $C$.
+The method \texttt{simulateRuns} first resets the statistical collector \texttt{statC},
+then generates $n$ independent copies of $C$ and pass these $n$ observations
+to the collector via the method \texttt{add}.
+The method \texttt{statC.report} computes a confidence interval from
+these $n$ observations and returns a statistical report in the form of a character string.
+This report is printed, together with the value of $\lambda$.
+
+
+\lstinputlisting[label=res:Collision,
+caption={Results of the program {\tt Collision}},%
+float=hbt,lineskip=-1pt]{Collision.res}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Nonuniform variate generation and simple quantile estimates}
+\label {sec:nonuniform}
+
+The program of Listing~\ref{lst:Nonuniform} simulates the following artificial model.
+Define the random variable
+\[
+  X = Y_1 + \cdots + Y_N + W_1 + \dots + W_M,
+\]
+where $N$ is Poisson with mean $\lambda$, $M$ is geometric with parameter $p$,
+the $Y_j$'s are gamma with parameters $(\alpha, \beta)$,
+the $W_j$'s are lognormal with parameters $(\mu,\sigma)$,
+and all these random variables are independent.
+We want to generate $n$ copies of $X$, say $X_1,\dots,X_n$, and estimate
+the 0.10, 0.50, 0.90, and 0.99 quantiles of the distribution of $X$,
+simply from the quantiles of the empirical distribution.
+
+The method \texttt{simulateRuns} generates $n$ copies of $X$ and pass
+them to a statistical collector of class \texttt{TallyStore},
+that stores the individual observations. % in a special type of array
+% called \texttt{DoubleArrayList}, provided by the COLT library.
+These observations are sorted in increasing order by invoking \texttt{quickSort},
+and the appropriate empirical quantiles are printed,
+together with a short report.
+
+
+\lstinputlisting[label=lst:Nonuniform,
+caption={Simulating nonuniform variates and observing quantiles},%
+lineskip=-1pt,%
+emph={generateX,simulateRuns,main}
+]
+{Nonuniform.java}
+
+\lstinputlisting[label=res:Nonuniform,
+caption={Results of the program {\tt Nonuniform}},%
+float=hbt,lineskip=-1pt]{Nonuniform.res}
+
+
+To simplify the program, all the parameters are fixed as constants at the
+beginning of the class. This is simpler, but not recommended in general
+because it does not permit one to perform experiments with different parameter
+sets in a single program.
+Passing the parameters to the constructor as in Listing~\ref{lst:Collision}
+would require more lines of code, but would provide more flexibility.
+
+The class initialization also constructs a \texttt{RandomStream} of type
+\texttt{LFSR113} (this is a faster uniform generator that \texttt{MRG32k3a}),
+used to generate all the random numbers.
+For the generation of $N$, we construct a Poisson distribution
+with mean $\lambda$ (without giving it a name),
+and pass it together with the random stream to
+the constructor of class \texttt{PoissonGen}.
+The returned object \texttt{genN} is random number generator that generate
+Poisson random variables with mean $\lambda$, via inversion.
+As similar procedure is used to construct \texttt{genY} and \texttt{genW},
+which generate gamma and lognormal random variates, respectively.
+Note that a \texttt{RandomVariateGenInt} produces integer-valued random variates,
+while a \texttt{RandomVariateGen} produces real-valued random variates.
+For the gamma distribution, we use a special type of random number generator
+based on a rejection method, which is faster than inversion.
+These constructors precompute some (hidden) constants once for all,
+to speedup the random variate generation.
+For the Poisson distribution with mean $\lambda$, the constructor of \texttt{PoissonDist}
+actually precomputes the distribution function in a table, and uses
+this table to compute the inverse distribution function each time a Poisson
+random variate needs to be generated with this particular distribution.
+This is possible because all Poisson random variates have the same parameter $\lambda$.
+If a different $\lambda$ was used for each variate, then we would use
+the static method of \texttt{PoissonDist} instead of constructing a Poisson distribution,
+otherwise we would have to reconstruct the distribution each time.
+The static method reconstructs part of the table each time, with the given $\lambda$,
+so it is slower if we want to generate several Poisson variates with the same $\lambda$.
+As an illustration, we use the static method to generate the geometric random variates
+(in \texttt{generateX}), instead of constructing a geometric distribution and variate generator.
+To generate $M$, we invoke the static method \texttt{inverseF} of the class
+\texttt{GeometricDist}, which evaluates the inverse geometric distribution function
+for a given parameter $p$ and a given uniform random variate.
+
+The results of this program, with $n = 10000$, are in Listing~\ref{res:Nonuniform}.
+We see that $X$ has a coefficient of variation larger than 1,
+and the quantiles indicate that the distribution is skewed,
+with a long thick tail to the right.
+We have $X < 553$ about half the time, but values over several thousands are not uncommon.
+This probably happens when $N$ or $M$ takes a large value.
+There are also cases where $N=M=0$, in which case $X=0$.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {A discrete-time inventory system}
+\label {sec:inventory}
+
+Consider a simple inventory system where the demands for a given product
+on successive days are independent Poisson random variables with mean
+$\lambda$.  If $X_j$ is the stock level at the beginning of day $j$ and
+$D_j$ is the demand on that day, then there are $\min(D_j, X_j)$ sales,
+$\max(0, D_j - X_j)$ lost sales, and the stock at the end of the day
+is $Y_j = \max(0, X_j - D_j)$.
+There is a revenue $c$ for each sale and a cost $h$ for each unsold
+item at the end of the day.
+The inventory is controlled using a $(s,S)$ policy:
+If $Y_j < s$, order $S - Y_j$ items, otherwise do not order.
+When an order is made in the evening, with probability $p$
+it arrives during the night and can be used for the next day,
+and with probability $1-p$ it never arrives (in which case a new order
+will have to be made the next evening).
+When the order arrives, there is a fixed cost $K$ plus a marginal cost
+of $k$ per item.
+The stock at the beginning of the first day is $X_0 = S$.
+
+We want to simulate this system for $m$ days, for a given set of
+parameters and a given control policy $(s,S)$, and replicate this
+simulation $n$ times independently to estimate the
+expected profit per day over a time horizon of $m$ days.
+Eventually, we might want to \emph{optimize} the values of the decision
+parameters $(s,S)$ via simulation, but we do not do that here.
+(In practice, this is usually done for more complicated models.)
+
+
+\lstinputlisting[label=lst:Inventory,
+caption={A simulation program for the simple inventory system},%
+lineskip=-1pt,%
+emph={simulateOneRun,simulateRuns,main}
+]
+{Inventory.java}
+
+%\bigskip
+
+Listing~\ref{lst:Inventory} gives a Java program, based on the SSJ
+library, that performs the required simulation for $n=500$, $m=2000$,
+$s=80$, $S=200$, $\lambda=100$, $c=2$, $h=0.1$, $K=10$, $k=1$, and $p=0.95$.
+
+The \texttt{import} statements at the beginning of the program
+retrieve the SSJ packages/classes that are needed.
+The \texttt{Inventory} class has a constructor that initializes the
+model parameters (saving their values in class variables) and constructs
+the required random number generators and the statistical collector.
+To generate the demands $D_j$ on successive days, we create
+(in the last line of the constructor) a random number stream and
+a Poisson distribution with mean $\lambda$, and then a Poisson random
+variate generator \texttt{genDemand} that uses this stream and this
+distribution.  This mechanism will (automatically) precompute tables
+to ensure that the Poisson variate generation is efficient.
+This can be done because the value of $\lambda$ does not change during
+the simulation.
+The random number stream \texttt{streamOrder}, used to decide which
+orders are received, and the statistical collector \texttt{statProfit},
+are also created when the \texttt{Inventory} constructor is invoked.
+The code that invokes their constructors is outside the
+\texttt{Inventory} constructor, but it could have been inside as well.
+On the other hand, \texttt{genDemand} must be constructed inside
+the \texttt{Inventory} constructor, because the value of $\lambda$
+is not yet defined outside.
+The \emph{random number streams} can be viewed as virtual random number
+generators that generate random numbers in the interval $[0,1)$
+according to the uniform probability distribution.
+
+The method \texttt{simulateOneRun} simulates the system for $m$ days,
+with a given policy, and returns the average profit per day.
+For each day, we generate the demand $D_j$, compute the stock $Y_j$
+at the end of the day, and add the sales revenues minus the leftover
+inventory costs to the profit.  If $Y_j < s$, we generate a uniform
+random variable $U$ over the interval $(0,1)$ and an order of size
+$S - Y_j$ is received the next morning if $U < p$ (that is, with
+probability $p$).  In case of a successful order, we pay for it and
+the stock level is reset to $S$.
+
+The method \texttt{simulateRuns} performs $n$ independent
+simulation runs of this system and returns a report that contains
+a 90\%{} confidence interval for the expected profit.
+The main program constructs an \texttt{Inventory} object with the
+desired parameters, asks for $n$ simulation runs, and prints the report.
+It also creates a timer that computes the total CPU time to execute
+the program, and prints it.
+The results are in Listing~\ref{res:Inventory}.
+The average profit per day is approximately 85.
+It took 0.39 seconds (on a 2.4 GHz computer running Linux)
+to simulate the system for 2000 days,
+compute the statistics, and print the results.
+
+\lstinputlisting[label=res:Inventory,
+caption={Results of the program \texttt{Inventory}},%
+float=hbt,lineskip=-1pt]{Inventory.res}
+
+
+\iffalse  %%%%%%%%%%
+\setbox1=\vbox{\hsize=5.8in
+\begin{verbatim}
+
+REPORT on Tally stat. collector ==> stats on profit
+         min        max      average    standard dev.  num. obs
+      185.701     188.606    187.114        0.510          500
+  90.0% confidence interval for mean (student): (   187.076,   187.151 )
+
+Total CPU time: 0:0:0.60
+
+\end{verbatim}
+}
+
+\begin{figure}[htb]
+\centerline {\boxit{\box1}}
+\
+\label {fig:Inventory}
+\end{figure}
+\fi  %%%%%%%%%%%%
+
+% \bigskip
+
+In Listing~\ref{lst:InventoryCRN}, we extend the \texttt{Inventory} class
+to a class \texttt{InventoryCRN} that compares two sets of values
+of the inventory control policy parameters $(s,S)$.
+
+% \bigskip
+
+\lstinputlisting[label=lst:InventoryCRN,
+caption={Comparing two inventory policies with common random numbers},%
+lineskip=-1pt,%
+emph={simulateDiffCRN,simulateDiff,main}]
+{InventoryCRN.java}
+
+The method \texttt{simulateDiff} simulates the system with policies
+$(s_1, S_1)$ and $(s_2, S_2)$ independently, computes the difference
+in profits, and repeats this $n$ times.  These $n$ differences are
+tallied in statistical collector \texttt{statDiff}, to estimate the
+expected difference in average daily profits between the two policies.
+
+The method \texttt{simulateDiffCRN} does the same, but using
+\emph{common random numbers} across pairs of simulation runs.
+After running the simulation with policy $(s_1, S_1)$, the two random
+number streams are reset to the start of their current substream,
+so that they produce exactly the same sequence of random numbers
+when the simulation is run with policy $(s_2, S_2)$.
+Then the difference in profits is given to the statistical collector
+\texttt{statDiff} as before and the two streams are reset to a
+new substream for the next pair of simulations.
+
+Why not use the same stream for both the demands and orders?
+In this example, we need one random number to generate the demand each day,
+and also one random number to know if the order arrives, but only on the days
+where we make an order.  These days where we make an order are not
+necessarily the same for the two policies.
+So if we use a single stream for both the demands and orders,
+the random numbers will not necessarily be used for the same purpose across
+the two policies: a random number used to decide if the order arrives in one case
+may end up being used to generate a demand in the other case.
+This can greatly diminish the power of the common random numbers technology.
+Using two different streams as in Listing~\ref{lst:InventoryCRN} ensures
+at least that the random numbers are used for the same purpose for the
+two policies.  For more explanations and examples about common random numbers,
+see \cite{sLAW00a,sLEC09a}.
+
+The main program estimates the expected difference in average
+daily profits for policies $(s_1, S_1) = (80, 198)$ and
+$(s_2, S_2) = (80, 200)$, first with independent random numbers,
+then with common random numbers.
+The other parameters are the same as before.
+The results are in Listing~\ref{res:InventoryCRN}.
+We see that use of common random numbers reduces the variance by
+a factor of approximately 19 in this case.
+
+\lstinputlisting[label=res:InventoryCRN,
+caption={Results of the program \texttt{InventoryCRN}},%
+lineskip=-1pt]{InventoryCRN.res}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {A single-server queue with Lindley's recurrence}
+\label {sec:queue-lindley}
+
+We consider here a {\em single-server queue}, where customers
+arrive randomly and are served one by one in their order of arrival,
+i.e., {\em first in, first out\/} (FIFO).
+We suppose that the times between successive arrivals are exponential
+random variables with mean $1/\lambda$, that the service times are exponential
+random variables with mean $1/\mu$, and that all these random variables are
+mutually independent.
+The customers arriving while the server is busy must join the queue.
+The system initially starts empty.  We want to simulate the first
+$m$ customers in the system and compute the mean waiting time per customer.
+
+This simple model is well-known in queuing theory: It is called
+an $M/M/1$ queue.  Simple formulas are available for this model to
+compute the average waiting time per customer, average queue length,
+etc., over an {\em infinite\/} time horizon \cite{pKLE75a}.
+For a finite number of customers or a finite time horizon,
+these expectations can also be computed by numerical methods,
+but here we just want to show how it can be simulated.
+
+In a single-server queue,
+if $W_i$ and $S_i$ are the waiting time and service time of the
+$i$th customer, and $A_i$ is the time between the arrivals of
+the $i$th and $(i+1)$th customers, we have $W_1=0$ and the $W_i$'s
+follow the recurrence
+\eq
+  W_{i+1} = \max(0,\; W_i + S_i - A_i),               \label {eq:lindley}
+\endeq
+known as \emph{Lindley's equation} \cite {pKLE75a}.
+
+
+\lstinputlisting[label=lst:QueueLindley,
+caption={A simulation based on Lindley's recurrence},
+emph={simulateOneRun,simulateRuns,main}
+]{QueueLindley.java}
+
+% \bigskip
+
+The program of Listing~\ref{lst:QueueLindley} exploits (\ref{eq:lindley})
+to compute the average waiting time of the first $m$ customers in
+the queue, repeats it $n$ times independently, and prints a summary of
+the results.
+Here, for a change, we pass the model parameters to the methods
+instead of to the constructor, and
+the random variates are generated by static methods
+instead of via a \texttt{RandomVariateGen} object as in the
+\emph{Inventory} class (previous example).
+This illustrates various ways of doing the same thing.
+The instruction ``\texttt{Wi += \dots}'' could also be replaced by
+\begin{code}
+      Wi += - Math.log (1.0 - streamServ.nextDouble()) / mu
+            + Math.log (1.0 - streamArr.nextDouble()) / lambda;
+\end{code}
+which directly implements inversion of the exponential distribution.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Using the observer design pattern}
+\label {sec:observer}
+
+Listing~\ref{lst:QueueObs} adds a few ingredients to the program
+\texttt{QueueLindley}, in order to illustrate the \emph{observer}
+design pattern implemented in package \texttt{stat}.
+This mechanism permits one to separate data generation from data
+processing.  It can be very helpful in large simulation programs or
+libraries, where different objects may need to process the same data
+in different ways.  These objects may have the task of storing observations
+or displaying statistics in different formats, for example, and they are
+not necessarily fixed in advance.
+
+\iffalse
+The \emph{observer} pattern, supported by the \texttt{Observable}
+class and \texttt{Observer} interface in Java,
+offers the appropriate flexibility for that kind of situation.
+An \texttt{Observable} object acts in a sense like a \emph{broadcasting}
+\emph{distribution agency} that maintains a list of registered
+\texttt{Observer} objects, and sends information to all its registered
+observers whenever appropriate.
+\fi
+
+The \emph{observer} pattern, supported by the
+\externalclass{umontreal.iro.lecuyer.stat}{ObservationListener}
+ interface in SSJ,
+offers the appropriate flexibility for that kind of situation.
+A statistical probe maintains a list of registered
+\externalclass{umontreal.iro.lecuyer.stat}{ObservationListener}
+objects, and broadcasts information to all its registered
+observers whenever appropriate. Any object that implements the interface
+\externalclass{umontreal.iro.lecuyer.stat}{ObservationListener}
+can register as an observer.
+
+\texttt{StatProbe} in package \texttt{stat}, as well as its subclasses
+\texttt{Tally} and \texttt{Accumulate}, contains a list of
+ \texttt{ObservationListener}'s.
+Whenever they receive a new statistical observation, e.g.,  via
+\texttt{Tally.add} or \texttt{Accumulate.update}, they send the new value
+to all registered observers.
+To register as an observer, an object must implement the interface
+\externalclass{umontreal.iro.lecuyer.stat}{ObservationListener}
+This implies that it must provide an implementation of the method
+\texttt{newObservation}, whose purpose is to recover the information
+that the object has registered for.
+
+In the example, the statistical collector \texttt{waitingTimes}
+ transmits to all its registered
+listeners each new statistical observation that it receives via
+its \texttt{add} method.
+More specifically, each call to \texttt{waitingTimes.add(x)} generates
+in the background a call to \texttt{o.newObservation(waitingTimes, x)}
+for all registered observers \texttt{o}.
+
+\begin{comment}
+The method \texttt{notifyObs} is used to
+turn the tally into such an agency.  In fact, the collector is both a
+tally and a distribution agency, but its tally functionality can be
+disabled using the \texttt{stopCollectStat} method.  This can be useful when
+the registered observers already perform statistical collection.
+\end{comment}
+
+Two observers register to receive observations from
+\texttt{waitingTimes} in the example.
+They are anonymous objects of classes \texttt{ObservationTrace} and
+\texttt{LargeWaitsCollector}, respectively. Each one is informed of any new
+observation $W_i$ via its \texttt{newObservation} method.
+The task of the \texttt{ObservationTrace} observer is to
+print the waiting times $W_5$, $W_{10}$, $W_{15}$, \dots, whereas
+the \texttt{LargeWaitsCollector} observer stores in an array all waiting
+times that exceed 2.
+The statistical collector \texttt{waitingTimes} itself also stores
+appropriate information to be able to provide a statistical report
+when required.
+
+The \texttt{ObservationListener} interface specifies that \texttt{newObservation}
+ must have two formal parameters, of classes \texttt{StatProbe} and
+\texttt{double}, respectively. The second parameter is the value of the
+observation.
+In the case where the observer registers to several \texttt{ObservationListener}
+objects, the first parameter of \texttt{newObservation} tells it which one
+is sending the information, so it can adopt the correct behavior for
+this sender.
+
+
+\lstinputlisting[label=lst:QueueObs,
+caption={A simulation of Lindley's recurrence using observers},
+emph={simulateOneRun,simulateRuns,updateLargeWaitsCollector,formatLargeWaits,update,main}
+]{QueueObs.java}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Pricing an Asian option}
+\label {sec:asian}
+
+A \emph{geometric Brownian motion} (GBM) $\{S(\zeta),\,\zeta\ge 0\}$ satisfies
+\[
+  S(\zeta) = S(0) \exp\left[(r - \sigma^2/2)\zeta + \sigma B(\zeta)\right]
+\]
+where $r$ is the \emph{risk-free appreciation rate},
+$\sigma$ is the \emph{volatility parameter}, and
+$B$ is a standard Brownian motion, i.e.,
+a stochastic process whose increments over disjoint intervals
+are independent normal random variables, with mean 0 and variance
+$\delta$ over an interval of length $\delta$ (see, e.g., \cite{fGLA04a}).
+The GBM process is a popular model for the evolution in time of the
+market price of financial assets.
+A discretely-monitored  \emph{Asian option} on the arithmetic
+average of a given asset has discounted payoff
+\eq                                            \label{eq:payasian}
+ X = e^{-rT} \max[\bar S - K,\, 0]
+\endeq
+where $K$ is a constant called the \emph{strike price} and
+\begin{equation}                        \label{eq:arithmetic-average}
+ \bar S = \frac{1}{t} \sum_{j=1}^t S(\zeta_j),
+\end{equation}
+for some fixed observation times $0 < \zeta_1 < \cdots < \zeta_t = T$.
+The value (or fair price) of the Asian option is $c = E[X]$ where
+the expectation is taken under the so-called risk-neutral measure
+(which means that the parameters $r$ and $\sigma$ have to be selected
+in a particular way; see \cite{fGLA04a}).
+
+This value $c$ can be estimated by simulation as follows.
+Generate $t$ independent and identically distributed
+(i.i.d.) $N(0,1)$ random variables $Z_1,\dots,Z_t$
+and put $B(\zeta_j) = B(\zeta_{j-1}) + \sqrt{\zeta_j - \zeta_{j-1}} Z_j$,
+for $j=1,\dots,t$, where $B(\zeta_0) = \zeta_0 = 0$.  Then,
+\eq
+  S(\zeta_j) = S(0) e^{(r-\sigma^2/2)\zeta_j + \sigma B(\zeta_j)}
+             = S(\zeta_{j-1}) e^{(r-\sigma^2/2)(\zeta_j-\zeta_{j-1})
+                          + \sigma \sqrt{\zeta_j - \zeta_{j-1}} Z_j}
+                                                      \label{eq:Szetaj}
+\endeq
+for $j = 1,\dots,t$ and the payoff can be computed via (\ref{eq:payasian}).
+This can be replicated $n$ times, independently, and the
+option value is estimated by the average discounted payoff.
+The Java program of Listing~\ref{lst:Asian} implement this procedure.
+
+Note that generating the sample path and computing the payoff is done
+in two different methods.  This way, other methods could eventually be
+added to compute payoffs that are defined differently (e.g., based on
+the geometric average, or with barriers, etc.) over the same generated
+sample path.
+
+\lstinputlisting[label=lst:Asian,
+caption={Pricing an Asian option on a GMB process},
+lineskip=-1pt,
+emph={generatePath,getPayoff,simulateRuns,main}
+]{Asian.java}
+
+% \bigskip
+
+The method \texttt{simulateRuns} performs $n$ independent simulation
+runs using the given random number stream and put the $n$ observations
+of the net payoff in the statistical collector \texttt{statValue}.
+In the \texttt{main} program, we first specify the 12 observation
+times $\zeta_j = j/12$ for $j=1,\dots,12$, and put them in the array
+\texttt{zeta} (of size 13) together with $\zeta_0=0$.
+We then construct an \texttt{Asian} object with parameters
+$r=0.05$, $\sigma=0.5$, $K = 100$, $S(0)=100$, $t=12$, and the
+observation times contained in array \texttt{zeta}.
+We then create the statistical collector \texttt{statValue},
+perform $10^5$ simulation runs, and print the results.
+The discount factor $e^{-rT}$ and the
+constants $\sigma \sqrt{\zeta_j - \zeta_{j-1}}$ and
+$(r-\sigma^2/2)(\zeta_j - \zeta_{j-1})$ are precomputed in the
+constructor \texttt{Asian}, to speed up the simulation.
+
+
+The program in Listing~\ref{lst:AsianQMC} extends the class \texttt{Asian}
+to \texttt{AsianQMC}, whose method \texttt{simulate\-QMC}
+estimates the option value via randomized quasi-Monte Carlo.
+It uses $m$ independently randomized copies of digital net \texttt{p}
+and puts the results in statistical collector \texttt{statAverage}.
+The randomization is a left matrix scramble followed by a digital
+random shift, applied before each batch of $n$ simulation runs.
+
+% \bigskip
+
+\lstinputlisting[label=lst:AsianQMC,
+caption={Pricing an Asian option on a GMB process with quasi-Monte Carlo},
+lineskip=-1pt,
+lineskip=-1pt,
+emph={simulateQMC,main}
+]{AsianQMC.java}
+
+% \bigskip
+
+The random number stream passed to the method
+\texttt{simulateRuns} is an iterator that enumerates the points and
+coordinates of the randomized point set \texttt{p}.
+These point set iterators, available for each type of point set
+in package \texttt{hups}, implement the \texttt{RandomStream} interface
+and permit one to easily replace the uniform random numbers by (randomized)
+highly-uniform point sets or sequences, without changing the code of
+the model itself.
+The method \texttt{resetStartStream}, invoked immediately after each
+randomization, resets the iterator to the first coordinate of the
+first point of the point set \texttt{p}.
+The number $n$ of simulation runs is equal to the number of points.
+The points correspond to substreams in the \texttt{RandomStream} interface.
+The method \texttt{resetNextSubstream}, invoked after each simulation
+run in \texttt{simulateRuns}, resets the iterator to the first
+coordinate of the next point.
+Each generation of a uniform random number (directly or indirectly)
+with this stream during the simulation moves the iterator to the next
+coordinate of the current point.
+
+The point set used in this example is a \emph{Sobol' net} with
+$n = 2^{16}$ points in $t$ dimensions.
+The \texttt{main} program passes this point set to \texttt{simulateQMC}
+and asks for $m=20$ independent randomizations.
+It then computes the empirical variance and CPU time
+\emph{per simulation run} for both MC and randomized QMC.
+It prints the ratio of variances, which can be
+interpreted as the estimated \emph{variance reduction factor} obtained
+when using QMC instead of MC in this example, and the ratio of
+efficiencies, which can be interpreted
+as the estimated \emph{efficiency improvement factor}.
+(The efficiency of an estimator is defined as
+1/(variance $\times$ CPU time per run.)
+The results are in Listing~\ref{res:AsianQMC}:
+QMC reduces the variance by a factor of around 250 and improves the
+efficiency by a factor of over 500.
+Randomized QMC not only reduces the variance, it also runs faster than MC.
+The main reason for this is the call to \texttt{resetNextSubstream}
+in \texttt{simulateRuns}, which is rather costly for a random
+number stream of class \texttt{MRG32k3a} (with the current implementation)
+and takes negligible time for an iterator over a digital net in base 2.
+In fact, in the the case of MC, the call to \texttt{resetNextSubstream}
+is not really needed.  Removing it for that case reduces the CPU
+time by more than 40\%.
+
+\lstinputlisting[label=res:AsianQMC,
+caption={Results of the program \texttt{AsianQMC}},%
+float=t,lineskip=-1pt]{AsianQMC.res}

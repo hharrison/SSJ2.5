@@ -1,0 +1,388 @@
+\defclass {HyperbolicSecantDist}
+
+Extends the class \class{ContinuousDistribution} for
+the {\em hyperbolic secant\/} distribution with location
+parameter $\mu$ and scale parameter $\sigma > 0$.
+Its density is
+\begin{htmlonly}
+\eq
+   f(x) = 1/(2\sigma) \mbox{ sech}(\pi/2 (x - \mu) / \sigma)
+\endeq
+The distribution function is given by
+\eq
+   F(x) = 2/\pi tan^{-1}[exp(\pi/2 (x - \mu) / \sigma)]
+\endeq
+\end{htmlonly}%
+\begin{latexonly}%
+\eq
+   f(x) = \frac{1}{2 \sigma} \mbox{ sech}\left(\frac{\pi}{2} \frac{(x - \mu)}{\sigma}\right)
+\eqlabel{eq:fHyperbolicSecant}
+\endeq
+The distribution function is given by
+\eq
+   F(x) = \frac{2}{\pi} \tan^{-1}\left[\exp{\left(\frac{\pi}{2} \frac{(x - \mu)}{\sigma}\right)}\right]
+\eqlabel{eq:FHyperbolicSecant}
+\endeq
+\end{latexonly}%
+
+The non-static versions of the methods \texttt{cdf}, \texttt{barF},
+and \texttt{inverseF} call the static version of the same name.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HyperbolicSecantDist
+ * Description:  hyperbolic secant distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import optimization.*;
+\end{hide}
+
+public class HyperbolicSecantDist extends ContinuousDistribution\begin{hide} {
+   protected double mu;
+   protected double sigma;
+   private static final double ZLIMB = 500.0;
+   private static final double ZLIMS = 50.0;
+
+   private static class Optim implements Uncmin_methods
+   {
+      private int n;
+      private double[] xi;
+
+      public Optim (double[] x, int n)
+      {
+         this.n = n;
+         this.xi = new double[n];
+         System.arraycopy (x, 0, this.xi, 0, n);
+      }
+
+      public double f_to_minimize (double[] p)
+      {
+         double sum = 0.0;
+
+         if (p[2] <= 0.0)
+            return 1e200;
+
+         for (int i = 0; i < n; i++)
+            sum -= Math.log (density (p[1], p[2], xi[i]));
+
+         return sum;
+      }
+
+      public void gradient (double[] x, double[] g)
+      {
+      }
+
+      public void hessian (double[] x, double[][] h)
+      {
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public HyperbolicSecantDist (double mu, double sigma)\begin{hide} {
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a hyperbolic secant distribution with parameters
+   $\mu$ and $\sigma$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return HyperbolicSecantDist.density (mu, sigma, x);
+   }
+
+   public double cdf (double x) {
+      return HyperbolicSecantDist.cdf (mu, sigma, x);
+   }
+
+   public double barF (double x) {
+      return HyperbolicSecantDist.barF (mu, sigma, x);
+   }
+
+   public double inverseF (double u) {
+      return HyperbolicSecantDist.inverseF (mu, sigma, u);
+   }
+
+   public double getMean() {
+      return HyperbolicSecantDist.getMean (mu, sigma);
+   }
+
+   public double getVariance() {
+      return HyperbolicSecantDist.getVariance (mu, sigma);
+   }
+
+   public double getStandardDeviation() {
+      return HyperbolicSecantDist.getStandardDeviation (mu, sigma);
+   }\end{hide}
+
+   public static double density (double mu, double sigma, double x)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      double y = (x - mu) / sigma;
+      if (Math.abs(y) >= ZLIMB)
+         return 0.0;
+      else
+         return (1.0 / (Math.cosh (Math.PI * y / 2.0) * 2.0 * sigma));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density function (\ref{eq:fHyperbolicSecant})
+  for a hyperbolic secant distribution with parameters $\mu$ and $\sigma$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double mu, double sigma, double x)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      double y = (x - mu) / sigma;
+      if (y >= ZLIMS)
+         return 1.0;
+      else if (y <= -ZLIMB)
+      	 return 0.0;
+      else
+         return (2.0 * Math.atan (Math.exp (Math.PI * y / 2.0))) / Math.PI;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the distribution function of the hyperbolic secant distribution
+   with parameters $\mu$ and $\sigma$.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double mu, double sigma, double x)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+
+      double y = (x - mu) / sigma;
+      if (y >= ZLIMB)
+         return 0.0;
+      else if (y <= -ZLIMS)
+      	 return 1.0;
+      else
+         return 2.0 / Math.PI * Math.atan (Math.exp (-Math.PI * y / 2.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the complementary distribution function of the
+   hyperbolic secant distribution with parameters $\mu$ and $\sigma$.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double mu, double sigma, double u)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u not in [0,1]");
+
+      if (u >= 1.0)
+         return Double.POSITIVE_INFINITY;
+      else if (u <= 0.0)
+         return Double.NEGATIVE_INFINITY;
+      else
+         return (mu + (2.0 * sigma / Math.PI * Math.log (Math.tan (Math.PI / 2.0 * u))));
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the inverse of the hyperbolic secant distribution
+   with parameters $\mu$ and $\sigma$.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      double sum;
+
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      Optim system = new Optim (x, n);
+
+      double[] parameters = new double[2];
+      double[] xpls = new double[3];
+      double[] param = new double[3];
+      double[] fpls = new double[3];
+      double[] gpls = new double[3];
+      int[] itrcmd = new int[2];
+      double[][] a = new double[3][3];
+      double[] udiag = new double[3];
+
+      sum = 0.0;
+      for (int i = 0; i < n; i++)
+         sum += x[i];
+      param[1] = sum / (double) n;
+
+      sum = 0.0;
+      for (int i = 0; i < n; i++)
+         sum += (x[i] - param[1]) * (x[i] - param[1]);
+      param[2] = Math.sqrt (sum / (double) n);
+
+      Uncmin_f77.optif0_f77 (2, param, system, xpls, fpls, gpls, itrcmd, a, udiag);
+
+      for (int i = 0; i < 2; i++)
+         parameters[i] = xpls[i+1];
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Estimates the parameters $(\mu, \sigma)$ of the hyperbolic secant distribution
+  using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\mu$, $\sigma$].
+   \begin{detailed}
+   The estimate of the parameters is given by maximizing numerically the
+   log-likelihood function, using the Uncmin package \cite{iSCHa,iVERa}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+   \return{returns the parameters [$\hat{\mu}$, $\hat{\sigma}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static HyperbolicSecantDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new HyperbolicSecantDist (parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a hyperbolic secant distribution with parameters
+   $\mu$ and $\sigma$ estimated using the maximum likelihood method based on
+   the $n$ observations $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = \mu$ of the
+   hyperbolic secant distribution with parameters
+   $\mu$ and $\sigma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the hyperbolic secant distribution $E[X] = \mu$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+
+      return (sigma * sigma);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance $\mbox{Var}[X] = \sigma^2$
+   of the hyperbolic secant distribution with parameters $\mu$ and $\sigma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the hyperbolic secant distribution
+   $\mbox{Var}[X] = \sigma^2$
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double mu, double sigma)\begin{hide} {
+      return Math.sqrt (HyperbolicSecantDist.getVariance (mu, sigma));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the hyperbolic secant distribution with parameters
+   $\mu$ and $\sigma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the hyperbolic secant distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\mu$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return sigma;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\sigma$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+
+      this.mu = mu;
+      this.sigma = sigma;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters $\mu$ and $\sigma$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {mu, sigma};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\mu$, $\sigma$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : mu = " + mu + ", sigma = " + sigma;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

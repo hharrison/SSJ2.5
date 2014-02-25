@@ -1,0 +1,124 @@
+\defclass{LoglogisticGen}
+
+This class implements random variate generators for the 
+{\em log-logistic\/} distribution with shape parameter $\alpha > 0$
+and scale parameter $\beta > 0$.
+The density function of this distribution is
+\begin{htmlonly}
+\eq
+   f(x) = (\alpha (x / \beta)^{\alpha - 1}) / (\beta [1 + (x / \beta)^\alpha]^2)
+\qquad \qquad  \mbox{for } x > 0.
+\endeq
+\end{htmlonly}
+\begin{latexonly} 
+\eq  
+   f(x) = \frac{\alpha (x / \beta)^{\alpha - 1}}{\beta [1 + (x / \beta)^\alpha]^2}
+\qquad \qquad  \mbox{for } x > 0.
+\eqlabel{eq:floglogistic}
+\endeq
+\end{latexonly}
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LoglogisticGen
+ * Description:  random variate generators for the log-logistic distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class LoglogisticGen extends RandomVariateGen \begin{hide} {
+   protected double alpha;
+   protected double beta;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public LoglogisticGen (RandomStream s, double alpha, double beta) \begin{hide} {
+      super (s, new LoglogisticDist(alpha, beta));
+      setParams (alpha, beta);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a log-logistic random variate generator with parameters
+  $\alpha =$ \texttt{alpha} and $\beta =$ \texttt{beta}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public LoglogisticGen (RandomStream s, LoglogisticDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getBeta());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}    
+
+   public static double nextDouble (RandomStream s,
+                                    double alpha, double beta)\begin{hide} {
+      return LoglogisticDist.inverseF (alpha, beta, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the {\em log-logistic\/} distribution
+   with shape parameter $\alpha > 0$ and scale parameter $\beta > 0$.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\alpha$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\beta$ of this object.
+  \end{tabb}
+\begin{code}\begin{hide}
+
+   protected void setParams (double alpha, double beta) {
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      this.alpha = alpha;
+      this.beta = beta;
+   }
+}\end{hide}
+\end{code}

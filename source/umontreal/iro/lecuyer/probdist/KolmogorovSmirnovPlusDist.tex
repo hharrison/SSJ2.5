@@ -1,0 +1,424 @@
+\defclass {KolmogorovSmirnovPlusDist}
+
+\newcommand{\ks}{{\em Kolmogorov-Smirnov\/}}
+
+Extends the class \class{ContinuousDistribution} for the
+\ks+{}  distribution (see \cite{tDAR60a,tDUR73a,tBRO07a}).
+Given a sample of $n$ independent uniforms $U_i$ over $[0,1]$,
+the \ks+{} statistic $D_n^+$ and the \ks$-${} statistic $D_n^-$,
+ are defined by
+\begin {eqnarray}
+  D_n^+ &=& \max_{1\le j\le n} \left(j/n - U_{(j)}\right),
+                                                    \eqlabel{eq:DNp} \\
+  D_n^- &=& \max_{1\le j\le n} \left(U_{(j)} - (j-1)/n\right),
+                                                    \eqlabel{eq:DNm}
+\end {eqnarray}
+where the $U_{(j)}$ are the $U_i$ sorted in increasing order. Both statistics
+follows the same distribution function, i.e.
+$F_n(x) = P[D_n^+ \le x] = P[D_n^- \le x]$.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        KolmogorovSmirnovPlusDist
+ * Description:  Kolmogorov-Smirnov+ distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public class KolmogorovSmirnovPlusDist extends ContinuousDistribution\begin{hide} {
+   protected int n;
+
+   private static class Function implements MathFunction {
+      protected int n;
+      protected double u;
+
+      public Function (int n, double u) {
+         this.n = n;
+         this.u = u;
+      }
+
+      public double evaluate (double x) {
+         return u - cdf(n,x);
+      }
+   }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public KolmogorovSmirnovPlusDist (int n)\begin{hide} {
+      setN (n);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs an \ks+{} distribution for a sample of size $n$.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (n, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (n, x);
+   }
+
+   public double barF (double x) {
+      return barF (n, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (n, u);
+   }
+
+   private static double dclem (int n, double x, double EPS) {
+      return (cdf(n, x + EPS) - cdf(n, x - EPS)) / (2.0 * EPS);
+   }\end{hide}
+
+   public static double density (int n, double x)\begin{hide} {
+      if (n <= 0)
+        throw new IllegalArgumentException (
+                             "Calling kolmogorovSmirnovPlus with n < 1");
+      if (x <= 0.0 || x >= 1.0)
+         return 0.0;
+      if (n == 1)
+         return 1.0;
+      final double EPS = 1.0 / 100.0;
+      final double D1 = dclem(n, x, EPS);
+      final double D2 = dclem(n, x, 2.0 * EPS);
+      final double RES = D1 + (D1 - D2) / 3.0;
+      if (RES < 0.0)
+         return 0.0;
+      return RES;
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the density of the \ks+ distribution with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int n, double x)\begin{hide} {
+      if (n <= 0)
+        throw new IllegalArgumentException (
+                             "Calling kolmogorovSmirnovPlus with n < 1");
+      if (x <= 0.0)
+         return 0.0;
+      if ((x >= 1.0) || (n*x*x >= 25.0))
+         return 1.0;
+      if (n == 1)
+         return x;
+
+      final double NXPARAM = 6.5;      // frontier: alternating series
+      final int NPARAM = 4000;         // frontier: non-alternating series
+      double q;
+      double Sum = 0.0;
+      double term;
+      double Njreal;
+      double jreal;
+      double LogCom = Math.log ((double)n);
+      int j;
+      int jmax;
+
+      //--------------------------------------------------------------
+      // the alternating series is stable and fast for n*x very small
+      //--------------------------------------------------------------
+
+      if (n*x <= NXPARAM) {
+         final double EPSILON = Num.DBL_MIN;
+         jmax = (int)(n*x);
+         int Sign = -1;
+         for (j = 1; j <= jmax; j++) {
+            jreal = j;
+            Njreal = n - j;
+            q = jreal/n - x;
+            // we must avoid log (0.0) for j = jmax and n*x near an integer
+            if (-q > EPSILON) {
+               term = LogCom + jreal*Math.log(-q) + (Njreal - 1.0)
+                       *Math.log1p (-q);
+               Sum += Sign*Math.exp (term);
+            }
+            Sign = -Sign;
+            LogCom += Math.log (Njreal/(j + 1));
+         }
+         // add the term j = 0
+         Sum += Math.exp ((n - 1)*Math.log1p (x));
+         return Sum*x;
+      }
+
+      //-----------------------------------------------------------
+      // For nx > NxParam, we use the other exact series for small
+      // n, and the asymptotic form for n larger than NPARAM
+      //-----------------------------------------------------------
+
+      if (n <= NPARAM) {
+         jmax = (int)(n*(1.0 - x));
+         if (1.0 - x - (double) jmax/n <= 0.0)
+            --jmax;
+         for (j = 1; j <= jmax; j++) {
+            jreal = j;
+            Njreal = n - j;
+            q = jreal/n + x;
+            term = LogCom+(jreal - 1.0)*Math.log(q) + Njreal*Math.log1p (-q);
+            Sum += Math.exp (term);
+            LogCom += Math.log (Njreal/(jreal + 1.0));
+         }
+         Sum *= x;
+
+         // add the term j = 0; avoid log (0.0)
+         if (1.0 > x)
+            Sum += Math.exp (n*Math.log1p (-x));
+         return 1.0 - Sum;
+      }
+
+      //--------------------------
+      // Use an asymptotic formula
+      //--------------------------
+
+      term = 2.0/3.0;
+      q = x*x*n;
+      Sum = 1.0 - Math.exp (-2.0*q)*(1.0 - term*x*(1.0 - x*(1.0 - term*q)
+            - term/n*(0.2 - 19.0/15.0*q + term*q*q)));
+      return Sum;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the \ks+ distribution function $F_n(x)$  with parameter $n$.
+  \begin{latexonly}%
+  The distribution function can be approximated via the
+  following expressions:
+  \begin {eqnarray}
+   P[D_n^+ \le x]
+    &=& 1 - x \sum_{i=0}^{\lfloor n(1-x)\rfloor}  \binom{n}{i}
+        \left(\frac{i}{n} + x \right)^{i-1}
+        \left(1 - \frac{i}{n} - x \right)^{n-i}     \label {DistKS1} \\[4pt]
+    &=& x \sum_{j=0}^{\lfloor nx \rfloor}
+        \binom{n}{j} \left(\frac{j}{n} - x \right)^j
+        \left(1 - \frac{j}{n} + x \right)^{n-j-1}   \label {DistKS2} \\[4pt]
+    &\approx& 1 - e^{-2 n x^2} \left[1 - \frac{2x}{3} \left(
+           1 - x\left(1 - \frac{2 n x^2}{3}\right) \right.\right.
+                                                   \nonumber\\[4pt]
+    &&  \left.\left. - \frac{2}{3n} \left(\frac{1}{5} - \frac{19 n x^2}{15}
+              + \frac{2n^2 x^4}{3}\right) \right) + O(n^{-2}) \right].
+                                                   \label {DistKS3}
+  \end {eqnarray}
+  Formula (\ref{DistKS1}) and (\ref{DistKS2}) can be found in
+  \cite{tDUR73a}, equations (2.1.12) and (2.1.16), while (\ref{DistKS3})
+  can be found in \cite{tDAR60a}.
+  Formula (\ref{DistKS2}) becomes numerically unstable as $nx$ increases.
+  The approximation (\ref{DistKS3}) is simpler to compute and excellent
+  when  $nx$ is large.
+\end{latexonly}%
+  The relative  error on $F_n(x) = P[D_n^+ \le x]$ is always less than
+  $10^{-5}$. %, and the relative error on $\bar F_n(x)$ is less than
+ % $10^{-1}$ when $\bar F_n(x) > 10^{-10}$.
+%  The {\em absolute\/}  error on $\bar F_n(x)$ is less than $10^{-11}$
+%  when $\bar F_n(x) < 10^{-10}$.
+%  It must be noted that Korolyuk \cite{tKOR59a} and many others
+%  gave an erroneous formula for the asymptotic form (\ref{DistKS3}).
+%  Darling \cite{tDAR60a} gives the correct formula with references.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   private static double KSPlusbarAsymp (int n, double x) {
+      /* Compute the probability of the complementary KSPlus distribution
+         using an asymptotic formula */
+      double t = (6.0*n*x + 1);
+      double z = t*t/(18.0*n);
+      double v = 1.0 - (2.0*z*z - 4.0*z - 1.0)/(18.0*n);
+      if (v <= 0.0)
+         return 0.0;
+      v = v*Math.exp(-z);
+      if (v >= 1.0)
+         return 1.0;
+      return v;
+   }
+
+
+//-------------------------------------------------------------------------
+
+   static double KSPlusbarUpper (int n, double x) {
+      /* Compute the probability of the complementary KS+ distribution in
+         the upper tail using Smirnov's stable formula */
+
+      if (n > 200000)
+         return KSPlusbarAsymp (n, x);
+
+      int jmax = (int) (n* (1.0 - x));
+      // Avoid log(0) for j = jmax and q ~ 1.0
+      if ((1.0 - x - (double)jmax/n) <= 0.0)
+         jmax--;
+
+      int jdiv;
+      if (n > 3000)
+         jdiv = 2;
+      else
+         jdiv = 3;
+      int j = jmax / jdiv + 1;
+
+      double LogCom = Num.lnFactorial(n) - Num.lnFactorial(j)
+                      - Num.lnFactorial(n-j);
+      final double LOGJM = LogCom;
+
+      final double EPSILON = 1.0E-12;
+      double q;
+      double term;
+      double t;
+      double Sum = 0.0;
+
+      while (j <= jmax) {
+         q = (double)j / n + x;
+         term = LogCom + (j - 1)*Math.log(q) + (n-j)*Math.log1p(-q);
+         t = Math.exp (term);
+         Sum += t;
+         LogCom += Math.log ((double)(n - j)/(j + 1));
+         if (t <= Sum*EPSILON)
+            break;
+         j++;
+      }
+
+      j = jmax / jdiv;
+      LogCom = LOGJM + Math.log ((double)(j+1)/(n - j));
+
+      while (j > 0) {
+         q = (double)j / n + x;
+         term = LogCom+(j - 1)*Math.log (q)+ (n - j)*Math.log1p (-q);
+         t = Math.exp (term);
+         Sum += t;
+         LogCom += Math.log ((double)j/(n - j + 1));
+         if (t <= Sum*EPSILON)
+            break;
+         j--;
+      }
+
+      Sum *= x;
+      // add the term j = 0
+      Sum += Math.exp (n*Math.log1p (-x));
+      return Sum;
+   }\end{hide}
+
+   public static double barF (int n, double x)\begin{hide} {
+      if (n <= 0)
+        throw new IllegalArgumentException (
+                             "Calling kolmogorovSmirnovPlus with n < 1");
+      if (x <= 0.0)
+         return 1.0;
+      if ((x >= 1.0) || (n*x*x >= 365.0))
+         return 0.0;
+      if (n == 1)
+         return 1.0 - x;
+
+      final double NXPARAM = 6.5;    // frontier: alternating series
+      final int NPARAM = 4000;       // frontier: non-alternating series
+      final int NASYMP = 200000;     // frontier: asymptotic
+
+      // the alternating series is stable and fast for n*x very small
+      if (n*x <= NXPARAM)
+         return 1.0 - cdf(n, x);
+
+      if (n >= NASYMP)
+         return KSPlusbarAsymp (n, x);
+
+      if ((n <= NPARAM) || (n*x*x > 1.0))
+         return KSPlusbarUpper(n,x);
+
+      return KSPlusbarAsymp (n, x);
+      // return (1.0 - 2.0*x/3.0)*Math.exp(-2.0*n*x*x);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the complementary  distribution function  $\bar F_n(x)$
+  with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public static double inverseF (int n, double u)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u must be in [0,1]");
+      if (u == 1.0)
+         return 1.0;
+      if (u == 0.0)
+         return 0.0;
+      Function f = new Function (n,u);
+      return RootFinder.brentDekker (0.0, 1.0, f, 1e-8);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Computes the inverse $x = F^{-1}(u)$ of the distribution with parameter $n$.
+\end{tabb}
+\begin{code}
+
+   public int getN()\begin{hide} {
+      return n;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $n$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setN (int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      this.n = n;
+      supportA = 0.0;
+      supportB = 1.0;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the parameter $n$ of this object.
+ \end{tabb}
+ \begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {n};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns an array containing the parameter $n$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : n = " + n;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

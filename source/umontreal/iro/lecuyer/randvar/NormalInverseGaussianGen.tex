@@ -1,0 +1,155 @@
+\defclass{NormalInverseGaussianGen}
+
+\newcommand{\nig}{\emph{normal inverse gaussian}}
+
+This class implements random variate generators for 
+the \nig{} ($\mathcal{NIG}$) distribution. See the definition of
+\externalclass{umontreal.iro.lecuyer.probdist}{NormalInverseGaussianDist}
+\begin{latexonly}%
+in package \texttt{probdist}.
+\end{latexonly}
+
+
+\bigskip\hrule\bigskip
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NormalInverseGaussianGen
+ * Description:  random variate generators for the normal inverse gaussian distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since        June 2008
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class NormalInverseGaussianGen extends RandomVariateGen \begin{hide} {
+   protected double mu;
+   protected double delta = -1.0;
+   protected double alpha = -1.0;
+   protected double beta = -2.0;
+   protected double gamma = -1.0;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public NormalInverseGaussianGen (RandomStream s, double alpha,
+                                    double beta, double mu, double delta) \begin{hide} {
+      super (s, new NormalInverseGaussianDist(alpha, beta, mu, delta));
+      setParams (alpha, beta, mu, delta);
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates an \nig{} random variate generator with parameters
+ $\alpha$ = \texttt{alpha}, $\beta$ = \texttt{beta},  $\mu$ = \texttt{mu}
+ and  $\delta$ = \texttt{delta}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public NormalInverseGaussianGen (RandomStream s,
+                                    NormalInverseGaussianDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getBeta(), dist.getMu(),
+                    dist.getDelta());
+   }\end{hide}
+\end{code}
+  \begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha,
+                                    double beta, double mu, double delta)\begin{hide} {
+      return NormalInverseGaussianDist.inverseF (alpha, beta, mu, delta,
+                                                 s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ NOT IMPLEMENTED. Use the daughter classes.
+% Generates a variate from the inverse gaussian distribution
+%   with location parameter $\mu > 0$ and scale parameter $\lambda > 0$.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\alpha$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return beta;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\beta$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\mu$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public double getDelta()\begin{hide} {
+      return delta;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Returns the parameter $\delta$ of this object.
+ \end{tabb}
+\begin{code}
+
+   public void setParams (double alpha, double beta, double mu,
+                          double delta)\begin{hide} {
+      if (delta <= 0.0)
+         throw new IllegalArgumentException ("delta <= 0");
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (Math.abs(beta) >= alpha)
+         throw new IllegalArgumentException ("|beta| >= alpha");
+
+      gamma = Math.sqrt(alpha*alpha - beta*beta);
+
+      this.mu = mu;
+      this.delta = delta;
+      this.beta = beta;
+      this.alpha = alpha;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets the parameters  $\alpha$,  $\beta$, $\mu$ and $\delta$ of this object.
+\end{tabb}
+\begin{code}\begin{hide} 
+}
+\end{hide}
+\end{code}

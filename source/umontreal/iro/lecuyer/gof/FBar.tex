@@ -1,0 +1,307 @@
+\defclass {FBar}
+
+This class is similar to \class{FDist}, except that it provides static methods
+to compute or approximate the complementary distribution function of $X$,
+which we define as $\bar F (x) = P[X\ge x]$, instead of $F (x)=P[X\le x]$.
+Note that with our definition of $\bar F$, one has
+$\bar F (x) = 1 - F (x)$ for continuous distributions and
+$\bar F (x) = 1 - F (x-1)$ for discrete distributions over the integers.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FBar
+ * Description:  Complementary empirical distributions
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.gof;
+\begin{hide}
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class FBar\begin{hide} {
+   private FBar() {}
+
+   private static final double EPSILONSCAN = 1.0E-7;
+
+   private static double scanGlaz (int n, double d, int m) {
+      int j, jmoy;
+      double temp;
+      double jr, jm1r, nr = n;
+      int signe;
+      double q = 1.0 - d;
+      double q4, q3, q2, q1;
+      double bin, binMoy;
+
+      jmoy = (int)((n + 1)*d);              // max term of the Binomial
+      if (jmoy < m - 1)
+         jmoy = m - 1;
+
+      /*---------------------------------------------------------
+       * Compute q1: formula (2.5) in Glaz (1989)
+       * Compute q2: formula (A.6) in Berman and Eagleson (1985)
+       * Compute q3, q4 : Theorem (3.2) in Glaz (1989)
+       *---------------------------------------------------------*/
+
+      // compute the probability of term j = jmoy
+      q1 = 0.0;
+      for (j = 1; j <= jmoy; j++) {
+         jr = j;
+         q1 += Math.log (nr - jr + 1.0) - Math.log (jr);
+      }
+      q1 += jmoy*Math.log (d) + (nr - jmoy)*Math.log (q);
+      binMoy = Math.exp (q1);
+      q1 = binMoy;
+      jm1r = jmoy - m + 1;
+      if (((jmoy - m + 1) & 1) != 0)
+         signe = -1;
+      else
+         signe = 1;
+      q2 = signe*binMoy;
+      q3 = signe*binMoy*(2.0 - jm1r*jm1r + jm1r);
+      q4 = signe*binMoy*(jm1r + 1.0)*(jm1r + 2.0)*(6.0 + jm1r*jm1r -
+         5.0*jm1r);
+
+      // compute the probability of terms j > jmoy
+      if (((jmoy - m + 1) & 1) != 0)
+         signe = -1;
+      else
+         signe = 1;
+
+      jm1r = jmoy - m + 1;
+      bin = binMoy;
+      for (j = jmoy + 1; j <= n; j++) {
+         jr = j;
+         jm1r += 1.0;
+         signe = -signe;
+         bin = (bin*(nr - jr + 1.0)*d)/(jr*q);
+         if (bin < EPSILONSCAN)
+            break;
+         q1 += bin;
+         q2 += signe*bin;
+         q3 += signe*bin*(2.0 - jm1r*jm1r + jm1r);
+         q4 += signe*bin*(jm1r + 1.0)*(jm1r + 2.0)*(6.0 + jm1r*jm1r -
+            5.0*jm1r);
+      }
+
+      q1 = 1.0 - q1;
+      q3 /= 2.0;
+      q4 /= 12.0;
+      if (m == 3) {
+        // Problem with this formula; I do not get the same results as Glaz
+         q4 = ((nr*(nr - 1.0)*d*d*Math.pow (q, nr - 2.0))/8.0
+            + nr*d*2.0*Math.pow (1.0 - 2.0*d, nr - 1.0))
+            - 4.0*Math.pow (1.0 - 2.0*d, nr);
+         if (d < 1.0/3.0) {
+            q4 += nr*d*2.0*Math.pow (1.0 - 3.0*d, nr - 1.0)
+                  + 4.0*Math.pow (1.0 - 3.0*d, nr);
+         }
+      }
+      // compute probability: Glaz, equations (3.2) and (3.3)
+      q3 = q1 - q2 - q3;
+      q4 = q3 - q4;
+      //when the approximation is bad, avoid overflow
+      temp = Math.log (q3) + (nr - m - 2.0)*Math.log (q4/q3);
+      if (temp >= 0.0)
+         return 0.0;
+      if (temp < -30.0)
+         return 1.0;
+      q4 = Math.exp (temp);
+      return 1.0 - q4;
+     }
+
+     //-----------------------------------------------------------------
+
+     private static double scanWNeff (int n, double d, int m) {
+      double q = 1.0 - d;
+      double temp;
+      double bin;
+      double sum;
+      int j;
+
+      /*--------------------------------------
+       * Anderson-Titterington: equation (4)
+       *--------------------------------------*/
+
+      // compute the probability of term j = m
+      sum = 0.0;
+      for (j = 1; j <= m; j++)
+         sum += Math.log ((double)(n - j + 1)) - Math.log ((double)j);
+
+      sum += m*Math.log (d) + (n - m)*Math.log (q);
+      bin = Math.exp (sum);
+      temp = (m/d - n - 1.0)*bin;
+      sum = bin;
+
+      // compute the probability of terms j > m
+      for (j = m + 1; j <= n; j++) {
+         bin *= (n - j + 1)*d/(j*q);
+         if (bin < EPSILONSCAN)
+            break;
+         sum += bin;
+      }
+      sum = 2.0*sum + temp;
+      return sum;
+     }
+
+     //----------------------------------------------------------------
+
+     private static double scanAsympt (int n, double d, int m) {
+      double kappa;
+      double temp;
+      double theta;
+      double sum;
+
+      /*--------------------------------------------------------------
+       * Anderson-Titterington: asymptotic formula after equation (4)
+       *--------------------------------------------------------------*/
+
+      theta = Math.sqrt (d/(1.0 - d));
+      temp = Math.sqrt ((double)n);
+      kappa = m/(d*temp) - temp;
+      temp = theta*kappa;
+      temp = temp*temp/2.0;
+      sum = 2.0*(1.0 - NormalDist.cdf01 (theta*kappa)) +
+         (kappa*theta*Math.exp (-temp))/(d*Math.sqrt (2.0*Math.PI));
+      return sum;
+   }\end{hide}
+
+   public static double scan (int n, double d, int m)\begin{hide} {
+      double mu;
+      double prob;
+
+      if (n < 2)
+        throw new IllegalArgumentException ("Calling scan with n < 2");
+      if (d <= 0.0 || d >= 1.0)
+         throw new IllegalArgumentException ("Calling scan with "+
+                    "d outside (0,1)");
+
+      if (m > n)
+         return 0.0;
+      if (m <= 1)
+         return 1.0;
+      if (m <= 2) {
+         if ((n - 1)*d >= 1.0)
+            return 1.0;
+         return 1.0 - Math.pow (1.0 - (n - 1)*d, (double)n);
+      }
+      if (d >= 0.5 && m <= (n + 1)/2.0)
+         return 1.0;
+      if (d > 0.5)
+        return -1.0;              // Error
+      // util_Assert (d <= 0.5, "Calling fbar_Scan with d > 1/2");
+
+      mu = n*d;                    // mean of a binomial
+      if (m <= mu + d)
+         return 1.0;
+      if (mu <= 10.0)
+         return scanGlaz (n, d, m);
+      prob = scanAsympt (n, d, m);
+      if ((d >= 0.3 && n >= 50.0) || (n*d*d >= 250.0 && d < 0.3)) {
+         if (prob <= 0.4)
+            return prob;
+      }
+      prob = scanWNeff (n, d, m);
+      if (prob <= 0.4)
+         return prob;
+      prob = scanGlaz (n, d, m);
+      if (prob > 0.4 && prob <= 1.0)
+         return prob;
+      return 1.0;
+   }
+}\end{hide}
+\end{code}
+ \begin{tabb} Return $P[S_N (d) \ge m]$, where $S_N (d)$ is the scan
+ statistic\latex{(see \cite{tGLA89a,tGLA01a} and
+   \externalmethod{}{GofStat}{scan}{int,double,int}),}\html{.  It is} defined as
+  \eq
+    S_N (d) = \latex{\sup}\html{sup}_{0\le y\le 1-d} \eta[y,\,y+d],    \latex{\eqlabel{eq:scan}}
+  \endeq
+  where $d$ is a constant in $(0, 1)$,
+  $\eta[y,\,y+d]$ is the number of observations falling inside
+  the interval $[y, y+d]$, from a sample of $N$ i.i.d.\ $U (0,1)$
+  random variables.
+\begin{latexonly}
+  One has (see \cite {tAND95b}),
+  \begin{eqnarray}
+   P[S_N (d) \ge m]
+    &\approx& \left (\frac{m}{d}-N-1\right) b (m)
+              + 2 \sum_{i=m}^{N} b (i)            \eqlabel{DistScan1} \\[6pt]
+    &\approx& 2 (1-\Phi (\theta\kappa)) + \theta\kappa
+              \frac{\exp(-\theta^2\kappa^2 /2)}{d \sqrt{2\pi}}
+                                                 \eqlabel {DistScan2}
+  \end{eqnarray}
+   where $\Phi$ is the standard normal distribution function.
+%  (\ref{eq:cdfnormal}),
+  \begin{eqnarray*}
+   b (i)    &=& \binom{N}{i} d^i (1-d)^{N-i}, \\[4pt]
+   \theta  &=& \sqrt{\frac d{1-d}}, \\[4pt]
+   \kappa  &=& \frac m{d \sqrt{N}} - \sqrt{N}.
+  \end{eqnarray*}
+  For $d \le 1/2$, (\ref{DistScan1}) is exact for $m > N/2$,
+  but only an approximation otherwise.
+  The approximation (\ref{DistScan2}) is good when
+  $N d^2$ is large or when $d > 0.3$ and $N>50$.
+  In other cases, this implementation sometimes use the approximation
+  proposed by Glaz \cite{tGLA89a}.
+  For more information, see \cite {tAND95b,tGLA89a,tWAL87a}.
+\end{latexonly}
+  The approximation returned by this function is generally good when
+  it is close to 0, but is not very reliable when it exceeds, say, 0.4.
+\begin{detailed}  %%%%%%
+  If $m \le (N + 1)d$, the method returns 1.
+  Else, if $Nd \le 10$, it returns the approximation given by
+  Glaz \cite{tGLA89a}.
+  If $Nd > 10$, it computes (\ref{DistScan2}) or (\ref{DistScan1})
+  and returns the result if it does not exceed 0.4, otherwise it computes
+  the approximation from \cite{tGLA89a}, returns it if it is less than 1.0,
+% inside the interval $(0.4, 1.0)$,
+  and returns 1.0 otherwise.
+ \hpierre{Even if it 0.40001 in the first approximation, and 0.3999
+   in the second one?}
+ \hrichard{C'est ce qui est programm\'e. Probablement que dans ce cas,
+   l'approximation est tellement mauvaise que nous avons d\'ecid\'e de
+   retourner 1. On pourrait retourner 0 au lieu??}
+ \hpierre {\c Ca n'a pas de bon sens.  Je ne vois pas pourquoi elle serait
+   ``tellement mauvaise'' dans le cas cit\'e avec 0.3999 et subitement
+   bonne si la seconde approximation retourne 0.4.
+   Il me semble que dans un tel cas on devrait retourner quelque chose
+   aux alentours de 0.4.
+   Et ce qui est g\^enant c'est qu'en retournant 0 ou 1 comme p-valeur,
+   on croira que l'hypoth\`ese nulle est rejet\'ee!  }
+  The relative error can
+  reach 10\%\ when $Nd \le 10$ or when the returned value
+  is less than 0.4.  For $m > Nd$ and $Nd > 10$, a returned value
+  that exceeds $0.4$ should be regarded as unreliable.
+  For $m = 3$, the returned values are totally unreliable.
+  (There may be an error in the original formulae in \cite{tGLA89a}).
+\end{detailed}  %%%%
+  Restrictions: $N \ge 2$  and $d \le 1/2$.\\
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{sample size ($\ge 2$)}
+   \param{d}{length of the test interval ($\in(0,1)$)}
+   \param{m}{scan statistic}
+   \return{the complementary distribution function of the statistic evaluated at \texttt{m}}
+\end{htmlonly}

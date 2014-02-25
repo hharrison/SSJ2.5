@@ -1,0 +1,210 @@
+\defclass{ProcessSimulator}
+
+Defines a special type of simulator capable of managing processes.
+This class extends the \class{Simulator} class
+with methods providing basic facilities used by process simulators
+to suspend, resume, and kill processes.
+It also specifies a mechanism for creating control events used for process synchronization.
+These methods are not called directly by the user, but they
+need to be implemented by any framework managing processes.
+
+A process simulator is usually constructed by the \method{newInstance}{} method which
+selects the appropriate implementation based on system properties.
+It can also be constructed manually  by calling the appropriate constructor explicitly.
+A default, implicit, simulator can also be used for compatibility with older programs.
+This can be done by calling the \method{initDefault}{} method or setting the
+\texttt{ssj.processes} property.
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+
+\begin{hide}
+/*
+ * Class:        ProcessSimulator
+ * Description:  Special type of simulator capable of managing processes
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.simprocs;\begin{hide}
+
+import umontreal.iro.lecuyer.simevents.Event;
+import umontreal.iro.lecuyer.simevents.Simulator;
+\end{hide}
+
+public abstract class ProcessSimulator extends Simulator \begin{hide} {
+
+   protected SimProcess currentProcess;
+   // The process who has control right now (current process).
+   // If no process has control (an event is executing), current = null.
+\end{hide}
+\end{code}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsubsection* {Constructor}
+% \begin{code}
+%    public ProcessSimulator() \begin{hide} {
+%       currentProcess = null;
+%    }\end{hide}
+% \end{code}
+% \begin{tabb} Creates a new Simulator for process-oriented simulation
+% \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public SimProcess currentProcess()\begin{hide} {
+      return currentProcess;
+   }\end{hide}
+\end{code}
+\begin{tabb}  Returns the currently active process for this simulator.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   protected void setCurrentProcess (SimProcess currentProcess) {
+      this.currentProcess = currentProcess;
+   }
+\end{hide}
+
+   public abstract Event createControlEvent (SimProcess process);
+\end{code}
+\begin{tabb} Constructs and returns a new \class{Event} object used for synchronization.
+Such control events are used by process simulator to start a process or to resume it if it is already
+started.
+\end{tabb}
+\begin{code}
+
+   public abstract void delay (SimProcess process, double delay);
+\end{code}
+\begin{tabb} Suspends the execution of \texttt{process} and
+    schedules it to resume its execution in \texttt{delay} units of simulation
+    time.  The state of the process also changes to \texttt{DELAYED}.
+\end{tabb}
+\begin{htmlonly}
+   \param{process}{SimProcess variable to delay.}
+   \param{delay}{delay value, in simulation time units.}
+\end{htmlonly}
+\begin{code}
+
+   public abstract void suspend (SimProcess process);
+\end{code}
+\begin{tabb} Suspends \texttt{process}.
+   If the process is \texttt{EXECUTING}, this suspends its execution.
+   If the process is \texttt{DELAYED}, this cancels its control event.
+   This method also places the process in the \texttt{SUSPENDED} state.
+\end{tabb}
+\begin{htmlonly}
+   \param{process}{SimProcess variable to suspend.}
+\end{htmlonly}
+\begin{code}
+
+   public abstract void kill (SimProcess process);
+\end{code}
+  \begin{tabb}  Terminates the life of \texttt{process} and sets its state to
+   \texttt{DEAD}, after canceling its control event if there is one.
+  \end{tabb}
+\begin{code}
+
+   public abstract void killAll();
+\end{code}
+\begin{tabb}  Kills all currently living (active, delayed, or suspended) processes managed by
+  this simulator.
+\end{tabb}
+\begin{code}
+
+   public static void initDefault() \begin{hide} {
+      if (defaultSimulator instanceof ProcessSimulator) {
+         defaultSimulator.init();
+         return;
+      }
+      if (defaultSimulator instanceof Simulator) {
+         Simulator temp = defaultSimulator;
+         defaultSimulator = newInstance();
+         defaultSimulator.init(temp.getEventList());
+         return;
+      }
+      defaultSimulator = newInstance();
+      defaultSimulator.init();
+   }
+
+   static {
+      if (System.getProperty ("ssj.processes") != null)
+         initDefault();
+   } \end{hide}
+\end{code}
+  \begin{tabb}  Initializes the default simulator to use processes.
+    If the field \texttt{Simulator.defaultSimulator} is already initialized to a class
+    extending \texttt{ProcessSimulator}, this
+    method does nothing.
+    Otherwise, it initializes the field to the return value of
+    \method{newInstance}{}.
+
+   Warning: \textbf{this method must be called before any event or process is
+   constructed},  otherwise the program could return some exceptions like
+   \class{ClassCastException} or \class{NullPointerException}.
+   Alternatively, one can set the \texttt{ssj.processes} system property, which
+   instructs this class to call this method at the time it is loaded.
+
+   The aim of this method is to allow the user to use default process-oriented
+   simulation without giving options to the Java Virtual Machine.
+   See package
+   \texttt{simevents} and class \class{Simulator} for more information about the default simulator.
+  \end{tabb}
+\begin{code}
+
+   public static ProcessSimulator newInstance()\begin{hide} {
+      if(System.getProperty("ssj.processSimulator") != null) {
+         ProcessSimulator myProcessSimulator = null;
+         try{
+            myProcessSimulator = (ProcessSimulator)(Class.forName(System.getProperty("ssj.processSimulator"))).newInstance();
+         }
+         catch (ClassNotFoundException cnfe) { cnfe.printStackTrace(); }
+         catch (IllegalAccessException iae)  { iae.printStackTrace(); }
+         catch (InstantiationException ie)   { ie.printStackTrace(); }
+         return myProcessSimulator;
+      }
+      else if(System.getProperty("ssj.withThread") != null)
+         return new ThreadProcessSimulator();
+      else if (System.getProperty("ssj.withDSOL") != null)
+         return new DSOLProcessSimulator();
+      else
+         return new ThreadProcessSimulator();
+   }\end{hide}
+\end{code}
+\begin{tabb}  Constructs and returns a new process-oriented simulator.
+  This method selects the concrete subclass of process simulator as follows.
+  If the \texttt{ssj.processSimulator} system property is set, this gives the
+  fully qualified class name of the process simulator to be instantiated.
+  The given class must not be abstract, and must have a no-argument constructor.
+  Otherwise, if the \texttt{ssj.withThread} system property is set, this returns a
+  \class{ThreadProcessSimulator}.
+  Otherwise, if the \texttt{ssj.withDSOL} system property is set, this
+  returns a \class{DSOLProcessSimulator} instance.
+  If no system property is set, this returns a \class{ThreadProcessSimulator}.
+
+  For example, if a program is called using \texttt{java -Dssj.withDSOL ...}, it will use DSOL
+  for process simulation.
+\end{tabb}
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

@@ -1,0 +1,323 @@
+\defclass {BernoulliDist}
+
+Extends the class \class{DiscreteDistributionInt} for the \emph{Bernoulli}
+distribution \cite{sLAW00a} with parameter $p$, where $0\le p\le 1$.
+Its mass function is given by
+\begin{htmlonly}
+\[
+\begin{array}{rll}
+f(x) =  & 1 - p,   &   \qquad\mbox { if } x = 0; \\[5pt]
+f(x) =  & p,       &   \qquad\mbox { if } x = 1; \\[5pt]
+f(x) =  & 0,       &   \qquad\mbox { otherwise. }
+\end{array}
+\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+    f(x) = \begin{cases}
+           1 - p, \qquad     & \text{if $x = 0$;} \\
+           p,         & \text{if $x = 1$;} \label{eq:fmass-bernoulli} \\
+           0,         & \text{otherwise.}
+     \end{cases}
+\endeq
+\end{latexonly}
+
+Its distribution function is
+\begin{htmlonly}
+\[
+\begin{array}{rll}
+F(x) =  & 0,       &   \qquad\mbox { if } x < 0; \\[5pt]
+F(x) =  & 1- p,    &   \qquad\mbox { if } 0 \le x < 1; \\[5pt]
+F(x) =  & 1,       &   \qquad\mbox { if } x \ge 1.
+\end{array}
+\]
+\end{htmlonly}
+\begin{latexonly}
+  \eq
+    F(x) = \begin{cases}
+           0,         & \text{if $x < 0$;} \\
+        1 - p, \qquad  & \text{if $0 \le x < 1$;} \label{eq:cdf-bernoulli} \\
+           1,         & \text{if $x \ge 1$.}
+     \end{cases}
+  \endeq
+\end{latexonly}
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BernoulliDist
+ * Description:  Bernoulli distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since        August 2010
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+
+
+public class BernoulliDist extends DiscreteDistributionInt\begin{hide} {
+   private double p;
+   private double q;
+\end{hide}
+\end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}
+
+   public BernoulliDist (double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0,1]");
+      this.p = p;
+      q = 1 - p;
+      supportA = 0;
+      supportB = 1;
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a Bernoulli distribution object.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+   public double prob (int x) {
+      if (1 == x) return p;
+      if (0 == x) return q;
+      return 0.0;
+   }
+
+   public double cdf (int x) {
+      if (x < 0) return 0.0;
+      if (x < 1) return q;
+      return 1.0;
+   }
+
+   public double barF (int x) {
+      if (x > 1) return 0.0;
+      if (x > 0) return p;
+      return 1.0;
+   }
+
+   public int inverseFInt (double u) {
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u not in [0,1]");
+      if (u > q) return 1;
+      return 0;
+   }
+
+   public double getMean() {
+      return BernoulliDist.getMean (p);
+   }
+
+   public double getVariance() {
+      return BernoulliDist.getVariance (p);
+   }
+
+   public double getStandardDeviation() {
+      return BernoulliDist.getStandardDeviation (p);
+   }
+
+\end{hide}
+
+   public static double prob (double p, int x)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0,1]");
+      if (1 == x) return p;
+      if (0 == x) return 1.0 - p;
+      return 0.0;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the Bernoulli probability $f(x)$  with parameter $p$
+(see eq. (\ref{eq:fmass-bernoulli})).
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double p, int x)\begin{hide} {
+      if (p < 0.0 | p > 1.0)
+         throw new IllegalArgumentException ("p not in [0,1]");
+      if (x < 0) return 0.0;
+      if (x < 1) return 1.0 - p;
+      return 1.0;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the Bernoulli distribution function $F(x)$
+ with parameter $p$ (see eq. (\ref{eq:cdf-bernoulli})).
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double p, int x)\begin{hide} {
+      if (p < 0.0 | p > 1.0)
+         throw new IllegalArgumentException ("p not in [0,1]");
+      if (x > 1) return 0.0;
+      if (x > 0) return p;
+      return 1.0;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the complementary Bernoulli distribution
+  function $\bar F(x) = P[X \ge x]$ with parameter $p$.
+ \end{tabb}
+\begin{code}
+
+   public static int inverseF (double p, double u) \begin{hide} {
+      if (p < 0.0 | p > 1.0)
+         throw new IllegalArgumentException ("p not in [0,1]");
+      if (u < 0.0 || u > 1.0)
+         throw new IllegalArgumentException ("u not in [0,1]");
+      if (u > 1.0 - p) return 1;
+      return 0;
+    }\end{hide}
+\end{code}
+\begin{tabb}  Returns the inverse of the Bernoulli distribution function
+ with parameter $p$ at $u$.
+\end{tabb}
+\begin{code}
+
+   public static double[] getMLE (int[] x, int m)\begin{hide} {
+      if (m < 2)
+         throw new UnsupportedOperationException(" m < 2");
+
+      // compute the empirical mean
+      double sum = 0.0;
+      for (int i = 0; i < m; i++)
+         sum += x[i];
+      sum /= (double) m;
+
+      double param[] = new double[1];
+      param[0] = sum;
+      return param;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $p$ of the Bernoulli distribution
+   using the maximum likelihood method, from the $m$ observations
+   $x[i]$, $i = 0, 1,\ldots, m-1$. The estimate is returned in a one-element
+    array: [$p$].
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{m}{the number of observations used to evaluate parameters}
+   \return{returns the parameter [$\hat{p}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static BernoulliDist getInstanceFromMLE (int[] x, int m)\begin{hide} {
+      double param[] = new double[1];
+      param = getMLE (x, m);
+      return new BernoulliDist (param[0]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a Bernoulli distribution with parameter
+   ${p}$ estimated using the maximum likelihood method, from
+   the $m$ observations $x[i]$,  $i = 0, 1, \ldots, m-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to estimate the parameters}
+   \param{m}{the number of observations to use to estimate the parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+
+      return (p);
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the mean $E[X] = p$ of the Bernoulli distribution with
+   parameter $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the Bernoulli distribution $E[X] = np$}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double p)\begin{hide} {
+      if (p < 0.0 || p > 1.0)
+         throw new IllegalArgumentException ("p not in [0, 1]");
+      return (p * (1.0 - p));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the variance $\mbox{Var}[X] = p(1 - p)$ of the Bernoulli
+   distribution with parameter $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the Bernoulli distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double p)\begin{hide} {
+      return Math.sqrt (BernoulliDist.getVariance (p));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes the standard deviation of the Bernoulli distribution
+   with parameter $p$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the Bernoulli distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getP()\begin{hide} {
+      return p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the parameter $p$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {p};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns an array that contains the parameter $p$ of the current
+   distribution: [$p$].
+\end{tabb}
+\begin{code}
+
+   public void setParams (double p)\begin{hide} {
+      this.p = p;
+      q = 1 - p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Resets the parameter to this new value.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : p = " + p;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

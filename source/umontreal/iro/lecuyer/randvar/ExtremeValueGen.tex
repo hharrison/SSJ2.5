@@ -1,0 +1,135 @@
+\defclass {ExtremeValueGen}
+
+\textbf{This class has been replaced by \class{GumbelGen}}.
+
+This class implements random variate generators for the \emph{Gumbel}
+(or {\em extreme value\/}) distribution. Its density is
+\eq
+    f(x) = \lambda e^{-e^{-\lambda(x - \alpha)}-\lambda(x-\alpha)}
+                                  \eqlabel{eq:fextremevalue}
+\endeq
+where $\lambda>0$.
+
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        ExtremeValueGen
+ * Description:  random variate generators for the Gumbel distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+@Deprecated
+public class ExtremeValueGen extends RandomVariateGen \begin{hide} {
+   protected double alpha = -1.0;
+   protected double lambda = -1.0;
+
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public ExtremeValueGen (RandomStream s, double alpha, double lambda) \begin{hide} {
+      super (s, new ExtremeValueDist(alpha, lambda));
+      setParams (alpha, lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates an \emph{extreme value} random variate generator with
+ parameters $\alpha =$ \texttt{alpha} and $\lambda $ = \texttt{lambda},
+ using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public ExtremeValueGen (RandomStream s) \begin{hide} {
+      this (s, 0.0, 1.0);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates an \emph{extreme value} random variate generator with
+ parameters $\alpha = 0$ and $\lambda =1$, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public ExtremeValueGen (RandomStream s, ExtremeValueDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getLambda());
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new generator object for distribution \texttt{dist} and
+   stream \texttt{s}.
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha,
+                                    double lambda) \begin{hide} {
+      return ExtremeValueDist.inverseF (alpha, lambda, s.nextDouble());
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Uses inversion to generate a new variate from the extreme value
+  distribution with parameters $\alpha = $~\texttt{alpha} and $\lambda =
+   $~\texttt{lambda}, using stream \texttt{s}.
+ \end{tabb}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return alpha;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\alpha$ of this object.
+\end{tabb}
+\begin{code}
+
+   public double getLambda()\begin{hide} {
+      return lambda;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $\lambda$ of this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double alpha, double lambda) {
+      if (lambda <= 0.0)
+         throw new IllegalArgumentException ("lambda <= 0");
+      this.lambda = lambda;
+      this.alpha = alpha;
+   }
+\end{code}
+\begin{tabb} Sets the parameter $\alpha$ and $\lambda$ of this object.
+\end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

@@ -1,0 +1,274 @@
+\defclass{MultinormalGen}
+
+Extends \class{RandomMultivariateGen} for a
+\emph{multivariate normal} (or {\em multinormal\/}) distribution \cite{tJOH72a}.
+The $d$-dimensional multivariate normal distribution
+with mean vector $\boldmu\in\RR^d$ and (symmetric positive-definite)
+covariance matrix $\boldSigma$, denoted $N(\boldmu, \boldSigma)$, has density
+\begin{latexonly}
+\[
+  f(\bX)=\frac1{\sqrt{(2\pi)^d\det(\boldSigma)}}
+    \exp\left(-(\bX - \boldmu)^{\!\tr}\boldSigma^{-1}(\bX -
+  \boldmu)/2\right),
+\]
+\end{latexonly}
+\begin{htmlonly}
+\[
+  f(\bX)=
+    \exp\left(-(\bX - \boldmu)^{\!\tr}\boldSigma^{-1}(\bX -
+  \boldmu)/2\right) / \sqrt{(2\pi)^d\;\det{\boldSigma}},
+\]
+\end{htmlonly}
+for all $\bX\in\RR^d$, and  $\bX^{\tr}$ is the transpose vector of $\bX$.
+If $\bZ \sim N(\bzero, \bI)$ where $\bI$ is the
+identity matrix, $\bZ$ is said to have the {\em standard multinormal\/}
+ distribution.
+
+For the special case $d=2$, if the random vector $\bX = (X_1, X_2)^\tr$
+has a bivariate normal distribution, then it has mean
+$\boldmu = (\mu_1, \mu_2)^\tr$, and covariance matrix
+\[
+\boldSigma =
+\left[\begin{array}{cc}
+\sigma_1^2 & \rho\sigma_1\sigma_2 \\
+\rho\sigma_1\sigma_2 &\sigma_2^2
+\end{array}\right]
+\]
+if and only if $\Var[X_1] = \sigma_1^2$, $\Var[X_2] = \sigma_2^2$, and the
+linear correlation between $X_1$ and $X_2$ is $\rho$, where $\sigma_1 > 0$,
+ $\sigma_2 > 0$, and $-1 \le \rho \le 1$.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        MultinormalGen
+ * Description:  multivariate normal random variable generator
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvarmulti;
+\begin{hide}
+import umontreal.iro.lecuyer.probdist.NormalDist;
+import umontreal.iro.lecuyer.randvar.NormalGen;
+import umontreal.iro.lecuyer.rng.RandomStream;
+import cern.colt.matrix.DoubleMatrix2D;
+import cern.colt.matrix.linalg.CholeskyDecomposition;
+import cern.colt.matrix.impl.DenseDoubleMatrix2D;
+\end{hide}
+
+public class MultinormalGen extends RandomMultivariateGen\begin{hide} {
+   protected double[] mu;
+   protected DoubleMatrix2D sigma;
+   protected DoubleMatrix2D sqrtSigma;
+   protected double[] temp;
+   protected static final double MYINF = 37.54;
+
+
+   private void initMN (NormalGen gen1, double[] mu, int d) {
+      if (gen1 == null)
+         throw new NullPointerException ("gen1 is null");
+
+      NormalDist dist = (NormalDist) gen1.getDistribution();
+      if (dist.getMu() != 0.0)
+         throw new IllegalArgumentException ("mu != 0");
+      if (dist.getSigma() != 1.0)
+         throw new IllegalArgumentException ("sigma != 1");
+      this.gen1 = gen1;
+      dist = null;
+
+      if (mu == null) {    // d is the dimension
+         dimension = d;
+         this.mu = new double[d];
+      } else {      // d is unused
+         dimension = mu.length;
+         this.mu = (double[])mu.clone();
+      }
+      temp = new double[dimension];
+     }\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public MultinormalGen (NormalGen gen1, int d)\begin{hide} {
+      initMN (gen1, null, d);
+      sigma = new DenseDoubleMatrix2D (d, d);
+      sqrtSigma = new DenseDoubleMatrix2D (d, d);
+      for (int i = 0; i < d; i++) {
+         sigma.setQuick (i, i, 1.0);
+         sqrtSigma.setQuick (i, i, 1.0);
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb} Constructs a generator with the standard multinormal distribution
+  (with $\bmu=\bzero$ and $\bSigma = \bI$) in $d$ dimensions.
+  Each vector $\bZ$ will be generated via $d$ successive calls to
+  \texttt{gen1}, which must be a \emph{standard normal} generator.
+\end{tabb}
+\begin{htmlonly}
+   \param{gen1}{the one-dimensional generator}
+   \param{d}{the dimension of the generated vectors}
+   \exception{IllegalArgumentException}{if the one-dimensional normal
+    generator uses a normal distribution with $\mu$ not equal to 0, or
+    $\sigma$ not equal to 1.}
+   \exception{IllegalArgumentException}{if \texttt{d}
+    is negative.}
+   \exception{NullPointerException}{if \texttt{gen1} is \texttt{null}.}
+\end{htmlonly}
+\begin{code}
+
+   protected MultinormalGen (NormalGen gen1, double[] mu,
+                             DoubleMatrix2D sigma)\begin{hide} {
+      initMN (gen1, mu, -1);
+      this.sigma = sigma.copy();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a multinormal generator with mean vector
+ \texttt{mu} and covariance matrix \texttt{sigma}.
+ The mean vector must have the same length as the dimensions
+ of the covariance matrix, which must be symmetric and positive-definite.
+ If any of the above conditions is violated, an exception is thrown.
+ The vector $\bZ$ is generated by calling $d$ times the generator \texttt{gen1},
+ which must be \emph{standard normal}.
+\end{tabb}
+\begin{htmlonly}
+   \param{gen1}{the one-dimensional generator}
+   \param{mu}{the mean vector.}
+   \param{sigma}{the covariance matrix.}
+   \exception{NullPointerException}{if any argument is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the length of the mean
+    vector is incompatible with the dimensions of the covariance matrix.}
+\end{htmlonly}
+\begin{code}
+
+   protected MultinormalGen (NormalGen gen1, double[] mu, double[][] sigma) \begin{hide} {
+      initMN (gen1, mu, -1);
+      this.sigma = new DenseDoubleMatrix2D (sigma);
+   }\end{hide}
+\end{code}
+\begin{tabb}   Equivalent to
+ \method{MultinormalGen}{(NormalGen, double[], DoubleMatrix2D)} \texttt{(gen1, mu, new DenseDoubleMatrix2D (sigma))}.
+\end{tabb}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+   public double[] getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the mean vector used by this generator.
+\end{tabb}
+\begin{htmlonly}
+   \return{the current mean vector.}
+\end{htmlonly}
+\begin{code}
+
+   public double getMu (int i)\begin{hide} {
+      return mu[i];
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $i$-th component of the mean vector
+ for this generator.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the index of the required component.}
+   \return{the value of $\mu_i$.}
+   \exception{ArrayIndexOutOfBoundsException}{if
+    \texttt{i} is negative or greater than or equal to \method{getDimension}{()}.}
+\end{htmlonly}
+\begin{code}
+
+   public void setMu (double[] mu)\begin{hide} {
+      if (mu.length != this.mu.length)
+         throw new IllegalArgumentException
+            ("Incompatible length of mean vector");
+      this.mu = mu;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Sets the mean vector to \texttt{mu}.
+\end{tabb}
+\begin{htmlonly}
+   \param{mu}{the new mean vector.}
+   \exception{NullPointerException}{if \texttt{mu} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the length of \texttt{mu}
+    does not correspond to \method{getDimension}{()}.}
+\end{htmlonly}
+\begin{code}
+
+   public void setMu (int i, double mui)\begin{hide} {
+      mu[i] = mui;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Sets the $i$-th component of the mean vector to \texttt{mui}.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the index of the modified component.}
+   \param{mui}{the new value of $\mu_i$.}
+   \exception{ArrayIndexOutOfBoundsException}{if \texttt{i}
+    is negative or greater than or equal to \method{getDimension}{()}.}
+\end{htmlonly}
+\begin{code}
+
+   public DoubleMatrix2D getSigma()\begin{hide} {
+      return sigma.copy();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the covariance matrix $\boldSigma$
+ used by this generator.
+\end{tabb}
+\begin{htmlonly}
+   \return{the used covariance matrix.}
+\end{htmlonly}
+\begin{code}
+
+   public void nextPoint (double[] p)\begin{hide} {
+      int n = dimension;
+      for (int i = 0; i < n; i++) {
+         temp[i] = gen1.nextDouble();
+         if (temp[i] == Double.NEGATIVE_INFINITY)
+            temp[i] = -MYINF;
+         if (temp[i] == Double.POSITIVE_INFINITY)
+            temp[i] = MYINF;
+      }
+      for (int i = 0; i < n; i++) {
+         p[i] = 0;
+         for (int c = 0; c < n; c++)
+            p[i] += sqrtSigma.getQuick (i, c)*temp[c];
+         p[i] += mu[i];
+      }
+   }\end{hide}
+\end{code}
+\begin{tabb}   Generates a point from this multinormal distribution.
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{the array to be filled with the generated point}
+\end{htmlonly}
+
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

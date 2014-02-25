@@ -1,0 +1,134 @@
+\defclass{RandomStart}
+
+This class implements a
+\externalclass{umontreal.iro.lecuyer.hups}{PointSetRandomization}
+that randomizes a sequence with a random starting point.
+The point set must be an instance of 
+\externalclass{umontreal.iro.lecuyer.hups}{HaltonSequence} or an
+\externalclass{java.lang}{IllegalArgumentException} is thrown.
+For now, only the Halton sequence is allowed, but there may be others
+later.
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        RandomStart
+ * Description:  Randomizes a sequence with a random starting point
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;
+\begin{hide}
+ import umontreal.iro.lecuyer.rng.RandomStream;
+ import java.lang.IllegalArgumentException;
+\end{hide}
+
+public class RandomStart implements PointSetRandomization \begin{hide} {
+
+   protected RandomStream stream;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+\begin{code}
+
+   public RandomStart() \begin{hide} {
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+   Empty constructor.
+\end{tabb}
+\begin{code}
+
+   public RandomStart (RandomStream stream) \begin{hide} {
+       this.stream = stream;
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+   Sets internal variable \texttt{stream} to the given
+   \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{stream to use in the randomization}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+\begin{code}
+
+   public void randomize (PointSet p) \begin{hide} {
+      if (p instanceof HaltonSequence) {
+         double[] x0 = new double[p.getDimension()];
+         stream.nextArrayOfDouble(x0, 0, x0.length);
+         ((HaltonSequence)p).setStart (x0);
+      } else {
+         throw new IllegalArgumentException("RandomStart" +
+                     " can only randomize a HaltonSequence");
+      }
+   }
+   \end{hide}
+\end{code}
+\begin{tabb}
+   This method calls
+   \externalmethod{umontreal.iro.lecuyer.hups}{HaltonSequence}{init}{double[]}.
+   If \texttt{p} is not a
+   \externalclass{umontreal.iro.lecuyer.hups}{HaltonSequence}, an
+\externalclass{java.lang}{IllegalArgumentException} is thrown.
+\end{tabb}
+\begin{htmlonly}
+   \param{p}{Point set to randomize}
+\end{htmlonly}
+\begin{code}
+
+   public void setStream (RandomStream stream) \begin{hide} {
+      this.stream = stream;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Sets the internal
+   \externalclass{umontreal.iro.lecuyer.rng}{RandomStream} to
+   \texttt{stream}.
+\end{tabb}
+\begin{htmlonly}
+   \param{stream}{stream to use in the randomization}
+\end{htmlonly}
+\begin{code}
+
+   public RandomStream getStream() \begin{hide} {
+      return stream;
+   } \end{hide}
+\end{code}
+\begin{tabb}
+   Returns the internal
+   \externalclass{umontreal.iro.lecuyer.rng}{RandomStream}.
+\end{tabb}
+\begin{htmlonly}
+   \return{stream used in the randomization}
+\end{htmlonly}
+\begin{code}\begin{hide}
+}
+\end{hide}\end{code}

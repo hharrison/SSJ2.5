@@ -1,0 +1,284 @@
+\defclass {DigitalNetBase2FromFile}
+
+This class allows us to read the parameters defining a digital net 
+ {\em in base 2\/} either from a file, or from a URL address on the
+ World Wide Web. See the documentation in 
+\externalclass{umontreal.iro.lecuyer.hups}{DigitalNetFromFile}.
+The parameters used in building the net are those defined in class
+\externalclass{umontreal.iro.lecuyer.hups}{DigitalNetBase2}.
+ The format of the data files must be the following (where $B$ is any $C_j$):
+\begin{htmlonly} (see the format in \texttt{guidehups.pdf})\end{htmlonly}
+
+\begin{figure}
+\begin{center}
+\tt
+\fbox {
+\begin {tabular}{ll}
+ \multicolumn{2}{l}{// Any number of comment lines starting with //} \\
+     $2$      & //    Base  \\
+     $k$      & //    Number of columns   \\
+     $r$      & //    Number of rows  \\
+     $n$      & //    Number of points = $2^k$  \\
+     $s$      & //    Dimension of points \\
+\\
+ \multicolumn{2}{l}{// dim = 1} \\
+  $a_{1}$ &  //  $= 2^{30}B_{11} + 2^{29}B_{21} + \cdots + 2^{31 - r}B_{r1}$ \\
+  $a_{2}$ &  //  $= 2^{30}B_{12} + 2^{29}B_{22} + \cdots + 2^{31 - r}B_{r2}$ \\
+  $\vdots$ & \\
+  $a_{k}$ & \\
+\\
+ \multicolumn{2}{l}{// dim = 2} \\
+   $\vdots$ & \\
+\\
+ \multicolumn{2}{l}{// dim = $s$} \\
+  $a_{1}$ &  \\
+  $a_{2}$ &  \\
+  $\vdots$ &\\
+  $a_{k}$ & \\
+\end {tabular}
+}
+\end{center}
+\end{figure}
+
+ For each dimension $j$, there must be a $k$-vector of 32-bit integers
+ (the $a_i$) corresponding to the columns of $\mathbf{C}_j$. The 
+  correspondance is such that integer
+  $a_i = 2^{30}(\mathbf{C}_j)_{1i} + 2^{29}(\mathbf{C}_j)_{2i} +
+   \cdots +    2^{31 - r}(\mathbf{C}_j)_{ri}$.
+
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        DigitalNetBase2FromFile
+ * Description:  read the parameters defining a digital net in base 2
+                 from a file or from a URL address
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;\begin{hide}
+
+import java.io.*;
+import java.net.URL;
+import java.net.MalformedURLException;
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+public class DigitalNetBase2FromFile extends DigitalNetBase2 \begin{hide} {
+   private String filename;
+
+   // s is the effective dimension if > 0, otherwise it is dim
+   private void readData (Reader re, int r1, int s1)
+       throws IOException, NumberFormatException
+   {
+      try {
+         StreamTokenizer st = new StreamTokenizer (re);
+         if (st == null) return;
+         st.eolIsSignificant (false);
+         st.slashSlashComments (true);
+
+         int i = st.nextToken ();
+         if (i != StreamTokenizer.TT_NUMBER)
+            throw new NumberFormatException();
+         b = (int) st.nval;
+         st.nextToken ();   numCols = (int) st.nval;
+         st.nextToken ();   numRows = (int) st.nval;
+         st.nextToken ();   numPoints = (int) st.nval;
+         st.nextToken ();   dim = (int) st.nval;
+         if (dim < 1) {
+            System.err.println (PrintfFormat.NEWLINE + 
+                "DigitalNetBase2FromFile:   dimension dim <= 0");
+            throw new IllegalArgumentException ("dimension dim <= 0");
+         }
+         if (r1 > numRows) 
+            throw new IllegalArgumentException (
+            "DigitalNetBase2FromFile:   One must have   r1 <= Max num rows");
+         if (s1 > dim) {
+            throw new IllegalArgumentException ("s1 is too large");
+         }
+         if (s1 > 0)
+            dim = s1;
+         if (r1 > 0)
+            numRows = r1;
+
+         if (b != 2) {
+            System.err.println (
+              "***** DigitalNetBase2FromFile:    only base 2 allowed");
+            throw new IllegalArgumentException ("only base 2 allowed");
+         }
+         genMat = new int[dim * numCols];
+         for (i = 0; i < dim; i++)
+            for (int c = 0; c < numCols; c++) {
+                st.nextToken ();
+                genMat[i*numCols + c] = (int) st.nval;
+            }
+
+      } catch (NumberFormatException e) {
+         System.err.println (
+            "   DigitalNetBase2FromFile:   not a number  " + e);
+         throw e;
+      }
+   }
+
+
+    private void maskRows (int r, int w) {
+       // Keep only the r most significant bits and set the others to 0.
+       int mask = (int) ((1L << r) - 1);
+       mask <<= MAXBITS - r;
+       for (int i = 0; i < dim; i++)
+          for (int c = 0; c < numCols; c++) {
+              genMat[i*numCols + c] &= mask;
+              genMat[i*numCols + c] >>= MAXBITS - w;
+          }
+    }
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code} 
+
+   public DigitalNetBase2FromFile (String filename, int r1, int w, int s1) 
+         throws IOException, MalformedURLException\begin{hide} 
+   {
+      super ();
+      if (w < r1 || w > MAXBITS) 
+         throw new IllegalArgumentException (" Must have numRows <= w <= 31");
+
+      BufferedReader input;
+      if (filename.startsWith("http:") || filename.startsWith("ftp:"))
+         input = DigitalNetFromFile.openURL(filename);
+      else
+         input = DigitalNetFromFile.openFile(filename);
+
+      try {
+         readData (input, r1, s1);
+      } catch (NumberFormatException e) {
+         System.err.println (
+            "   DigitalNetBase2FromFile:   cannot read from   " + filename);
+         throw e;
+
+      }  catch (IOException e) {
+         System.err.println (
+            "   DigitalNetBase2FromFile:  cannot read from  " + filename);
+         throw e;
+      }
+      input.close();
+      maskRows (numRows, w);
+      outDigits = w;
+      if (numCols >= MAXBITS) 
+         throw new IllegalArgumentException (" Must have numCols < 31");
+
+      this.filename = filename;
+      int x = (1 << numCols);
+      if (x != numPoints) {
+         System.out.println ("numPoints != 2^k");
+         throw new IllegalArgumentException ("numPoints != 2^k");
+      }
+      // Compute the normalization factors.  
+      normFactor = 1.0 / ((double) (1L << (outDigits)));
+
+  }\end{hide}
+\end{code} 
+\begin{tabb}
+    Constructs a digital net in base 2 after reading its parameters from file
+    {\texttt{filename}}. See the documentation in
+  \externalclass{umontreal.iro.lecuyer.hups}{DigitalNetFromFile}.
+   Parameter \texttt{w} gives the number of bits of resolution, \texttt{r1} is
+   the number of rows, and \texttt{s1} is the dimension.
+   Restrictions: \texttt{s1} must be less than the maximal dimension, and
+   \texttt{r1} less than the maximal number of rows in the data file.
+   Also \texttt{w} $\ge$ \texttt{r1}.
+\end{tabb}
+\begin{htmlonly}
+   \param{filename}{Name of the file to be read}
+   \param{r1}{Number of rows for the generating matrices}
+   \param{w}{Number of bits of resolution}
+   \param{s1}{Number of dimensions}
+\end{htmlonly}
+\begin{code} 
+
+   public DigitalNetBase2FromFile (String filename, int s1) 
+        throws IOException, MalformedURLException\begin{hide}
+   {
+       this (filename, -1, 31, s1);
+   }\end{hide}
+\end{code} 
+\begin{tabb}
+   Same as \method{DigitalNetBase2FromFile}{}\texttt{(filename, r, 31, s1)} where
+   \texttt{s1} is the dimension and \texttt{r} is given in data file \texttt{filename}.
+\end{tabb}
+\begin{htmlonly}
+   \param{filename}{Name of the file to be read}
+   \param{s1}{Number of dimensions}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}\begin{hide} 
+
+   public String toString() {
+      StringBuffer sb = new StringBuffer ("File:  " + filename  +
+         PrintfFormat.NEWLINE);
+      sb.append (super.toString());
+      return sb.toString();
+   }\end{hide}
+
+   public String toStringDetailed() \begin{hide} {
+      StringBuffer sb = new StringBuffer (toString() + PrintfFormat.NEWLINE);
+      sb.append ("dim = " + dim + PrintfFormat.NEWLINE);
+      for (int i = 0; i < dim; i++) {
+         sb.append (PrintfFormat.NEWLINE + "// dim = " + (1 + i) +
+              PrintfFormat.NEWLINE);
+         for (int c = 0; c < numCols; c++)
+            sb.append  (genMat[i*numCols + c]  + PrintfFormat.NEWLINE);
+      }
+      sb.append ("--------------------------------" + PrintfFormat.NEWLINE);
+      return sb.toString ();
+   }\end{hide}
+\end{code} 
+\begin{tabb}
+    Writes the parameters and the generating matrices of this digital net
+    to a string.
+    This is useful to check that the file parameters have been read correctly.
+\end{tabb}
+\begin{code}
+
+   public static String listDir (String dirname) throws IOException \begin{hide} {
+      return DigitalNetFromFile.listDir(dirname);
+   }\end{hide}
+\end{code} 
+\begin{tabb}
+  Lists all files (or directories) in directory \texttt{dirname}. Only relative
+  pathnames should be used. The files are  parameter files used in defining
+  digital nets.  For example, calling \texttt{listDir("")} will give the list
+  of the main data directory in SSJ, while calling \texttt{listDir("Edel/OOA2")}
+  will give the list of all files in directory \texttt{Edel/OOA2}. 
+ \end{tabb}
+\begin{code}
+\begin{hide} 
+}
+\end{hide}
+\end{code}

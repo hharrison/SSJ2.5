@@ -1,0 +1,25 @@
+\begin{thebibliography}{1}
+
+\bibitem{sFIS01a}
+G.~S. Fishman.
+\newblock {\em Discrete Event Simulation: Modeling, Programming, and Analysis}.
+\newblock Springer Series in Operations Research. Springer-Verlag, New York,
+  NY, 2001.
+
+\bibitem{sKIN85a}
+J.~H. Kingston.
+\newblock Analysis of tree algorithms for the simulation event lists.
+\newblock {\em Acta Informatica}, 22:15--33, 1985.
+
+\bibitem{sKIN86a}
+J.~H. Kingston.
+\newblock Analysis of {H}enriksen's algorithm for the simulation event set.
+\newblock {\em SIAM Journal on Computing}, 15:887--902, 1986.
+
+\bibitem{iSLE85a}
+D.~D. Sleator and R.~E. Tarjan.
+\newblock Self-adjusting binary search trees.
+\newblock {\em Journal of the Association for Computing Machinery},
+  32(3):652--686, 1985.
+
+\end{thebibliography}

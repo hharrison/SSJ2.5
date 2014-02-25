@@ -1,0 +1,332 @@
+\defclass {BoxChart}
+
+% Extends \externalclass{umontreal.iro.lecuyer.charts}{CategoryChart}.
+This class provides tools to create and manage box-and-whisker  plots.
+Each \class{BoxChart} object is linked with a
+\externalclass{umontreal.iro.lecuyer.charts}{BoxSeriesCollection} data set.
+% It's advised to use more than 3 series.
+
+A boxplot is a convenient way of viewing sets of numerical data through their
+summaries: the smallest observation, first quartile ($Q_1 = x_{.25}$), median
+ ($Q_2 = x_{.5}$), third quartile ($Q_3 = x_{.75}$), and largest observation.
+Sometimes, the mean and the outliers are also plotted.
+
+In the charts created by this class, the box has its lower limit at $Q_1$
+and its upper limit at $Q_3$. The median is indicated by the line inside the box,
+while the mean is at the center of the filled circle inside the box.
+Define the interquartile range as ($Q_3 - Q_1$).
+Any data observation which is more than $1.5(Q_3 - Q_1)$ lower than the first
+quartile or $1.5(Q_3 - Q_1)$ higher than the third quartile is considered an
+outlier. The smallest and the largest values that are not outliers are connected
+to the box with a vertical line or "whisker" which is ended by a horizontal line.
+Outliers are indicated by hollow circles outside the whiskers. Triangles
+indicate the existence of very far outliers.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BoxChart
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   org.jfree.chart.axis.NumberAxis;
+import   org.jfree.chart.ChartFactory;
+import   org.jfree.chart.ChartPanel;
+import   org.jfree.chart.plot.CategoryPlot;
+import   org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
+import   org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
+
+import   java.util.Locale;
+import   java.util.Formatter;
+import   javax.swing.JFrame;
+\end{hide}
+
+
+public class BoxChart extends CategoryChart \begin{hide} {
+
+   protected void init (String title, String XLabel, String YLabel) {
+      // create the chart...
+      chart = ChartFactory.createBoxAndWhiskerChart (
+         title,                         // chart title
+         XLabel,                        // x axis label
+         YLabel,                        // y axis label
+         (DefaultBoxAndWhiskerCategoryDataset)dataset.getSeriesCollection(), // data
+         true                          // include legend
+      );
+
+      ((CategoryPlot)chart.getPlot()).setRenderer(dataset.getRenderer());
+      // Initialize axis variables
+      initAxis();
+   }
+
+   protected void initAxis(){
+      YAxis = new Axis((NumberAxis)((CategoryPlot) chart.getPlot()).getRangeAxis(),
+                        Axis.ORIENTATION_VERTICAL);
+      setAutoRange();
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+
+   public BoxChart() \begin{hide} {
+      super();
+      dataset = new BoxSeriesCollection();
+      init (null, null, null);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Initializes a new \texttt{BoxChart} instance with an empty data set.
+\end{tabb}
+\begin{code}
+
+   public BoxChart (String title, String XLabel, String YLabel,
+                    double[] data, int numPoints) \begin{hide} {
+      super();
+      dataset = new BoxSeriesCollection(data, numPoints);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Initializes a new \texttt{BoxChart} instance with data \texttt{data}.
+\texttt{title} is a title, \texttt{XLabel} is a short description of the
+$x$-axis, and \texttt{YLabel} a short description of the $y$-axis.
+The input parameter \texttt{data} represents a set of plotting data.
+ Only \emph{the first} \texttt{numPoints} of \texttt{data} will
+  be considered for the plot.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{point sets.}
+   \param{numPoints}{Number of points to plot}
+\end{htmlonly}
+\begin{code}
+
+   public BoxChart (String title, String XLabel, String YLabel,
+                    double[]... data) \begin{hide} {
+      super();
+      dataset = new BoxSeriesCollection(data);
+      init (title, XLabel, YLabel);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+Initializes a new \texttt{BoxChart} instance with data \texttt{data}.
+\texttt{title} sets a title, \texttt{XLabel} is a short description of the
+$x$-axis, and \texttt{YLabel} is a short description of the $y$-axis.
+The input parameter \texttt{data} represents a set of plotting data.
+\end{tabb}
+\begin{htmlonly}
+   \param{title}{chart title.}
+   \param{XLabel}{Label on $x$-axis.}
+   \param{YLabel}{Label on $y$-axis.}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public int add (double[] data) \begin{hide} {
+      return add(data, data.length);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{data} represents
+   a set of plotting data.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{point sets.}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{BoxSeriesCollection} object.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (double[] data, int numPoints) \begin{hide} {
+      int seriesIndex = getSeriesCollection().add(data, numPoints);
+      initAxis();
+      return seriesIndex;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{data} represents
+   a set of plotting data. Only \emph{the first} \texttt{numPoints} of
+   \texttt{data} will be taken into account for the new series.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{point set.}
+   \param{numPoints}{number of points to add.}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{BoxSeriesCollection} object.}
+\end{htmlonly}
+\begin{code}
+
+   public BoxSeriesCollection getSeriesCollection() \begin{hide} {
+      return (BoxSeriesCollection)dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the chart's dataset.
+\end{tabb}
+\begin{htmlonly}
+   \return{the chart's dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setSeriesCollection (BoxSeriesCollection dataset) \begin{hide} {
+      this.dataset = dataset;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Links a new dataset to the current chart.
+\end{tabb}
+\begin{htmlonly}
+   \param{dataset}{new dataset.}
+\end{htmlonly}
+\begin{code}
+
+   public void setFillBox (boolean fill) \begin{hide} {
+      ((BoxAndWhiskerRenderer)dataset.getRenderer()).setFillBox(fill);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Sets \texttt{fill} to \texttt{true}, if the boxes are to be filled.
+\end{tabb}
+\begin{htmlonly}
+   \param{fill}{true if the boxes are filled}
+\end{htmlonly}
+\begin{code}
+
+   public JFrame view (int width, int height) \begin{hide} {
+      JFrame myFrame;
+      if(chart.getTitle() != null)
+         myFrame = new JFrame ("BoxChart from SSJ : " + chart.getTitle().getText());
+      else
+         myFrame = new JFrame ("BoxChart from SSJ");
+      ChartPanel chartPanel = new ChartPanel (chart);
+      chartPanel.setPreferredSize (new java.awt.Dimension(width, height));
+      myFrame.setContentPane (chartPanel);
+      myFrame.pack ();
+      myFrame.setDefaultCloseOperation (JFrame.DISPOSE_ON_CLOSE);
+      myFrame.setLocationRelativeTo (null);
+      myFrame.setVisible (true);
+      return myFrame;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Displays chart on the screen using Swing.
+   This method creates an application containing a chart panel displaying
+   the chart.  The created frame is positioned on-screen, and displayed before
+   it is returned. The circle represents the mean, the dark line inside the box
+   is the median, the box limits are the first and third quartiles,
+   the lower whisker (the lower line outside the box) is the first decile,
+   and the upper whisker is the ninth decile. The outliers, if any, are
+   represented by empty circles, or arrows if outside the range bounds.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{frame width.}
+   \param{height}{frame height.}
+   \return{frame containing the chart.};
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Latex-specific method}
+
+\begin{code}
+
+  public String toLatex (double width, double height) \begin{hide} {
+  throw new UnsupportedOperationException(" NOT implemented yet");
+/*
+      double yunit;
+      double[] save = new double[4];
+
+      if(dataset.getSeriesCollection().getColumnCount() == 0)
+         throw new IllegalArgumentException("Empty chart");
+
+      //Calcul des parametres d'echelle et de decalage
+      double YScale = computeYScale(YAxis.getTwinAxisPosition());
+
+
+      yunit = height / ( (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition()) * YScale) - (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition()) * YScale) );
+      //taille d'une unite en y et en cm dans l'objet "tikzpicture"
+
+      Formatter formatter = new Formatter(Locale.US);
+
+      // Entete du document
+      formatter.format("\\documentclass[12pt]{article}%n%n");
+      formatter.format("\\usepackage{tikz}%n\\usetikzlibrary{plotmarks}%n\\begin{document}%n%n");
+      if(chart.getTitle() != null)
+         formatter.format("%% PGF/TikZ picture from SSJ : %s%n", chart.getTitle().getText());
+      else
+         formatter.format("%% PGF/TikZ picture from SSJ %n");
+      formatter.format("%%  YScale = %s, YShift = %s%n", YScale,  YAxis.getTwinAxisPosition());
+      formatter.format("%%        and thisFileYValue = (originalSeriesYValue+YShift)*YScale%n%n");
+      if (chart.getTitle() != null)
+         formatter.format("\\begin{figure}%n");
+      formatter.format("\\begin{center}%n");
+      formatter.format("\\begin{tikzpicture}[y=%scm]%n", yunit);
+      formatter.format("\\footnotesize%n");
+      if(grid)
+         formatter.format("\\draw[color=lightgray] (%s) grid[ystep=%s] (%s);%n",
+            (Math.min(YAxis.getAxis().getRange().getLowerBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale,
+            ystepGrid*YScale,
+            (Math.max(YAxis.getAxis().getRange().getUpperBound(), YAxis.getTwinAxisPosition())-YAxis.getTwinAxisPosition()) * YScale );
+      formatter.format("%s", YAxis.toLatex(YScale) );
+
+      formatter.format("%s", dataset.toLatex(YScale, YAxis.getTwinAxisPosition(),      YAxis.getAxis().getLowerBound(), YAxis.getAxis().getUpperBound()));
+
+      formatter.format("\\end{tikzpicture}%n");
+      formatter.format("\\end{center}%n");
+      if (chart.getTitle() != null) {
+         formatter.format("\\caption{");
+         formatter.format(chart.getTitle().getText());
+         formatter.format("}%n\\end{figure}%n");
+      }
+      formatter.format("\\end{document}%n");
+      return formatter.toString();
+*/
+   }\end{hide}
+\end{code}
+\begin{tabb}
+NOT IMPLEMENTED.
+%   Exports the chart to a \LaTeX\ source code using PGF/TikZ.
+%   This method constructs and returns a string that can be written to
+%   a \LaTeX\ document to render the plot. \texttt{width} and \texttt{height}
+%   represents the width and the height of the produced chart. These dimensions
+%   do not take into account the axes and labels extra space.
+\end{tabb}
+\begin{htmlonly}
+   \param{width}{Chart's width in centimeters.}
+   \param{height}{Chart's height in centimeters.}
+   \return{LaTeX source code.}
+\end{htmlonly}
+\begin{code}
+\begin{hide}
+}\end{hide}
+\end{code}

@@ -1,0 +1,183 @@
+\defclass {BetaGen}
+
+This class implements random variate generators with the 
+{\em beta\/} distribution with shape parameters $\alpha > 0$ and 
+$\beta > 0$, over the interval $(a,b)$, where $a < b$.
+The density function of this distribution is
+\begin{htmlonly}
+\eq
+f(x) = [\Gamma (\alpha+\beta)/(\Gamma(\alpha)
+\Gamma(\beta)(b - a)^{\alpha+\beta-1})]
+            (x - a)^{\alpha - 1}(b - x)^{\beta-1}  
+     \mbox{ for } a < x < b,
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+ f(x) = \frac {\Gamma (\alpha+\beta)}{
+               \Gamma(\alpha)\Gamma(\beta)(b - a)^{\alpha+\beta-1}}
+          (x - a)^{\alpha - 1}(b - x)^{\beta-1}  
+        \qquad \mbox{ for } a < x < b,
+\endeq
+\end{latexonly}
+and $f(x)=0$ elsewhere,
+where $\Gamma (x)$ is the gamma function defined
+in
+\begin{latexonly}
+(\ref{eq:Gamma}).
+\end{latexonly}
+\begin{htmlonly}
+\class{GammaGen}.
+\end{htmlonly}
+
+Local copies of the parameters $\alpha$, $\beta$, $a$, and $b$
+are maintained in this class.
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+%Available generation methods: inversion performed with a binary search,
+%rejection with log-logistic envelopes, and stratified rejection/patchwork
+%rejection.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BetaGen
+ * Description:  random variate generators with the beta distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class BetaGen extends RandomVariateGen \begin{hide} {
+    
+   // Distribution parameters
+   protected double p;
+   protected double q;
+   protected double a;
+   protected double b;
+   protected int gen;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public BetaGen (RandomStream s, double alpha, double beta,
+                                   double a, double b) \begin{hide} {
+      super (s, new BetaDist (alpha, beta, a, b));
+      setParams (alpha, beta, a, b);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new beta generator with parameters $\alpha =$ 
+     \texttt{alpha} and $\beta =$ \texttt{beta}, over the interval
+    $($\texttt{a}$,$~\texttt{b}$)$, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public BetaGen (RandomStream s, double alpha, double beta) \begin{hide} {
+      this (s, alpha, beta, 0.0, 1.0);
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new beta generator with parameters $\alpha =$ 
+     \texttt{alpha} and $\beta =$ \texttt{beta}, over the interval $(0,1)$,
+   using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public BetaGen (RandomStream s, BetaDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getAlpha(), dist.getBeta(), dist.getA(), dist.getB());
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double alpha,
+                                    double beta, double a, double b)\begin{hide} {
+      return BetaDist.inverseF (alpha, beta, a, b, 15, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the {\em beta\/} distribution with
+ parameters $\alpha = $~\texttt{alpha}, $\beta = $~\texttt{beta}, over the
+ interval $(a, b)$, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public double getAlpha()\begin{hide} {
+      return p;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\alpha$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getBeta()\begin{hide} {
+      return q;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\beta$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $a$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $b$ of this object.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   protected void setParams (double alpha, double beta, double aa, double bb) {
+      if (alpha <= 0.0)
+         throw new IllegalArgumentException ("alpha <= 0");
+      if (beta <= 0.0)
+         throw new IllegalArgumentException ("beta <= 0");
+      if (aa >= bb)
+         throw new IllegalArgumentException ("a >= b");
+      p = alpha;
+      q = beta;
+      a = aa;
+      b = bb;
+   }
+}\end{hide}
+\end{code}

@@ -1,0 +1,152 @@
+\documentclass[twoside,12pt]{article}
+
+\usepackage{ssj}
+\usepackage[procnames]{listings}
+\usepackage{lstpatch}
+\usepackage{url}
+\usepackage{color}
+\usepackage{crayola}
+\usepackage{amsfonts}
+% \usepackage{mycal}
+% \usepackage{mybold}
+% \usepackage{mymathbb}
+\usepackage{pictexwd}
+
+
+\lstloadlanguages{Java}
+\lstset{language=Java,
+float=tbhp,
+captionpos=t,
+frame=trbl,
+abovecaptionskip=1.5em,
+belowskip=2em,
+basicstyle=\small\ttfamily,
+stringstyle=\color{OliveGreen},
+commentstyle=\color{red},
+identifierstyle=\color{Bittersweet},
+basewidth={0.5em},
+showstringspaces=false,
+framerule=0.8pt,
+procnamestyle=\bfseries\color{blue},
+emphstyle=\bfseries\color{Cerulean},
+procnamekeys={class,extends,interface,implements}
+}
+
+% listings lacks a label feature to refer to listings.
+% The code was inspired from the \label LaTeX command definition.
+% \makeatletter
+% \newcommand{\lstlabel}[1]{{
+% \let\@currentlabel=\thelstlisting
+% \label{#1}}}
+% \makeatother
+
+\def\g   {{\;\leftarrow\;}}
+\def\tbu {\tilde{\mbox{\boldmath $u$}}}
+\def\bu  {\mbox{\boldmath $u$}}
+
+%%%%%%%%%%%%%%
+%begin{latexonly}
+%\def\fiverm {}
+%\input prepictex.tex  \input pictex.tex  \input postpictex.tex
+%\valuestolabelleading = -0.1\baselineskip
+%end{latexonly}
+\vbadness=10000
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+
+\null\vfill
+\begin {center}
+{\Large\bf SSJ User's Guide } \\[12pt] 
+{\Large Overview and Examples} \\[20pt]
+% of Simulation programs using SSJ} \\[20pt]
+ Version: \today \\
+\vfill
+ {\sc Pierre L'Ecuyer}
+\footnote {\normalsize 
+ SSJ was designed and implemented in the Simulation laboratory of the
+ D\'epartement d'Informa\-tique et de Recherche
+ Op\'erationnelle (DIRO), at the Universit\'e de Montr\'eal,
+ under the supervision of 
+ Pierre L'Ecuyer, with the contribution of
+% (until August 2004):  
+%\begin{verse}
+ Mathieu Bague,
+ Sylvain Bonnet,
+ \'Eric Buist, 
+% Chiheb Dkhil,
+ Yves Edel,
+ Regina H.{} S.{} Hong, 
+ Alexander Keller,
+ Pierre L'Ecuyer, 
+ \'Etienne Marcotte,
+ Lakhdar Meliani, 
+ Abdelazziz Milib, 
+ Fran\c{c}ois Panneton,
+ Richard Simard,
+ Pierre-Alexandre Tremblay, 
+ and Jean Vaucher.
+%\end{verse}
+%
+Its development has been supported by NSERC-Canada grant No.\ ODGP0110050,
+NATEQ-Qu\'ebec grant No.\ 02ER3218, a Killam fellowship,
+and a Canada Research Chair to P.~L'Ecuyer.
+
+%  listed at the end of the \emph{SSJ overview} document.
+% The first implementation of SSJ was done by Lakhdar Meliani   
+% for his master's thesis.
+} \\[10pt]
+  Canada Research Chair in Stochastic Simulation and Optimization \\
+% Chaire du Canada en simulation et optimisation stochastiques \\
+  D\'epartement d'Informatique et de Recherche Op\'erationnelle \\
+  Universit\'e de Montr\'eal, Canada
+\vfill\vfill
+\end {center}
+
+\begin {quotation}
+\noindent 
+SSJ stands for \emph{stochastic simulation in Java}.
+The SSJ library provides facilities for generating uniform and nonuniform random 
+variates, computing different measures related to probability 
+distributions, performing goodness-of-fit tests, applying 
+quasi-Monte Carlo methods, collecting statistics,
+and programming discrete-event simulations with both events and processes.
+This document provides a very brief overview of this library
+and presents several examples of small simulation programs in Java,
+based on this library.  The examples are commented in detail.
+They can serve as a good starting point for learning how to use SSJ.
+The first part of the guide gives very simple examples that do not
+need event or process scheduling.
+The second part contains examples of discrete-event simulation 
+programs implemented with an \emph{event view},
+% using the package \texttt{simevents}.
+while the third part gives examples of implementations based 
+on the \emph{process view}.
+% supported by the package \texttt{simprocs}.
+\end {quotation}
+
+\vfill
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+\include{intro}
+\include{overview}
+\include{simple}
+\include{event}
+\include{process}
+
+%\include{Queue}
+%\include{PreyPred}
+%\include{Jobshop}
+%\include{TimeShared}
+%\include{Bank}
+%\include{Visits}
+
+\bibliography{simul,random,ift,stat,prob,fin,callc}
+\bibliographystyle{plain}
+
+\end{document}

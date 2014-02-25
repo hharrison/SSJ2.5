@@ -1,0 +1,161 @@
+\defclass {TriangularGen}
+
+This class implements random variate generators for the 
+{\em triangular\/} distribution. Its  density is
+\begin{htmlonly}
+\[\begin{array}{rll}
+f(x) =& 2(x-a)/[(b-a)(m-a)]&\qquad\mbox{ for }a\le x\le m, \\
+f(x) =& 2(b-x)/[(b-a)(b-m)]&\qquad\mbox{ for }m\le x\le b, \\
+f(x) =& 0&\qquad\mbox{ elsewhere,}
+\end{array}\]
+\end{htmlonly}
+\begin{latexonly}
+\eq
+    f(x) = \left \{\begin{array}{ll}
+           \frac {2(x-a)}{(b-a)(m-a)}  & \mbox {for } a\le x\le m, \\ [6pt]
+           \frac {2(b-x)}{(b-a)(b-m)} & \mbox { for } m\le x\le b, \\ [6pt]
+            0 & \mbox { elsewhere, }
+          \end{array}\right.         \eqlabel{eq:ftrian}
+\endeq
+\end{latexonly}
+where $a\le m\le b$ (see, e.g., \cite{sLAW00a}).
+
+The (non-static) \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+\bigskip\hrule
+
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        TriangularGen
+ * Description:  random variate generators for the triangular distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class TriangularGen extends RandomVariateGen \begin{hide} {
+   private double a;
+   private double b;
+   private double m;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public TriangularGen (RandomStream s, double a, double b, double m) \begin{hide} {
+      super (s, new TriangularDist(a, b, m));
+      setParams (a, b, m);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a triangular random variate generator over the interval
+(\texttt{a}, \texttt{b}), with parameter \texttt{m}, using stream \texttt{s}. 
+\end{tabb}
+\begin{code}
+
+   public TriangularGen (RandomStream s, double m) \begin{hide} {
+      this (s, 0.0, 1.0, m);
+   }\end{hide}
+\end{code} 
+\begin{tabb}  Creates a triangular random variate generator over the interval
+  $(0, 1)$, with parameter \texttt{m}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+ 
+   public TriangularGen (RandomStream s, TriangularDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getA(), dist.getB(), dist.getM());
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a new generator for the triangular distribution
+ \texttt{dist} and stream \texttt{s}.   
+\end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+   
+   public static double nextDouble (RandomStream s, double a, 
+                                    double b, double m) \begin{hide} {
+       // the code is taken and adapted from unuran
+       // file /distributions/c_triangular_gen.c
+       return TriangularDist.inverseF (a, b, m, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb}  
+  Generates a new variate from the triangular distribution with parameters
+  $a = $~\texttt{a}, $b = $~\texttt{b} and $m = $~\texttt{m} and stream \texttt{s},
+   using inversion.
+\end{tabb}
+\begin{code}      
+
+   public double getA()\begin{hide} {
+      return a;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $a$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getB()\begin{hide} {
+      return b;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $b$ for this object.
+ \end{tabb}
+\begin{code}      
+
+   public double getM()\begin{hide} {
+      return m;
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Returns the value of $m$ for this object.
+ \end{tabb}
+\begin{hide}\begin{code}      
+
+   private void setParams (double a, double b, double m) {
+      if ((a == 0.0 && b == 1.0) && (m < 0 || m > 1))
+         throw new IllegalArgumentException ("m is not in [0,1]");
+      else if (a >= b)
+         throw new IllegalArgumentException ("a >= b");
+      else if (m < a || m > b) 
+         throw new IllegalArgumentException ("m is not in [a,b]");
+      this.a = a;
+      this.b = b;
+      this.m = m;
+   }
+\end{code}
+  \begin{tabb}
+  Sets the value of the parameters $a$, $b$ and $m$ for this object.
+ \end{tabb}
+\begin{code}      
+}
+\end{code}
+\end{hide}

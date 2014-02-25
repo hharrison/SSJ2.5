@@ -1,0 +1,100 @@
+\latex{\section*{Overview of package \texttt{stat}}\addcontentsline{toc}{section}{Overview of package \texttt{stat}}}
+
+This package provides elementary tools for collecting statistics and computing
+confidence intervals.  The base class 
+\externalclass{umontreal.iro.lecuyer.stat}{StatProbe} 
+implements common methods needed by all probes.  
+Its subclass \externalclass{umontreal.iro.lecuyer.stat}{Tally}
+collects data as a sequence of observations $X_1,X_2,\dots$, and computes
+sample averages, sample standard deviations, and confidence intervals
+based on the normality assumption. \richard{Toujours bas\'e sur la normale?}
+The class \externalclass{umontreal.iro.lecuyer.stat}{TallyStore} is 
+similar, but it also stores the individual observations in a list 
+implemented as a \externalclass{cern.colt.list}{DoubleArrayList}%
+\begin{latexonly}, a class imported from the COLT library\end{latexonly}.
+This permits one to compute more quantities and to use the methods 
+provided by COLT for computing descriptive statistics.
+
+The class \externalclass{umontreal.iro.lecuyer.simevents}{Accumulate}%
+\begin{latexonly}, in package \texttt{simevents},\end{latexonly}
+computes integrals and averages with respect to time.
+This class is in package \texttt{simevents} because its operation depends
+on the simulation clock.
+
+\iffalse  %%%%%%%%
+The class
+\externalclass{umontreal.iro.lecuyer.stat}{FunctionOfMultipleMeansTally}
+collects data as a sequence of $d$-dimensional
+vectors $\boldX_1, \boldX_2, \ldots$,
+and computes a function of sample averages with a sample variance, and
+a confidence interval on the corresponding function of means using the
+delta theorem.
+The function of averages to consider, as well as its gradient, need to
+be computed by an implementation of
+\externalclass{umontreal.iro.lecuyer.util}{MultivariateFunction},
+for example,
+\externalclass{umontreal.iro.lecuyer.util}{RatioFunction} for
+a ratio of two quantities.
+\fi  %%%%%%%%%
+
+All classes that represent statistical probes
+support the \emph{observer} design pattern, well-known
+in software engineering \cite{iGAM98a}.
+%%  Gamma et al., Design Patterns---Elements of Reusable 
+%%  Object-Oriented Software, Addison-Wesley, second ed., 1998.
+This pattern facilitates the separation of data generation (by the 
+simulation program) from data processing (for statistical reports and
+displays).  This can be very helpful in particular in large simulation 
+programs or libraries, where different objects may need to process 
+the same data in different ways.  
+A statistical probe maintains a list of registered 
+\externalclass{umontreal.iro.lecuyer.stat}{ObservationListener}
+objects, and broadcasts information to all its registered
+observers whenever appropriate.  %For the
+%\externalclass{umontreal.iro.lecuyer.stat}{StatProbe} class,
+%this happens whenever a new observation is given to the probe.
+Any object that implements the interface 
+\externalclass{umontreal.iro.lecuyer.stat}{ObservationListener}
+can register as an observer. For an example, see the program 
+\texttt{QueueObs} in the directory \texttt{examples}.
+
+Subpackages of package \texttt{stat} provide matrices of \texttt{Tally}'s
+(see the overview on page \pageref{over-mat-tal} of this guide),
+and lists of \texttt{Tally}'s (see page \pageref{over-li-tal} of this guide).
+% and lists of \texttt{Tally}'s with control variables
+% (see page \pageref{over-licv-tal} of this guide).
+
+
+
+%%%%%%%%%   Enlever ce qui suit: trop technique pour l'overview.
+\begin{comment}
+
+When writing complex simulation programs, in data generation portions,
+one uses the statistical
+probes as usual but with observation notification turned on.  To turn
+on observation notification, one simply calls
+\externalmethod{umontreal.iro.lecuyer.stat}{StatProbe}{notifyObs}{}
+on the probes.  In this mode, a probe becomes a \emph{distribution
+  agency} which broadcasts received observations to
+all \emph{observers} that registered to it.  It will also fulfill its
+collector functionality unless it is disabled explicitly by calling
+the
+\externalmethod{umontreal.iro.lecuyer.stat}{StatProbe}{stopCollectStat}{}
+method.
+When the statistical collection is disabled, the probes are only
+distribution agencies.
+
+Data processing parts of the program are implemented through
+observers. An observer is a class
+implementing the \externalclass{java.util}{Observer} interface.  It
+can be registered to any class extending
+\externalclass{java.util}{Observable}, including
+\externalclass{umontreal.iro.lecuyer.stat}{StatProbe}.
+The observed value is passed
+to the observers through the second argument of the
+\externalmethod{java.util}{Observer}{update}{} method which is an
+\texttt{Object}.  The argument must then be
+type-casted to a \texttt{Double} wrapper object
+before the observation value can be extracted.
+
+\end{comment}

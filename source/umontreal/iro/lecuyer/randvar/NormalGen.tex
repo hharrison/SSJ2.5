@@ -1,0 +1,162 @@
+\defclass {NormalGen}
+
+This class implements methods for generating random variates from the
+{\em normal\/} distribution $N(\mu, \sigma)$.
+It has mean $\mu$ and variance $\sigma^2$, where $\sigma>0$.
+ Its density function is
+\begin{htmlonly}
+\eq
+     f(x) = 1/\sqrt{2\pi}\sigma e^{(x-\mu)^2/(2\sigma^2)}
+\endeq
+\end{htmlonly}
+\begin{latexonly}
+\eq
+     f(x) = \frac{1}{\sqrt{2\pi}\sigma} e^{(x-\mu)^2/(2\sigma^2)}
+                        \eqlabel{eq:fnormal}
+\endeq
+\end{latexonly}
+%
+The \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+The following table gives the CPU time needed to generate $10^8$ standard
+normal random variates using the different implementations available in SSJ.
+The first time is for a generator object (non-static method), and
+the second time is for the static method
+where no object is created.
+These tests were made on a machine with processor AMD Athlon 4000, running
+Red Hat Linux, with clock speed at 2403 MHz. The static method
+ \texttt{nextDouble()} for \texttt{NormalBoxMullerGen} and
+  \texttt{NormalPolarGen} uses only one number out of two that are
+  generated; thus they are twice slower than the non-static method.
+
+\begin{center}
+\begin{tabular}{|l|c|c|}
+\hline
+ Generator  &  time in seconds  &  time in seconds  \\
+   &  (object)  &  (static)  \\
+\hline
+\texttt{NormalGen}     &  7.67  & 7.72 \\
+\texttt{NormalACRGen}   &    4.71  & 4.76 \\
+\texttt{NormalBoxMullerGen}    &  16.07 & 31.45 \\
+\texttt{NormalPolarGen}     &  7.31  & 13.74 \\
+\texttt{NormalKindermannRamageGen}     & 5.38 & 5.34 \\
+\hline
+\end{tabular}
+\end{center}
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NormalGen
+ * Description:  random variates generator from the normal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class NormalGen extends RandomVariateGen \begin{hide} {
+   protected double mu;
+   protected double sigma = -1.0;
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public NormalGen (RandomStream s, double mu, double sigma) \begin{hide} {
+      super (s, new NormalDist(mu, sigma));
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a normal random variate generator with mean \texttt{mu}
+  and standard deviation \texttt{sigma}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public NormalGen (RandomStream s) \begin{hide} {
+      this (s, 0.0, 1.0);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a standard normal random variate generator with mean
+  \texttt{0} and standard deviation \texttt{1}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public NormalGen (RandomStream s, NormalDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getMu(), dist.getSigma());
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a random variate generator for the normal distribution
+  \texttt{dist} and stream \texttt{s}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double mu, double sigma) \begin{hide} {
+      return NormalDist.inverseF (mu, sigma, s.nextDouble());
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Generates a variate from the normal distribution with
+   parameters $\mu = $~\texttt{mu} and $\sigma = $~\texttt{sigma}, using
+   stream \texttt{s}.
+ \end{tabb}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the parameter $\mu$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return sigma;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the parameter $\sigma$ of this object.
+  \end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setParams (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      this.mu = mu;
+      this.sigma = sigma;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Sets the parameters $\mu$ and $\sigma$ of this object.
+  \end{tabb}
+\begin{code}
+}
+\end{code}
+\end{hide}

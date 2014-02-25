@@ -1,0 +1,136 @@
+\defclass {NormalInverseFromDensityGen}
+
+This class implements \emph{normal} random variate generators
+ using numerical inversion of the \emph{normal} density
+ as described in \cite{rDER10a}.  It makes use of the class
+\externalclass{umontreal.iro.lecuyer.probdist}{InverseDistFromDensity}.
+A set of tables are precomputed to speed up the generation of normal random 
+variables by numerical inversion. This will be useful if one 
+wants to generate a large number of random variables.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        NormalInverseFromDensityGen
+ * Description:  random variate generators using numerical inversion of
+                 the normal density
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class NormalInverseFromDensityGen extends NormalGen \begin{hide} {
+
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public NormalInverseFromDensityGen (RandomStream stream, double mu, 
+                                       double sigma, double ueps, int order) \begin{hide} {
+      // dist is the normal distribution
+      super (stream, mu, sigma);
+      double xc = mu;
+
+      // member (NormalDist) dist is replaced by 
+      // (InverseDistFromDensity) dist
+      dist = new InverseDistFromDensity ((ContinuousDistribution) dist,
+                                         xc, ueps, order);
+    }\end{hide}
+\end{code} 
+\begin{tabb} Creates a normal random variate generator with parameters 
+$\mu=$ \texttt{mu} and $\sigma $ = \texttt{sigma}, using stream \texttt{stream}.
+It uses numerical inversion with precomputed tables.
+The $u$-resolution \texttt{ueps} is the desired absolute error in the 
+\texttt{cdf}, and \texttt{order} is the degree of the Newton interpolating 
+polynomial over each interval.
+\end{tabb}
+\begin{code}
+
+   public NormalInverseFromDensityGen (RandomStream stream, NormalDist dist,
+                                       double ueps, int order) \begin{hide} {
+      super (stream, dist);
+      double xc = mu;
+
+      // member (NormalDist) dist is replaced by 
+      // (InverseDistFromDensity) dist
+      this.dist = new InverseDistFromDensity (dist, xc, ueps, order);
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Similar to the first constructor, with the normal 
+   distribution \texttt{dist}.  
+ \end{tabb}
+\begin{code}
+
+   public NormalInverseFromDensityGen (RandomStream stream, 
+                                       InverseDistFromDensity dist) \begin{hide} {
+      super (stream, null);
+      mu = dist.getXc();
+      this.dist = dist;
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Creates a new normal generator using the \emph{normal}
+   distribution \texttt{dist} and stream \texttt{stream}. \texttt{dist}
+   may be obtained by calling method \method{getDistribution}{()},
+   after using one of the other constructors to create the 
+   precomputed tables. This is useful when one needs many   generators
+ using the same normal distribution.
+ Precomputing tables for numerical inversion is
+ costly; thus using only one set of tables for many generators 
+is more efficient. The first \class{NormalInverseFromDensityGen} generator 
+ using the other constructors creates the precomputed tables.
+Then all other streams use this constructor with the same set of tables.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public double getUepsilon()\begin{hide} {
+      return ((InverseDistFromDensity)dist).getEpsilon();
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $u$-resolution \texttt{ueps}.
+\end{tabb}
+\begin{code}
+
+   public int getOrder()\begin{hide} {
+      return ((InverseDistFromDensity)dist).getOrder();
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the order of the interpolating polynomial.
+\end{tabb}
+
+\begin{hide}
+\begin{code}
+}\end{code}
+\end{hide}

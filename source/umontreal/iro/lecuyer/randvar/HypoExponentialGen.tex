@@ -1,0 +1,102 @@
+\defclass {HypoExponentialGen}
+
+This class implements random variate generators for the 
+\emph{hypoexponential} distribution (see classes 
+\externalclass{umontreal.iro.lecuyer.probdist}{HypoExponentialDist} and
+\externalclass{umontreal.iro.lecuyer.probdist}{HypoExponentialDistQuick}
+in package \texttt{probdist} for the definition).
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        HypoExponentialGen
+ * Description:  random variate generators for the hypoexponential distribution 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Richard Simard
+ * @since        January 2011
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class HypoExponentialGen extends RandomVariateGen \begin{hide} {
+\end{hide}\end{code}
+
+\subsubsection* {Constructors}
+\begin{code}
+
+   public HypoExponentialGen (RandomStream stream, double[] lambda) \begin{hide} {
+      super (stream, new HypoExponentialDist(lambda));
+   }\end{hide}
+\end{code} 
+\begin{tabb} Creates a hypoexponential random variate generator with
+ rates $\lambda_i = $ \texttt{lambda[$i-1$]}, $i = 1,\ldots,k$,
+ using stream \texttt{stream}. 
+\end{tabb}
+\begin{code}
+
+   public HypoExponentialGen (RandomStream stream, HypoExponentialDist dist) \begin{hide} {
+      super (stream, dist);
+//      if (dist != null)
+//         setParams (dist.getLambda());
+   } \end{hide}
+\end{code}
+ \begin{tabb}  Creates a new generator for the hypoexponential 
+   distribution \texttt{dist} with stream \texttt{stream}.   
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+   
+   public static double nextDouble (RandomStream stream, double[] lambda) \begin{hide} {
+      return HypoExponentialDist.inverseF (lambda, stream.nextDouble());
+   }\end{hide}
+\end{code}
+ \begin{tabb}  Uses inversion to generate a new hypoexponential variate
+   with rates $\lambda_i = $ \texttt{lambda[$i-1$]}, $i = 1,\ldots,k$, 
+   using stream \texttt{stream}. The inversion uses a root-finding method
+  and is very slow.
+ \end{tabb}
+\begin{code}
+
+   public double[] getLambda()\begin{hide} {
+      return ((HypoExponentialDist)dist).getLambda();
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $\lambda_i$ associated with this object.
+\end{tabb}
+\begin{code}
+
+   public void setLambda (double[] lambda)\begin{hide} {
+      ((HypoExponentialDist)dist).setLambda(lambda);
+   }\end{hide}
+\end{code}
+\begin{tabb} Sets the rates $\lambda_i = $ \texttt{lam[$i-1$]}, 
+$i = 1,\ldots,k$ of this object.
+\end{tabb}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

@@ -1,0 +1,139 @@
+\defclass {FoldedNormalGen}
+
+This class implements methods for generating random variates from the 
+{\em folded normal\/} distribution  with
+parameters $\mu \ge 0$  and $\sigma > 0$.
+The density is
+\begin{htmlonly}
+\eq
+  f(x) = \phi \left((x-\mu/)\sigma\right) + \phi \left((-x-\mu)/\sigma\right) 
+   \qquad \mbox {for  } x \ge 0,
+\endeq
+\end{htmlonly}
+\begin{latexonly} 
+\eq
+ f(x) = \phi \left(\frac{x-\mu}{\sigma}\right) + 
+        \phi \left(\frac{-x-\mu}{\sigma}\right) 
+   \qquad \mbox {for  } x \ge 0,   \eqlabel{eq:fFoldedNormal}
+\endeq
+\end{latexonly}
+where $ \phi $ denotes the density function of a standard normal distribution.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FoldedNormalGen
+ * Description:  generator of random variates from the folded normal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class FoldedNormalGen extends RandomVariateGen \begin{hide} {
+    
+   // Distribution parameters
+   protected double mu;
+   protected double sigma;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public FoldedNormalGen (RandomStream s, double mu, double sigma) \begin{hide} {
+      super (s, new FoldedNormalDist (mu, sigma));
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Creates a new {\em folded normal} generator with parameters $\mu =$ 
+     \texttt{mu} and $\sigma =$ \texttt{sigma}, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public FoldedNormalGen (RandomStream s, FoldedNormalDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setParams (dist.getMu(), dist.getSigma());
+   }\end{hide}
+\end{code}
+\begin{tabb} Creates a new generator for the distribution \texttt{dist},
+     using stream \texttt{s}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, double mu, double sigma)\begin{hide} {
+      return FoldedNormalDist.inverseF (mu, sigma, s.nextDouble());
+   }\end{hide}
+\end{code}
+\begin{tabb} Generates a variate from the {\em folded normal\/} distribution with
+ parameters $\mu = $~\texttt{mu} and $\sigma = $~\texttt{sigma},
+   using stream \texttt{s}.
+\end{tabb}
+\begin{htmlonly}
+   \param{s}{the random stream}
+   \param{mu}{the parameter mu}
+   \param{sigma}{the parameter sigma}
+   \return{Generates a variate from the {\em FoldedNormal\/} distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\mu$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the parameter mu}
+\end{htmlonly}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return sigma;
+   }\end{hide}
+\end{code}
+  \begin{tabb} Returns the parameter $\sigma$ of this object.
+  \end{tabb}
+\begin{htmlonly}
+   \return{the parameter mu}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   protected void setParams (double mu, double sigma) {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      if (mu < 0.0)
+         throw new IllegalArgumentException ("mu < 0");
+      this.mu = mu;
+      this.sigma = sigma;
+   }
+}\end{hide}
+\end{code}

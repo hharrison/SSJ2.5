@@ -1,0 +1,108 @@
+\section {Guided visits}
+\label {sec:visits}
+
+This example is translated from \cite{sLEC88a}.
+A touristic attraction offers guided visits, using three guides.
+The site opens at 10:00 and closes at 16:00.
+Visitors arrive in small groups (e.g., families) and the arrival 
+process of
+those groups is assumed to be a Poisson process
+with rate of 20 groups per hour, from 9:45 until 16:00.
+The visitors arriving before 10:00 must wait for the opening.
+After 16:00, the visits already under way can be completed,
+but no new visit is undertaken, so that all the visitors still
+waiting cannot visit the site and are lost.
+
+The size of each arriving group of visitors is a discrete random
+variable taking the value $i$ with probability $p_i$ given in the
+following table:
+\begin{center}
+\begin{tabular}{r|rrrr}         \hline
+   $i$ \ \  & 1  & 2  & 3  & 4\\  \hline
+   $p_i$ \  & \ .2 & \ .6 & \ .1 & \ .1\\ \hline
+\end{tabular}
+\end{center}
+
+Visits are normally made by groups of 8 to 15 visitors.
+Each visit requires one guide and lasts 45 minutes.
+People waiting for guides form a single queue.
+When a guide becomes free, if there is less than 8 people
+in the queue, the guide waits until the queue grows to at 
+least 8 people, otherwise she starts a new visit right away.
+If the queue contains more than 15 people, the first 15 will
+go on this visit.
+At 16:00, if there is less than 8 people in the queue 
+and a guide is free, she starts a visit with the remaining 
+people.
+At noon, each free guide takes 30 minutes for lunch.
+The guides that are busy at that time will take 30 minutes
+for lunch as soon as they complete their on-going visit.
+
+Sometimes, an arriving group of visitors may decide to just
+go away (balk) because the queue is too long.
+%  These visitors are lost.
+We assume that the probability of balking when the queue 
+size is $n$ is given by
+$$
+   R(n) = \cases {0          & for $n\le 10;$\cr
+                  (n-10)/30  & for $10< n< 40$;\cr
+                  1          & for $n\ge 40$.}
+$$
+
+The aim is to estimate the average number of visitors lost
+per day, in the long run.
+The visitors lost are those that balk or are still in the
+queue after 16:00.
+
+A simulation program for this model is given in 
+Listing~\ref{lst:Visits}.
+Here, time is measured in hours, starting at midnight.
+At time 9:45, for example, the simulation clock is at 9.75.
+The (process) class \texttt{Guide} describes the daily 
+behavior of a guide (each guide is an instance of this 
+class), whereas \texttt{Arrival} generates the arrivals
+according to a Poisson process, the group sizes,
+and the balking decisions.
+The event \texttt{closing} closes the site at 16:00.
+
+The \texttt{Bin} mechanism \texttt{visitReady} is used to
+synchronize the \texttt{Guide} processes.
+The number of tokens in this bin is 1 if there is 
+enough visitors in the queue to start a visit (8 or more)
+and is 0 otherwise.
+When the queue size reaches 8 due to a new arrival,
+the \texttt{Arrival} process puts a token into the bin.
+This wakes up a guide if one is free.
+A guide must take a token from the bin to start a new
+visit.  If there is still 8 people or more in the queue
+when she starts the visit, she puts the token back to 
+the bin immediately, to indicate that another visit is
+ready to be undertaken by the next available guide.
+
+\lstinputlisting[label=lst:Visits,caption={Simulation of guided visits}, lineskip=-1pt]{Visits.java}
+
+\setbox3=\vbox {\hsize = 6.0in
+\begin{verbatim}
+REPORT on Tally stat. collector ==> Nb. of visitors lost per day
+   min        max        average      standard dev.   nb. obs.
+    3         48          21.78         10.639          100
+ 
+        90.0% confidence interval for mean (student): ( 20.014, 23.546 )
+\end{verbatim}
+}
+
+\begin{figure}[ht]
+\centerline{\boxit{\box3}}
+\caption {Simulation results for the guided visits model.}
+\label {fig:visits-res}
+\end{figure}
+
+The simulation results are in Figure~\ref{fig:visits-res}.
+
+Could we have used a \texttt{Condition} instead of a \texttt{Bin}
+for synchronizing the \texttt{Guide} processes?
+The problem would be that if several guides are waiting for a
+condition indicating that the queue size has reached 8, 
+{\em all\/} these guides (not only the first one)
+would resume their execution 
+simultaneously when the condition becomes true.

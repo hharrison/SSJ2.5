@@ -1,0 +1,103 @@
+\documentclass[12pt]{article}
+
+\usepackage{amssymb}
+\usepackage{alltt}
+\usepackage{html}
+\usepackage{url}
+\usepackage{ssj}
+
+% \def\bq{\mbox{\boldmath $q$}}
+% \def\be{\mbox{\boldmath $e$}}
+\def\bu{\mbox{\boldmath $u$}}
+% \def\bv{\mbox{\boldmath $v$}}
+% \def\bC{\mbox{\boldmath $C$}}
+% \def\bV{\mbox{\boldmath $V$}}
+% \def\cS{\mathcal{S}}
+
+
+\mytwoheads\dateheadtrue
+\detailedfalse
+
+% \includeonly{F2wStructure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\begin{titlepage}
+
+%  \title{hups}{Highly Uniform Point Sets}
+\title{hups}{Tools for Quasi-Monte Carlo}
+
+This package provides classes implementing highly uniform point sets
+(HUPS) and tools for their randomization.
+These point sets can be used for quasi-Monte Carlo integration.
+Randomized quasi-Monte Carlo point sets can in fact replace streams
+of uniform random numbers in a simulation, for the purpose of
+reducing the variance of the estimator.
+
+\vfill
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\tableofcontents
+\pagenumbering{arabic}
+
+\include{overview}
+
+\include{PointSet}                        % top class
+\include{PointSetIterator}
+
+% \include{Randomization}
+\include{PointSetRandomization}
+\include{EmptyRandomization}
+\include{RandomShift}
+\include{LMScrambleShift}
+\include{SMScrambleShift}
+\include{RandomStart}
+
+\include{ContainerPointSet}
+\include{CachedPointSet}
+% \include{SortedPointSet}
+\include{SubsetOfPointSet}
+\include{PaddedPointSet}
+\include{AntitheticPointSet}
+\include{RandShiftedPointSet}
+%% \include{RandXoredPointSet}  % remove ?
+\include{BakerTransformedPointSet}
+
+\include{CycleBasedPointSet}
+\include{LCGPointSet}
+\include{CycleBasedPointSetBase2}
+\include{F2wStructure}
+\include{F2wCycleBasedLFSR}
+\include{F2wCycleBasedPolyLCG}
+
+\include{DigitalNet}
+\include{DigitalSequence}
+\include{DigitalNetFromFile}
+\include{FaureSequence}
+
+\include{DigitalNetBase2}
+\include{DigitalSequenceBase2}
+\include{DigitalNetBase2FromFile}
+\include{SobolSequence}
+\include{NiedSequenceBase2}
+\include{NiedXingSequenceBase2}
+\include{F2wNetLFSR}
+\include{F2wNetPolyLCG}
+
+\include{RadicalInverse}
+\include{HammersleyPointSet}
+\include{HaltonSequence}
+
+\include{Rank1Lattice}
+\include{KorobovLattice}
+\include{KorobovLatticeSequence}
+
+\bibliographystyle{plain}
+\bibliography{stat,random,vrt,simul,math,ift,fin}
+
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,140 @@
+\defclass {StudentGen}
+
+This class implements methods for generating random variates from the
+{\em Student\/} distribution with $n>0$ degrees of freedom.
+Its density function is
+\begin{htmlonly}
+ \eq
+        f (x) = [\Gamma((n + 1)/2 )/
+                        (\Gamma (n/2) \sqrt{\pi n})]
+            [1 + x^2/n]^{-(n+1)/2}
+            \qquad \qquad \mbox {for } -\infty < x < \infty,
+   \endeq
+\end{htmlonly}
+\begin{latexonly}
+ \eq
+        f (x) = \frac{\Gamma\left ((n + 1)/2 \right)}
+                        {\Gamma (n/2) \sqrt{\pi n}}
+            \left[1 + \frac{x^2}{n}\right]^{-(n+1)/2}
+            \qquad \qquad \mbox {for } -\infty < x < \infty,    \eqlabel{eq:fstudent}
+   \endeq
+\end{latexonly}
+where $\Gamma (x)$ is the gamma function defined in
+\latex{(\ref{eq:Gamma})}\html{\class{GammaGen}}.
+
+The \texttt{nextDouble} method simply calls \texttt{inverseF} on the
+distribution.
+
+The following table gives the CPU time needed to generate $10^7$ Student
+ random variates using the different implementations available in SSJ.
+ The second test ({Q}) was made with the inverse in
+  \class{StudentDistQuick},
+ while the first test was made with the inverse in \class{StudentDist}.
+These tests were made on a machine with processor AMD Athlon 4000, running
+Red Hat Linux, with clock speed at 2400 MHz.
+
+\begin{center}
+\begin{tabular}{|l|c|}
+\hline
+ Generator  &  time in seconds  \\
+\hline
+\texttt{StudentGen}       &   22.4  \\
+\texttt{StudentGen(Q)}   &  \phantom{2}6.5   \\
+\texttt{StudentPolarGen}  &   \phantom{2}1.4 \\
+\hline
+\end{tabular}
+\end{center}
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        StudentGen
+ * Description:  Student-t random variate generators 
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class StudentGen extends RandomVariateGen \begin{hide} {
+   protected int n = -1;
+\end{hide}\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public StudentGen (RandomStream s, int n) \begin{hide} {
+      super (s, new StudentDist(n));
+      setN (n);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a Student random variate generator with
+ $n$ degrees of freedom, using stream \texttt{s}.
+\end{tabb}
+\begin{code}
+
+   public StudentGen (RandomStream s, StudentDist dist) \begin{hide} {
+      super (s, dist);
+      if (dist != null)
+         setN (dist.getN ());
+   }\end{hide}
+\end{code}
+ \begin{tabb} Creates a new generator for the Student distribution \texttt{dist}
+     and stream \texttt{s}.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double nextDouble (RandomStream s, int n) \begin{hide} {
+      return StudentDist.inverseF (n, s.nextDouble());
+    }\end{hide}
+\end{code}
+ \begin{tabb}  Generates a new variate from the Student distribution
+   with $n = $~\texttt{n} degrees of freedom, using stream \texttt{s}.
+ \end{tabb}
+\begin{code}
+
+   public int getN()\begin{hide} {
+      return n;
+   }
+\end{hide}
+\end{code}
+\begin{tabb}
+  Returns the value of $n$ for this object.
+\end{tabb}
+\begin{hide}\begin{code}
+
+   protected void setN (int nu) {
+      if (nu <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+      this.n = nu;
+   }
+}
+\end{code}
+\end{hide}

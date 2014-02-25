@@ -1,0 +1,357 @@
+\defclass {LognormalDist}
+
+Extends the class \class{ContinuousDistribution} for the
+{\em lognormal\/} distribution  \cite{tJOH95a}. It has scale
+parameter $\mu$ and shape parameter $\sigma > 0$.
+The density is
+\eq
+  f(x) = \latex{\frac{1}{\sqrt{2\pi}\sigma x}}\html{(\sqrt{2\pi}\sigma x)^{-1}}
+      e^{-(\ln (x) - \mu)^2/(2\sigma^2)}
+      \qquad\mbox{for }  x>0,                   \eqlabel{eq:flognormal}
+\endeq
+and 0 elsewhere.  The distribution function is
+\eq
+  F(x) = \Phi \left({(\ln(x) - \mu)/\sigma}\right) \qquad\mbox{for }  x>0,
+\endeq
+where $\Phi$ is the standard normal distribution function.
+Its inverse is given by
+\eq
+    F^{-1}(u) = e^{\mu + \sigma\Phi^{-1} (u)}
+          \qquad \mbox{for } 0 \le u < 1.
+\endeq
+If $\ln(Y)$ has a {\em normal\/} distribution, then $Y$ has a
+{\em lognormal\/} distribution with the same parameters.
+
+This class relies on the methods
+  \clsexternalmethod{}{NormalDist}{cdf01}{} and
+ \clsexternalmethod{}{NormalDist}{inverseF01}{}
+of \class{NormalDist} to approximate $\Phi$ and $\Phi^{-1}$.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        LognormalDist
+ * Description:  lognormal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.*;\end{hide}
+
+public class LognormalDist extends ContinuousDistribution\begin{hide} {
+   private double mu;
+   private double sigma; \end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+
+\begin{code}
+
+   public LognormalDist()\begin{hide} {
+      setParams (0.0, 1.0);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{LognormalDist} object with default
+   parameters $\mu = 0$ and $\sigma = 1$.
+  \end{tabb}
+\begin{code}
+
+   public LognormalDist (double mu, double sigma)\begin{hide} {
+      setParams (mu, sigma);
+   }\end{hide}
+\end{code}
+  \begin{tabb} Constructs a \texttt{LognormalDist} object with parameters
+   $\mu$ = \texttt{mu} and $\sigma$ = \texttt{sigma}.
+  \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}\begin{hide}
+
+   public double density (double x) {
+      return density (mu, sigma, x);
+   }
+
+   public double cdf (double x) {
+      return cdf (mu, sigma, x);
+   }
+
+   public double barF (double x) {
+      return barF (mu, sigma, x);
+   }
+
+   public double inverseF (double u) {
+      return inverseF (mu, sigma, u);
+   }
+
+   public double getMean() {
+      return LognormalDist.getMean (mu, sigma);
+   }
+
+   public double getVariance() {
+      return LognormalDist.getVariance (mu, sigma);
+   }
+
+   public double getStandardDeviation() {
+      return LognormalDist.getStandardDeviation (mu, sigma);
+   }\end{hide}
+
+   public static double density (double mu, double sigma, double x)\begin{hide} {
+      if (sigma <= 0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      if (x <= 0)
+         return 0;
+      double diff = Math.log (x) - mu;
+      return Math.exp (-diff*diff/(2*sigma*sigma))/
+              (Math.sqrt (2*Math.PI)*sigma*x);
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the lognormal density function
+  $f(x)$\latex{ in (\ref{eq:flognormal})}.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (double mu, double sigma, double x)\begin{hide} {
+      if (sigma <= 0.0)
+        throw new IllegalArgumentException ("sigma  <= 0");
+      if (x <= 0.0)
+         return 0.0;
+      return NormalDist.cdf01 ((Math.log (x) - mu)/sigma);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the lognormal distribution function, using
+ \externalmethod{}{NormalDist}{cdf01}{}.
+ \end{tabb}
+\begin{code}
+
+   public static double barF (double mu, double sigma, double x)\begin{hide} {
+      if (sigma <= 0.0)
+        throw new IllegalArgumentException ("sigma  <= 0");
+      if (x <= 0.0)
+         return 1.0;
+      return NormalDist.barF01 ((Math.log (x) - mu)/sigma);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+  Computes the lognormal complementary distribution function $\bar{F}(x)$,
+  using \clsexternalmethod{}{NormalDist}{barF01}{}.
+ \end{tabb}
+\begin{code}
+
+   public static double inverseF (double mu, double sigma, double u)\begin{hide} {
+        double t, v;
+
+        if (sigma <= 0.0)
+            throw new IllegalArgumentException ("sigma  <= 0");
+
+        if (u > 1.0 || u < 0.0)
+            throw new IllegalArgumentException ("u not in [0,1]");
+
+        if (Num.DBL_EPSILON >= 1.0 - u)
+            return Double.POSITIVE_INFINITY;
+
+        if (u <= 0.0)
+            return 0.0;
+
+        t = NormalDist.inverseF01 (u);
+        v = mu + sigma * t;
+
+        if ((t >= XBIG) || (v >= Num.DBL_MAX_EXP * Num.LN2))
+            return Double.POSITIVE_INFINITY;
+        if ((t <= -XBIG) || (v <= -Num.DBL_MAX_EXP*Num.LN2))
+            return 0.0;
+
+        return Math.exp (v);
+   }\end{hide}
+\end{code}
+  \begin{tabb}
+  Computes the inverse of the lognormal distribution function,
+  using \clsexternalmethod{}{NormalDist}{inverseF01}{}.
+ \end{tabb}
+\begin{code}
+
+   public static double[] getMLE (double[] x, int n)\begin{hide} {
+      if (n <= 0)
+         throw new IllegalArgumentException ("n <= 0");
+
+      final double LN_EPS = Num.LN_DBL_MIN - Num.LN2;
+      double parameters[];
+      parameters = new double[2];
+      double sum = 0.0;
+      for (int i = 0; i < n; i++) {
+         if (x[i] > 0.0)
+            sum += Math.log (x[i]);
+         else
+            sum += LN_EPS;       // log(DBL_MIN / 2)
+      }
+      parameters[0] = sum / n;
+
+      double temp;
+      sum = 0.0;
+      for (int i = 0; i < n; i++) {
+         if (x[i] > 0.0)
+            temp = Math.log (x[i]) - parameters[0];
+         else
+            temp = LN_EPS - parameters[0];
+         sum += temp * temp;
+      }
+      parameters[1] = Math.sqrt (sum / n);
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameters $(\mu, \sigma)$ of the lognormal distribution
+   using the maximum likelihood method, from the $n$ observations
+   $x[i]$, $i = 0, 1,\ldots, n-1$. The estimates are returned in a two-element
+    array, in regular order: [$\mu$, $\sigma$].
+   \begin{detailed}
+   The maximum likelihood estimators are the values $(\hat\mu , \hat\sigma)$
+   that satisfy the equations:
+   \begin{eqnarray*}
+      \hat{\mu} & = & \frac{1}{n} \sum_{i=1}^{n} \ln(x_i)\\[6pt]
+      \hat{\sigma} & = & \sqrt{\frac{1}{n} \sum_{i=1}^{n} (\ln(x_i) - \hat{\mu})^2}.
+   \end{eqnarray*}
+   See \cite[page 220]{tJOH95a}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{n}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{\mu}$, $\hat{\sigma}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static LognormalDist getInstanceFromMLE (double[] x, int n)\begin{hide} {
+      double parameters[] = getMLE (x, n);
+      return new LognormalDist (parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a lognormal distribution with parameters $\mu$ and $\sigma$
+   estimated using the maximum likelihood method based on the $n$ observations
+   $x[i]$, $i = 0, 1, \ldots, n-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{n}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public static double getMean (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+
+      return (Math.exp(mu + (sigma * sigma) / 2.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the mean $E[X] = e^{\mu + \sigma^2/2}$
+   of the lognormal distribution with parameters $\mu$ and $\sigma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the mean of the lognormal distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getVariance (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0.0)
+         throw new IllegalArgumentException ("sigma <= 0");
+
+      return (Math.exp(2.0 * mu + sigma * sigma) * (Math.exp(sigma * sigma) - 1.0));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the variance
+   $\mbox{Var}[X] = e^{2\mu + \sigma^2}(e^{\sigma^2} - 1)$
+   of the lognormal distribution with parameters $\mu$ and $\sigma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the variance of the lognormal distribution}
+\end{htmlonly}
+\begin{code}
+
+   public static double getStandardDeviation (double mu, double sigma)\begin{hide} {
+      return Math.sqrt (LognormalDist.getVariance (mu, sigma));
+   }\end{hide}
+\end{code}
+\begin{tabb}  Computes and returns the standard deviation
+   of the lognormal distribution with parameters $\mu$ and $\sigma$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the standard deviation of the lognormal distribution}
+\end{htmlonly}
+\begin{code}
+
+   public double getMu()\begin{hide} {
+      return mu;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the parameter $\mu$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double getSigma()\begin{hide} {
+      return sigma;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Returns the parameter $\sigma$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public void setParams (double mu, double sigma)\begin{hide} {
+      if (sigma <= 0)
+         throw new IllegalArgumentException ("sigma <= 0");
+      this.mu = mu;
+      this.sigma = sigma;
+      supportA = 0.0;
+   }\end{hide}
+\end{code}
+  \begin{tabb}  Sets the parameters $\mu$ and $\sigma$ of this object.
+  \end{tabb}
+\begin{code}
+
+   public double[] getParams ()\begin{hide} {
+      double[] retour = {mu, sigma};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Return a table containing the parameters of the current distribution.
+   This table is put in regular order: [$\mu$, $\sigma$].
+\end{tabb}
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : mu = " + mu + ", sigma = " + sigma;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

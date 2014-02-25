@@ -1,0 +1,543 @@
+\section {Discrete-Event Simulation}
+\label {sec:event}
+
+Examples of discrete-event simulation programs, based on the event view
+supported by the package \texttt{simevents}, are given in this section.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {The single-server queue with an event view}
+\label {sec:queue-event}
+
+We return to the single-server queue considered in
+Section~\ref{sec:queue-lindley}.
+This time, instead of simulating a fixed number of customers,
+we simulate the system for a fixed time horizon of 1000.
+
+%%%%%%%%%%%%%%%%%
+\lstinputlisting[label=lst:QueueEv,%
+caption={Event-oriented simulation of an $M/M/1$ queue},%
+lineskip=-1pt,emph={simulateOneRun,actions,main}]{QueueEv.java}
+
+% \bigskip
+
+Listing~\ref{lst:QueueEv} gives an event-oriented simulation program,
+where a subclass of the class \texttt{Event} is defined for each type
+of event that can occur in the simulation:
+arrival of a customer (\texttt{Arrival}),
+departure of a customer (\texttt{Departure}),
+and end of the simulation (\texttt{EndOfSim}).
+Each event {\em instance\/} is inserted into the {\em event list\/}
+upon its creation, with a scheduled time of occurrence, and is
+{\em executed\/} when the simulation clock reaches this time.
+Executing an event means invoking its \texttt{actions} method.
+Each event subclass must implement this method.
+The simulation clock and the event list (i.e., the list of events
+scheduled to occur in the future) are maintained behind the
+scenes by the class \texttt{Sim} of package \texttt{simevents}.
+
+When \texttt{QueueEv} is instantiated  by the \texttt{main} method,
+the program creates
+two streams of random numbers,
+two random variate generators, two
+lists, and two statistical probes (or collectors).
+The random number streams
+% can be viewed as virtual random number generators that generate random
+% numbers in the interval $[0,1)$ according to the uniform probability
+are attached to random variate generators
+\texttt{genArr} and \texttt{genServ} which are used to generate the times
+between successive arrivals and the service times, respectively.
+We can use such an attached generator because the means (parameters)
+do not change during simulation.
+The lists \texttt{waitList} and \texttt{servList} contain the customers
+waiting in the queue and the customer in service (if any), respectively.
+Maintaining a list for the customer in service may seem exaggerated,
+because this list never contains more than one object, but the current
+design has the advantage of working with very little change if the
+queuing model has more than one server, and in other more general
+situations.
+Note that we could have used the class \texttt{LinkedListStat} from package
+\texttt{simevents} instead of \texttt{java.util.LinkedList}.
+However, with our current implementation,
+the automatic statistical collection in that \texttt{LinkedListStat}
+class would not count the customers whose waiting time is zero, because
+they are never placed in the list.
+\begin{comment}
+Here we use the class \texttt{List} from package \texttt{simevents}.
+This class is equivalent to the standard class \texttt{java.util.LinkedList},
+except that its implementation is more efficient than the current one
+in JDK and it can also collect statistics automatically.
+However, the automatic statistical collection on \texttt{waitList}
+would not count the customers whose waiting time is zero, because
+they are never placed in this list, so we do not use this facility.
+\end{comment}
+
+The statistical probe \texttt{custWaits} collects statistics on the
+customer's waiting times.  It is of the class \texttt{Tally}, which
+is appropriate when the statistical data of interest is  a sequence
+of observations $X_1, X_2, \dots$ of which we might want to compute
+the sample mean, variance, and so on.
+A new observation is given to this probe by the \texttt{add} method
+each time a customer starts its service.
+Every \texttt{add} to a \texttt{Tally} probe brings a new observation $X_i$,
+which corresponds here to a customer's waiting time in the queue.
+The other statistical probe, \texttt{totWait}, is of the class
+\texttt{Accumulate}, which means that it computes the integral
+(and, eventually, the time-average) of a continuous-time
+stochastic process with piecewise-constant trajectory.
+Here, the stochastic process of interest is the length of the queue
+as a function of time.  One must call \texttt{totWait.update} whenever
+there is a change in the queue size, to update the (hidden)
+{\em accumulator\/} that keeps the current value of the integral
+of the queue length.  This integral is equal, after each update,
+to the total waiting time in the queue, for all the customers,
+since the beginning of the simulation.
+
+Each customer is an object with two fields: \texttt{arrivTime}
+memorizes this customer's arrival time to the system, and
+\texttt{servTime} memorizes its service time.
+This object is created, and its fields are initialized,
+when the customer arrives.
+
+The method \texttt{simulateOneRun} simulates this system for a fixed
+time horizon.  It first invokes \texttt{Sim.init},
+which initializes the clock and the event list.
+The method \texttt{Sim.start} actually starts the simulation
+by advancing the clock to the time of
+the first event in the event list, removing this event
+from the list, and executing it.  This is repeated until either
+\texttt{Sim.stop} is called or the event list becomes empty.
+\texttt{Sim.time} returns the current time on the simulation clock.
+Here, two events are scheduled before starting the simulation:
+the end of the simulation at time horizon, and the
+arrival of the first customer at a random time that has the exponential
+distribution with \emph{rate} $\lambda$ (i.e., \emph{mean} $1/\lambda$),
+generated by \texttt{genArr} using inversion and its attached random stream.
+The method \texttt{genArr.nextDouble} returns this exponential random variate.
+
+The method \texttt{actions} of the class \texttt{Arrival} describes what happens
+when an arrival occurs.
+Arrivals are scheduled by a domino effect:
+the first action of each arrival event schedules the next event in
+a random number of time units, generated from the exponential distribution
+with rate $\lambda$.
+Then, the newly arrived customer is created,
+its arrival time is set to the current simulation time,
+and its service time is generated from the exponential distribution
+with mean $1/\mu$, using the random variate generator \texttt{genServ}.
+If the server is busy, this customer is inserted at the end of the
+queue (the list \texttt{waitList}) and the statistical probe
+\texttt{totWait}, that keeps track of the size of the queue, is updated.
+Otherwise, the customer is inserted in the server's list \texttt{servList},
+its departure is scheduled to happen in a number of time units
+equal to its service time, and a new observation of 0.0 is given to the
+statistical probe \texttt{custWaits} that collects the waiting times.
+
+When a \texttt{Departure} event occurs, the customer in service is
+removed from the list (and disappears).
+If the queue is not empty, the first customer is removed from
+the queue (\texttt{waitList}) and inserted in the server's list,
+and its departure is scheduled.
+The waiting time of that customer (the current time minus its
+arrival time) is given as a new observation to the probe
+\texttt{custWaits}, and the probe \texttt{totWait} is also updated
+with the new (reduced) size of the queue.
+
+The event \texttt{EndOfSim} stops the simulation.
+Then the \texttt{main} routine regains control and prints statistical
+reports for the two probes.
+The results are shown in Listing~\ref{res:QueueEv}.
+When calling \texttt{report} on an \texttt{Accumulate} object, an implicit
+update is done using the current simulation time and the last
+value given to \texttt{update}.  In this example, this ensures
+that the \texttt{totWait} accumulator will integrate the total wait
+until the time horizon, because the simulation clock is still at that
+time when the report is printed.
+Without such an automatic update, the accumulator would integrate
+only up to the last update time before the time horizon.
+
+
+%%%%%%%%%%%%%%%%%
+\lstinputlisting[label=res:QueueEv,%
+caption={Results of the program \texttt{QueueEv}},%
+lineskip=-1pt]{QueueEv.res}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Continuous simulation: A prey-predator system}
+\label {sec:preypred}
+
+We consider a classical prey-predator system, where the preys
+are food for the predators (see, e.g., \cite{sLAW00a}, page 87).
+Let $x(t)$ and $z(t)$ be the numbers of preys and predators
+at time $t$, respectively.
+These numbers are integers, but as an approximation,
+we shall assume that they are real-valued variables evolving
+according to the differential equations
+\begin{eqnarray*}
+  x'(t) &= &\ r x(t) - c x(t) z(t)\\
+  z'(t) &= & -s z(t) + d x(t) z(t)
+\end{eqnarray*}
+with initial values $x(0)=x_0>0$ et $z(0)=z_0>0$.
+This is a \emph{Lotka-Volterra} system of differential
+equations, which has a known analytical solution.
+Here, in the program of Listing~\ref{lst:PreyPred},
+we simply simulate its evolution, to illustrate the continuous
+simulation facilities of SSJ.
+
+\lstinputlisting[label=lst:PreyPred,%
+caption={Simulation of the prey-predator system},
+emph={derivative,actions,main}
+]{PreyPred.java}
+
+% \bigskip
+Note that, instead of using the default simulator, this program
+explicitly  creates a discrete-event \class{Simulator} object to manage the
+execution of the simulation, unlike the other examples in this section.
+
+The program prints the triples $(t, x(t), z(t))$ at values of
+$t$ that are multiples of \texttt{h}, one triple per line.
+This is done by an event of class \texttt{PrintPoint}, which is
+rescheduled at every \texttt{h} units of time.
+This output can be redirected to a file for later use,
+for example to plot a graph of the trajectory.
+The continuous variables \texttt{x} and \texttt{z} are instances of the
+classes \texttt{Preys} and \texttt{Preds}, whose method \texttt{derivative}
+give their derivative $x'(t)$ and $z'(t)$, respectively.
+The differential equations are integrated by a Runge-Kutta method
+of order 4.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {A simplified bank}
+\label {sec:bank}
+
+This is Example~1.4.1 of \cite{sBRA87a}, page~14.
+% Bratley, Fox, and Schrage (1987).
+A bank has a random number of tellers every morning.
+On any given day, the bank has $t$ tellers with probability $q_t$,
+where $q_3 = 0.80$, $q_2 = 0.15$, and $q_1 = 0.05$.
+All the tellers are assumed to be identical from the modeling viewpoint.
+
+
+%%%%%%%%%%%%%
+\setbox0=\vbox{\hsize=6.0in
+%%  {Arrival rate of customers to the bank.}
+\beginpicture
+\setcoordinatesystem units <1.8cm,2cm>
+%%  72.27pt = 1in
+\setplotarea x from 0 to 6.5, y from 0 to 1
+\axis left
+  label {\lines {arrival \ \cr rate }}
+  ticks length <2pt> withvalues 0.5 1 / at 0.5 1 / /
+\axis bottom
+  label {\hbox to 5.4in {\hfill time}}
+  ticks length <2pt> withvalues 9:00 9:45 11:00 14:00 15:00 /
+  at 0.0 0.75 2.0 5.0 6.0 / /
+\shaderectangleson
+\putrectangle corners at 0.75 0.0 and 2.0 0.5
+\putrectangle corners at 2.0 0.0 and 5.0 1.0
+\putrectangle corners at 5.0 0.0 and 6.0 0.5
+\endpicture
+}
+
+\begin{figure}[htb]
+\box0
+\caption {Arrival rate of customers to the bank.}
+\label {fig:blambda}
+\end{figure}
+
+\lstinputlisting[label=lst:BankEv,
+caption={Event-oriented simulation of the bank model},
+emph={simulOneDay,simulateDays,actions,balk,main}]%
+{BankEv.java}
+
+% \bigskip
+
+The bank opens at 10:00 and closes at 15:00 (i.e., {\sc 3 p.m.}).
+The customers arrive randomly according to a Poisson process
+with piecewise constant rate $\lambda(t)$, $t\ge 0$.
+The arrival rate $\lambda(t)$ (see Fig.{}~\ref{fig:blambda})
+is 0.5 customer per minute from
+9:45 until 11:00 and from 14:00 until 15:00, and
+one customer per minute from 11:00 until 14:00.
+The customers who arrive between 9:45 and 10:00 join a FIFO queue
+and wait for the bank to open.
+At 15:00, the door is closed, but all the customers already in will be served.
+Service starts at 10:00.
+
+Customers form a FIFO queue for the tellers, with balking.
+An arriving customer will balk (walk out) with probability $p_k$ if there
+are $k$ customers ahead of him in the queue (not counting the people
+receiving service), where
+ $$ p_k = \cases { 0       & if $k\le 5$;\cr
+                   (n-5)/5 & if $5 < k < 10$;\cr
+                   1       & if $k\ge 10$.\cr }$$
+The customer service times are independent Erlang random
+variables: Each service time is the sum of
+two independent exponential random variables with mean one.
+
+We want to estimate the expected number of customers served in a
+day, and the expected average wait for the customers
+served on a day.
+% We could also be interested in the effect of changing the number of tellers,
+% changing their speed, and so on.
+
+Listing~\ref{lst:BankEv} gives and event-oriented simulation
+program for this bank model.
+There are events at the fixed times 9:45, 10:00, etc.
+At 9:45, the counters are initialized and the arrival process
+is started.  The time until the first arrival,
+or the time between one arrival and the next one, is (tentatively)
+an exponential with a mean of 2 minutes.
+However, as soon as an arrival turns out to be past 11:00,
+its time must be readjusted to take into account the increase of the
+arrival rate at 11:00.
+The event 11:00 takes care of this readjustment,
+and the event at 14:00 makes a similar readjustment
+when the arrival rate decreases.
+We give the specific name \texttt{nextArriv} to the next planned
+arrival event in order to be able to reschedule
+that particular event to a different time.
+Note that a {\em single\/} arrival event is
+created at the beginning and this same event is scheduled over and
+over again.  This can be done because there is never more than one
+arrival event in the event list.
+(We could have done that as well for the $M/M/1$ queue in
+Listing \ref{lst:QueueEv}.)
+
+At the bank opening at 10:00, an event generates the number
+of tellers and starts the service for the corresponding customers.
+The event at 15:00 cancels the next arrival.
+
+Upon arrival, a customer checks if a teller is free.
+If so, one teller becomes busy and the customer generates its
+service time and schedules his departure, otherwise the
+customer either balks or joins the queue.
+The balking decision is computed by the method \texttt{balk},
+using the random number stream \texttt{streamBalk}.
+The arrival event also generates the next scheduled arrival.
+Upon departure, the customer frees the teller, and the first
+customer in the queue, if any, can start its service.
+The generator \texttt{genServ} is an \texttt{ErlangConvolutionGen} generator,
+so that the Erlang variates are generated by adding two exponentials instead
+of using inversion.
+
+The method \texttt{simulateDays} simulates the bank
+for \texttt{numDays} days and prints a statistical report.
+If $X_i$ is the number of customers served on day $i$ and
+$Q_i$ the total waiting time on day $i$, the program estimates
+$E[X_i]$ and $E[Q_i]$ by their sample averages $\bar X_n$ and
+$\bar Q_n$ with $n = $\texttt{numDays}.
+For each simulation run (each day), \texttt{simulOneDay} initializes
+the clock, event list, and statistical probe for the waiting times,
+schedules the deterministic events, and runs the simulation.
+After 15:00, no more arrival occurs and the event list becomes
+empty when the last customer departs.
+At that point, the program returns to right after the \texttt{Sim.start()}
+statement and updates the statistical counters for the number of
+customers served during the day and their total waiting time.
+
+The results are given in Listing~\ref{res:Bank}.
+
+\lstinputlisting[label=res:Bank,
+caption={Results of the \texttt{BankEv} program}]%
+{Bank.res}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {A call center}
+\label {sec:call-center}
+
+We consider here a simplified model of a telephone contact center
+(or \emph{call center}) where agents answer incoming calls.
+% in FIFO order.
+Each day, the center operates for $m$ hours.
+The number of agents answering calls and the arrival rate
+of calls vary during the day; we shall assume that
+they are constant within each hour of operation but depend on the hour.
+% We number the hours of operations staring from zero.
+Let $n_j$ be the number of agents in the center during hour $j$,
+for $j=0,\dots,m-1$.
+For example, if the center operates from 8 {\sc am} to 9 {\sc pm},
+then $m=13$ and hour $j$ starts at ($j+8$) o'clock.
+All agents are assumed to be identical.
+When the number of occupied agents at the end of hour $j$ is larger
+than $n_{j+1}$, ongoing calls are all completed but new calls are
+answered only when there are less than $n_{j+1}$ agents busy.
+After the center closes, ongoing calls are completed and calls already
+in the queue are answered, but no additional incoming call is taken.
+
+The calls arrive according to a Poisson process with piecewise constant rate,
+equal to $R_j = B \lambda_j$ during hour $j$, where the $\lambda_j$
+are constants and $B$ is a random variable having the gamma distribution
+with parameters $(\alpha_0,\alpha_0)$.
+% $E[B] = \alpha/\lambda$ and $\Var[B] = \alpha /\lambda^2$.
+Thus, $B$ has mean 1 and variance $1/\alpha_0$, and it
+represents the \emph{busyness} of the day; it is more busy than usual
+when $B > 1$ and less busy when $B < 1$.
+The Poisson process assumption means that conditional on $B$,
+the number of incoming calls during any subinterval $(t_1, t_2]$
+of hour $j$ is a Poisson random variable with
+mean $(t_2 - t_1) B \lambda_j$ and that the arrival counts in
+any disjoint time intervals are independent random variables.
+This arrival process model is motivated and studied in
+\cite{ccWHI99c} and \cite{ccAVR04a}.
+
+Incoming calls form a FIFO queue for the agents.
+% with impatient customers.
+A call is \emph{lost} (abandons the queue) when its waiting time
+exceed its \emph{patience time}.
+The patience times of calls are assumed to be i.i.d.{} random variables
+with the following distribution: with probability $p$ the patience
+time is 0 (so the person hangs up unless there is an agent
+available immediately), and with probability $1-p$ it is exponential
+with mean $1/\nu$.
+The service times
+% (times to handle the calls)
+are i.i.d.{} gamma random variables with parameters $(\alpha,\beta)$.
+%  Or perhaps Erlang?
+
+We want to estimate the following quantities
+\emph{in the long run} (i.e., over an infinite number of days):
+(a) $w$, the average waiting time per call,
+(b) $g(s)$, the fraction of calls whose waiting time is less than
+    $s$ seconds for a given threshold $s$, and
+(c) $\ell$, the fraction of calls lost due to abandonment.
+
+Suppose we simulate the model for $n$ days.  For each day $i$, let
+$A_i$ be the number of arrivals,
+$W_i$ the total waiting time of all calls,
+$G_i(s)$ the number of calls who waited less than $s$ seconds,
+and $L_i$ the number of abandonments.
+For this model, the expected number of incoming calls in a day is
+$a = E[A_i] = \sum_{j=0}^{m-1} \lambda_j$.
+% We have that $w = E[W_i]/a$, $g(s) = E[G_i(s)]/a$, and $\ell = E[L_i]/a$.
+Then, $W_i/a$, $G_i(s)/a$, and $L_i/a$, $i=1,\dots,n$,
+are i.i.d.{} unbiased estimators of $w$, $g(s)$, and $\ell$, respectively,
+and can be used to compute confidence intervals for these quantities
+in a standard way if $n$ is large.
+
+
+\lstinputlisting[label=lst:CallCenter,
+caption={Simulation of a simplified call center},
+emph={simulateOneDay,actions,generPatience,checkQueue,endWait,readData,main}
+]%
+{CallCenter.java}
+
+% \bigskip
+
+Listing~\ref{lst:CallCenter} gives an event-oriented simulation
+program for this call center model.
+When the \texttt{CallCenter} class is instantiated by the \texttt{main} method,
+the random streams, list, and statistical probes are created,
+and the model parameters are read from a file by the method \texttt{readData}.
+The line \texttt{Locale.setDefault(Locale.US)} is added because
+real numbers in the data file are read in the anglo-saxon form 8.3
+instead of the form 8,3 used by most countries in the world.
+The \texttt{main} program then simulates $n = 1000$ operating days and
+prints the value of $a$, as well as 90\%{} confidence intervals on
+$a$, $w$, $g(s)$, and $\ell$, based on their estimators
+$\bar A_n$, $\bar W_n/a$, $\bar G_n(s)/a$, and $\bar L_n/a$,
+assuming that these estimators have approximately the Student distribution.
+This is justified by the fact that $W_i$, and $G_i(s)$, and $L_i$
+are themselves ``averages'' over several observations, so we may expect
+their distribution to be not far from a normal.
+
+To generate the service times, we use a gamma random variate
+generator called \texttt{genServ}, created in the constructor
+after the parameters $(\alpha,\beta)$ of the service time distribution
+have been read from the data file.
+For the other random variables in the model, we simply create random
+streams of i.i.d.{} uniforms (in the preamble) and apply inversion
+explicitly to generate the random variates.
+The latter approach is more convenient, e.g., for patience times
+because their distribution is not standard and for the inter-arrival
+times because their mean changes every period.
+For the gamma service time distribution, on the other hand,
+the parameters always remain the same and inversion is rather slow,
+so we decided to create a generator that uses a faster special method.
+
+The method \texttt{simulateOneDay} simulates one day of operation.
+It initializes the simulation clock, event list, and counters,
+schedules the center's opening
+% (start of the first period)
+and the first arrival, and starts the simulation.
+When the day is over, it updates the statistical collectors.
+Note that there are two versions of this method; one that generates the random
+variate $B$ and the other that takes its value as an input parameter.
+This is convenient in case one wishes to simulate the center with
+a fixed value of $B$.
+
+An event \texttt{NextPeriod(j)} marks the beginning of each period $j$.
+The first of these events (for $j=0$) is scheduled by \texttt{simulateOneDay};
+then the following ones schedule each other successively,
+until the end of the day.
+This type of event updates the number of agents in the center and
+the arrival rate for the next period.
+If the number of agents has just increased and the queue is not empty,
+some calls in the queue can now be answered.
+The method \texttt{checkQueue} verifies this and starts service for the
+appropriate number of calls.
+The time until the next planned arrival is readjusted to take into account
+the change of arrival rate, as follows.
+The inter-arrival times are i.i.d.{} exponential with
+mean $1/R_{j-1}$ when the arrival rate is fixed at $R_{j-1}$.
+But when the arrival rate changes from $R_{j-1}$ to $R_j$,
+the residual time until the next arrival should be modified from an
+exponential with mean $1/R_{j-1}$ (already generated)
+to an exponential with mean $1/R_j$.
+Multiplying the residual time by $\lambda_{j-1}/\lambda_j$ is an easy
+way to achieve this.
+We give the specific name \texttt{nextArrival} to the next arrival
+event in order to be able to reschedule it to a different time.
+Note that there is a \emph{single} arrival event which is scheduled
+over and over again during the entire simulation.
+This is more efficient than creating a new arrival event for each
+call, and can be done here because there is never more than one arrival
+event at a time in the event list.
+At the end of the day, simply canceling the next arrival makes sure
+that no more calls will arrive.
+
+Each arrival event first schedules the next one.
+Then it increments the arrivals counter and creates the new call that just
+arrived.  The call's constructor generates its service time and decides
+where the incoming call should go.
+If an agent is available, the call is answered immediately
+(its waiting time is zero), and an event is scheduled for the completion
+of the call.   Otherwise, the call must join the queue;
+its patience time is generated by \texttt{generPatience} and memorized,
+together with its arrival time, for future reference.
+
+Upon completion of a call, the number of busy agents is decremented
+and one must verify if a waiting call can now be answered.
+The method \texttt{checkQueue} verifies that and if the answer is yes,
+it removes the first call from the queue and activates its \texttt{endWait}
+method.
+This method first compares the call's waiting time with its patience time,
+to see if this call is still waiting or has been lost (by abandonment).
+If the call was lost, we consider its waiting time
+as being equal to its patience time (i.e., the time that the caller
+has really waited), for the statistics.
+If the call is still there, the number of busy agents is incremented
+and an event is scheduled for the call completion.
+
+The results of this program, with the data in file
+\texttt{CallCenter.dat}, are shown in Listing~\ref{res:CallCenter}.
+
+\lstinputlisting[label=res:CallCenter,
+caption={Simulation of a simplified call center},
+float=tp]%
+{CallCenter.res}
+
+% \bigskip
+
+This model is certainly an oversimplification of actual call centers.
+It can be embellished and made more realistic by considering
+different types of agents, different types of calls,
+agents taking breaks for lunch, coffee, or going to the restroom,
+agents making outbound calls to reach customers when the inbound
+traffic is low (e.g., for marketing purpose or for returning calls),
+and so on.   One could also model the revenue generated by calls and
+the operating costs for running the center,
+and use the simulation model to compare alternative operating strategies
+in terms of the expected net revenue, for example.

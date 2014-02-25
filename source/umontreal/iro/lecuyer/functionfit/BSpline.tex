@@ -1,0 +1,607 @@
+\defclass{BSpline}
+
+Represents a B-spline with control points at
+$(X_i, Y_i)$.
+Let $\mathbf{P_i}=(X_i, Y_i)$, for $i=0,\ldots,n-1$, be a \emph{control point} and
+let $t_j$, for $j=0,\ldots,m-1$ be a \emph{knot}.
+A B-spline \cite{mDEB78a} of degree $p=m-n-1$ is a parametric curve defined as
+\[\mathbf{P(t)} = \sum_{i=0}^{n-1} N_{i, p}(t) \mathbf{P_i},\mbox{ for }t_p\le t\le t_{m-p-1}.\]
+Here,
+\begin{latexonly}%
+\begin{eqnarray*}
+N_{i, p}(t) &=&
+\frac{t-t_i}{t_{i+p} - t_i}N_{i, p-1}(t)
++ \frac{t_{i+p+1} - t}{t_{i+p+1} - t_{i+1}}N_{i+1, p-1}(t)\\[7pt]
+N_{i, 0}(t) &=& \left\{\begin{array}{ll}
+1&\mbox{ for }t_i\le t\le t_{i+1},\\
+0&\mbox{ elsewhere}.
+\end{array}\right.
+\end{eqnarray*}
+\end{latexonly}%
+\begin{htmlonly}
+\begin{eqnarray*}
+N_{i, p}(t) &=&
+((t-t_i)/(t_{i+p} - t_i))N_{i, p-1}(t)
++ ((t_{i+p+1} - t)/(t_{i+p+1} - t_{i+1})) N_{i+1, p-1}(t)\\[7pt]
+N_{i, 0}(t) &=& \left\{\begin{array}{ll}
+1&\mbox{ for }t_i\le t\le t_{i+1},\\
+0&\mbox{ elsewhere}.
+\end{array}\right.
+\end{eqnarray*}
+\end{htmlonly}%
+
+
+This class provides methods to evaluate
+$\mathbf{P(t)}=(X(t), Y(t))$ at any value of $t$,
+for a B-spline of any degree $p\ge 1$.
+Note that the
+\method{evaluate}{double} method
+of this class can be slow, since it
+uses a root finder to determine
+the value of $t^*$ for which $X(t^*)=x$
+before it computes $Y(t^*)$.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BSpline
+ * Description:  B-spline
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.functionfit;\begin{hide}
+
+import umontreal.iro.lecuyer.util.Misc;
+import umontreal.iro.lecuyer.util.RootFinder;
+import umontreal.iro.lecuyer.functions.MathFunction;
+import umontreal.iro.lecuyer.functions.MathFunctionWithIntegral;
+import umontreal.iro.lecuyer.functions.MathFunctionWithDerivative;
+import umontreal.iro.lecuyer.functions.MathFunctionWithFirstDerivative;
+import umontreal.iro.lecuyer.functions.MathFunctionUtil;
+import cern.colt.matrix.linalg.Algebra;
+import cern.colt.matrix.DoubleMatrix2D;
+import cern.colt.matrix.DoubleFactory2D;
+import java.util.Arrays;
+import java.util.Random;
+import java.io.*;
+\end{hide}
+
+public class BSpline implements MathFunction\begin{hide}
+
+,
+MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDerivative{
+   // Formula taken from http://www.ibiblio.org/e-notes/Splines/Basis.htm
+   // and http://en.wikipedia.org/wiki/De_Boor_algorithm
+   private double[] x;     //x original
+   private double[] y;     //y original
+
+   private int degree;
+
+   //variables sur lesquelles on travaille
+   private double[] myX;
+   private double[] myY;
+   private double[] knots;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public BSpline (final double[] x, final double[] y, final int degree)\begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException("The arrays x and y must share the same length");
+      this.degree = degree;
+      this.x = x.clone();
+      this.y = y.clone();
+      init(x, y, null);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a new uniform B-spline of degree \texttt{degree}
+   with control points at (\texttt{x[i]}, \texttt{y[i]}).
+   The knots of the resulting B-spline are set uniformly from
+    \texttt{x[0]} to \texttt{x[n-1]}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the values of $X$.}
+   \param{y}{the values of $Y$.}
+   \param{degree}{the degree of the B-spline.}
+\end{htmlonly}
+\begin{code}
+
+   public BSpline (final double[] x, final double[] y, final double[] knots)\begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException("The arrays x and y must share the same length");
+      if (knots.length <= x.length + 1)
+         throw new IllegalArgumentException("The number of knots must be at least n+2");
+
+      this.x = x.clone();
+      this.y = y.clone();
+      this.knots = knots.clone();
+      init(x, y, knots);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Constructs a new uniform B-spline
+   with control points at (\texttt{x[i]}, \texttt{y[i]}), and
+   knot vector given by the array \texttt{knots}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the values of $X$.}
+   \param{y}{the values of $Y$.}
+   \param{knots}{the knots of the B-spline.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+
+\begin{code}
+
+   public double[] getX()\begin{hide} {
+      return myX.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $X_i$ coordinates for this spline.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $X_i$ coordinates.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getY()\begin{hide} {
+      return myY.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $Y_i$ coordinates for this spline.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $Y_i$ coordinates.}
+\end{htmlonly}
+\begin{code}
+
+   public double getMaxKnot()\begin{hide} {
+      return knots[knots.length-1];
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the knot maximal value.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $Y_i$ coordinates.}
+\end{htmlonly}
+\begin{code}
+
+   public double getMinKnot()\begin{hide} {
+      return knots[0];
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the knot minimal value.
+\end{tabb}
+\begin{htmlonly}
+   \return{the $Y_i$ coordinates.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getKnots()\begin{hide} {
+      return knots.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns an array containing the knot vector $(t_0, t_{m-1})$.
+\end{tabb}
+\begin{htmlonly}
+   \return{the knot vector.}
+\end{htmlonly}
+\begin{code}
+
+   public static BSpline createInterpBSpline (double[] x, double[] y,
+                                              int degree) \begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException("The arrays x and y must share the same length");
+      if (x.length <= degree)
+         throw new IllegalArgumentException("The arrays length must be greater than degree");
+
+      int n = x.length-1;
+      //compute t : parameters vector uniformly from 0 to 1
+      double[] t = new double[x.length];
+      for(int i =0; i<t.length; i++) {
+         t[i] = (double)i/(t.length-1);
+      }
+
+      //compute U : clamped knots vector uniformly from 0 to 1
+      double U[] = new double[x.length + degree + 1];
+      int m = U.length-1;
+      for(int i =0; i<=degree; i++)
+         U[i] = 0;
+      for(int i =1; i<x.length-degree; i++)
+         U[i+degree] = (double)i/(x.length-degree);
+      for(int i = U.length-1-degree; i<U.length; i++)
+         U[i] = 1;
+
+
+      //compute matrix N : made of BSpline coefficients
+      double [][] N = new double[x.length][x.length];
+      for(int i = 0; i<x.length; i++) {
+            N[i] = computeN(U, degree, t[i], x.length);
+      }
+
+      //initialize D : initial points matrix
+      double [][] D = new double[x.length][2];
+      for(int i =0; i<x.length; i++) {
+         D[i][0] = x[i];
+         D[i][1] = y[i];
+      }
+
+      //solve the linear equation system using colt library
+      DoubleMatrix2D coltN = DoubleFactory2D.dense.make(N);
+      DoubleMatrix2D coltD = DoubleFactory2D.dense.make(D);
+      DoubleMatrix2D coltP;
+      coltP = Algebra.ZERO.solve(coltN, coltD);
+
+      return new BSpline(coltP.viewColumn(0).toArray(), coltP.viewColumn(1).toArray(), U);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a B-spline curve of degree \texttt{degree} interpolating the
+   $(x_i, y_i)$ points \cite{mDEB78a}.
+   This method uses the uniformly spaced method for interpolating
+   points with a B-spline curve, and a uniformed clamped knot vector,
+   as described in \url{http://www.cs.mtu.edu/~shene/COURSES/cs3621/NOTES/}.
+   %On pourrait peut etre implementer les autes methodes ?
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the values of $X$.}
+   \param{y}{the values of $Y$.}
+   \param{degree}{the degree of the B-spline.}
+   \return{the B-spline curve.}
+\end{htmlonly}
+
+\begin{code}
+
+   public static BSpline createApproxBSpline (double[] x, double[] y,
+                                              int degree, int h) \begin{hide} {
+      if (x.length != y.length)
+         throw new IllegalArgumentException("The arrays x and y must share the same length");
+      if (x.length <= degree)
+         throw new IllegalArgumentException("The arrays length must be greater than degree");
+
+      //compute t : parameters vector uniformly from 0 to 1
+      double[] t = new double[x.length];
+      for(int i =0; i<t.length; i++) {
+         t[i] = (double)i/(t.length-1);
+      }
+
+      //compute U : clamped knots vector uniformly from 0 to 1
+      double U[] = new double[x.length + degree + 1];
+      int m = U.length-1;
+      for(int i =0; i<=degree; i++)
+         U[i] = 0;
+      for(int i =1; i<x.length-degree; i++)
+         U[i+degree] = (double)i/(x.length-degree);
+      for(int i = U.length-1-degree; i<U.length; i++)
+         U[i] = 1;
+
+
+      //compute matrix N : composed of BSpline coefficients
+      double [][] N = new double[x.length][x.length];
+      for(int i = 1; i<x.length; i++) {
+            N[i] = computeN(U, degree, t[i], x.length);
+      }
+
+      //initialize D : initial points matrix
+      double [][] D = new double[x.length][2];
+      for(int i =0; i<x.length; i++) {
+         D[i][0] = x[i];
+         D[i][1] = y[i];
+      }
+
+      //compute Q :
+      double[][] tempQ = new double[x.length][2];
+      for(int k = 1; k < x.length-1; k++) {
+         tempQ[k][0] = D[k][0] - N[k][0]*D[0][0] - N[k][h]*D[D.length-1][0];
+         tempQ[k][1] = D[k][1] - N[k][0]*D[0][1] - N[k][h]*D[D.length-1][1];
+      }
+      double[][] Q = new double[h-1][2];
+      for(int i = 1; i < h; i++) {
+         Q[i-1][0] = 0;
+         Q[i-1][1] = 0;
+         for(int k = 1; k<x.length; k++) {
+            Q[i-1][0] += N[k][i]*tempQ[k][0];
+            Q[i-1][1] += N[k][i]*tempQ[k][1];
+         }
+      }
+
+      //initialize P : new control point matrix
+      double [][] P = new double[h+1][2];
+
+      //solve the linear equation system using colt library
+      DoubleMatrix2D coltQ = DoubleFactory2D.dense.make(Q);
+      DoubleMatrix2D coltN = Algebra.ZERO.subMatrix(DoubleFactory2D.dense.make(N), 1, x.length-1, 1, h-1).copy();
+      DoubleMatrix2D coltM = Algebra.ZERO.mult(Algebra.ZERO.transpose(coltN), coltN);
+      DoubleMatrix2D coltP;
+      coltP = Algebra.ZERO.solve(coltM, coltQ);
+      double[] pxTemp = coltP.viewColumn(0).toArray();
+      double[] pyTemp = coltP.viewColumn(1).toArray();
+      double[] px = new double[h+1];
+      double[] py = new double[h+1];
+      px[0] = D[0][0];
+      py[0] = D[0][1];
+      px[h] = D[D.length-1][0];
+      py[h] = D[D.length-1][1];
+      for(int i =0; i< pxTemp.length; i++) {
+         px[i+1] = pxTemp[i];
+         py[i+1] = pyTemp[i];
+      }
+/*
+      Writer dos = null;
+      try {
+         dos = new FileWriter("resss");
+
+         int j = 0;
+         //BSpline bs = new BSpline(x, y, 5);
+         for (int i = 0; i < px.length; i++) {
+            dos.write(px[i] + "   " + py[i] + PrintfFormat.NEWLINE);
+         }
+      }
+      catch (FileNotFoundException e) {e.printStackTrace(); }
+      catch (IOException e) { e.printStackTrace();}
+      finally {
+         try {
+            dos.close();
+         }
+         catch (IOException e) {}
+      }*/
+      return new BSpline(px, py, U);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a B-spline curve of degree \texttt{degree} smoothing
+   $(x_i, y_i)$, for $i=0,\ldots,n$ points. The
+   precision depends on the parameter $h$: $1 \le \texttt{degree} \le h<n$, which
+   represents the number of control points used by the new B-spline curve,
+   minimizing the quadratic error
+   \[L = \sum_{i=0}^{n}\left( \frac{Y_i - S_i(X_i)}{W_i}\right)^2.\]
+   This method uses the uniformly spaced method for interpolating
+   points with a B-spline curve and a uniformed clamped knot vector,
+   as described in \url{http://www.cs.mtu.edu/~shene/COURSES/cs3621/NOTES/}.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the values of $X$.}
+   \param{y}{the values of $Y$.}
+   \param{degree}{the degree of the B-spline.}
+   \param{h}{the desired number of control points.}
+   \return{the B-spline curve.}
+\end{htmlonly}
+\begin{code}
+
+   public BSpline derivativeBSpline() \begin{hide} {
+      double xTemp[] = new double[this.myX.length-1];
+      double yTemp[] = new double[this.myY.length-1];
+      for(int i = 0; i<xTemp.length; i++) {
+         xTemp[i] = (myX[i+1]-myX[i])*degree/(knots[i+degree+1]-knots[i+1]);
+         yTemp[i] = (myY[i+1]-myY[i])*degree/(knots[i+degree+1]-knots[i+1]);
+      }
+
+      double [] newKnots = new double[knots.length-2];
+      for(int i = 0; i < newKnots.length; i++) {
+         newKnots[i] = knots[i+1];
+      }
+
+      //tri pas optimise du tout
+      double xTemp2[] = new double[this.myX.length-1];
+      double yTemp2[] = new double[this.myY.length-1];
+      for(int i = 0; i<xTemp.length; i++) {
+         int k=0;
+         for(int j = 0; j<xTemp.length; j++) {
+            if(xTemp[i] > xTemp[j])
+               k++;
+         }
+         while(xTemp2[k] != 0)
+            k++;
+         xTemp2[k] = xTemp[i];
+         yTemp2[k] = yTemp[i];
+      }
+
+      return new BSpline(xTemp2, yTemp2, newKnots);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the derivative B-spline object of the current variable.
+   Using this function and the returned object, instead of the
+  \texttt{derivative} method,
+   is strongly recommended if one wants to compute many derivative values.
+\end{tabb}
+\begin{htmlonly}
+   \return{the derivative B-spline of the current variable.}
+\end{htmlonly}
+\begin{code}
+
+   public BSpline derivativeBSpline (int i) \begin{hide} {
+      BSpline bs = this;
+      while(i > 0) {
+         i--;
+         bs = bs.derivativeBSpline();
+      }
+      return bs;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the $i$th derivative B-spline object of the current variable;
+   $i$ must be less than the degree of the original B-spline.
+   Using this function and the returned object, instead of the
+  \texttt{derivative} method,
+   is strongly recommended if one wants to compute many derivative values.
+\end{tabb}
+\begin{htmlonly}
+   \param{i}{the degree of the derivative.}
+   \return{the ith derivative.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+   public double evaluate(final double u) {
+      final MathFunction xFunction = new MathFunction () {
+         public double evaluate (double t) {
+            return evalX(t) - u;
+         }
+      };
+      final double t = RootFinder.brentDekker (0, 1-1.0E-6, xFunction, 1e-6);
+      return evalY(t);
+   }
+
+   public double integral (double a, double b) {
+      return MathFunctionUtil.simpsonIntegral (this, a, b, 500);
+   }
+
+   public double derivative(double u) {
+      return derivativeBSpline().evaluate(u);
+   }
+
+   public double derivative(double u, int n) {
+      return derivativeBSpline(n).evaluate(u);
+   }
+
+   private void init(double[] x, double[] y, double [] initialKnots) {
+      if(initialKnots == null) {
+      //Cree un vecteur de noeud uniforme entre 0 et 1
+         knots = new double[x.length+degree+1];
+         for(int i = degree; i < this.knots.length-degree; i++)
+            this.knots[i]= (double)(i-degree)/(knots.length - (2.0*degree) -1);
+         for(int i = this.knots.length-degree; i < this.knots.length; i++)
+            this.knots[i]=this.knots[i-1];
+         for(int i = degree; i > 0; i--)
+            this.knots[i-1]=this.knots[i];
+
+      // cree notre vecteur interne de Points de controle
+      // ici, aucune modification a faire sur les tableaux originaux
+         myX = x;
+         myY = y;
+      }
+      else {
+         degree = initialKnots.length - x.length -1;
+
+      // on adapte le tableau des noeuds a notre algorithme
+      // le tableau knot necessite d'avoir degree fois la meme valeur en debut et en fin de tableau
+      // on adapte la taille des tableau X et Y en consequence afin de continuer a respecter la condition :
+      // x.length + degree + 1 = this.knots.length
+      // Cette modification n'influence pas le resultat et permet de fermer notre courbe
+
+         //Compute the number of values wich need to be added
+         int iBorneInf = 1, iBorneSup = initialKnots.length-2;
+         while(initialKnots[iBorneInf] == initialKnots[0])
+            iBorneInf++;
+         if(iBorneInf <= degree)
+            iBorneInf = degree-iBorneInf+1;
+         else
+            iBorneInf=0;//on a alors iBorneInf valeurs a rajouter en debut de tableau
+
+         while(initialKnots[iBorneSup] == initialKnots[initialKnots.length-1])
+            iBorneSup--;
+         if(iBorneSup >= initialKnots.length-1-degree)
+            iBorneSup = degree+1-(initialKnots.length-1-iBorneSup);
+         else
+            iBorneSup = 0; //on a alors iBorneSup valeurs a rajouter en fin de tableau
+
+         //add computed values
+         this.knots = new double[initialKnots.length + iBorneInf + iBorneSup];
+         myX = new double[x.length + iBorneInf + iBorneSup];
+         myY = new double[y.length + iBorneInf + iBorneSup];
+         for(int i = 0; i<iBorneInf; i++) {
+            this.knots[i] = initialKnots[0];
+            myX[i] = x[0];
+            myY[i] = y[0];
+         }
+         for(int i = 0; i<initialKnots.length; i++)
+            this.knots[iBorneInf + i] = initialKnots[i];
+         for(int i = 0; i<x.length; i++) {
+            myX[iBorneInf + i] = x[i];
+            myY[iBorneInf + i] = y[i];
+         }
+         for(int i = 0; i<iBorneSup; i++) {
+            this.knots[this.knots.length-1 - i] = initialKnots[initialKnots.length-1];
+            myX[myX.length-1-i] = x[x.length-1];
+            myY[myY.length-1-i] = y[y.length-1];
+         }
+      }
+   }
+
+   public double evalX(double u) {
+      int k = Misc.getTimeInterval (knots, 0, knots.length - 1, u);
+      double[][] X = new double[degree+1][myX.length];
+
+      for(int i = k-degree; i<=k; i++)
+         X[0][i] = myX[i];
+      for(int j=1; j<= degree; j++) {
+         for(int i = k-degree+j; i <= k; i++) {
+            double aij = (u - this.knots[i]) / (this.knots[i+1+degree-j] - this.knots[i]);
+            X[j][i] = (1-aij) * X[j-1][i-1] + aij * X[j-1][i];
+         }
+      }
+      return X[degree][k];
+   }
+
+   public double evalY(double u) {
+      int k = Misc.getTimeInterval (knots, 0, knots.length - 1, u);
+      double[][] Y = new double[degree+1][myX.length];
+
+      for(int i = k-degree; i<=k; i++)
+         Y[0][i] = myY[i];
+      for(int j=1; j<= degree; j++) {
+         for(int i = k-degree+j; i <= k; i++) {
+            double aij = (u - this.knots[i]) / (this.knots[i+1+degree-j] - this.knots[i]);
+            Y[j][i] = (1-aij) * Y[j-1][i-1] + aij * Y[j-1][i];
+         }
+      }
+      return Y[degree][k];
+   }
+
+   private static double[] computeN(double[] U, int degree, double u, int n) {
+      double[] N = new double[n];
+
+      //cas particuliers
+      if(u == U[0]) {
+         N[0] = 1.0;
+         return N;
+      }
+      else if (u == U[U.length-1]) {
+         N[N.length-1] = 1.0;
+         return N;
+      }
+
+      //trouve l'intervalle de u
+      int k = Misc.getTimeInterval (U, 0, U.length - 1, u);
+
+      //calcule N, tableaux des coefficients des BSplines
+      N[k] = 1.0;
+      for(int d = 1; d <= degree; d++) {
+         N[k-d] = N[k-d+1] * (U[k+1] - u) / (U[k+1] - U[k-d+1]);
+         for(int i = k-d+1; i<= k-1; i++)
+            N[i] = (u - U[i]) / (U[i+d]-U[i]) * N[i] + (U[i+d+1] - u)/(U[i+d+1] - U[i+1]) * N[i+1];
+         N[k] = (u - U[k]) / (U[k+d] - U[k]) * N[k];
+      }
+      return N;
+   }
+
+}\end{hide}
+\end{code}

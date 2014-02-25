@@ -1,0 +1,99 @@
+\begin{thebibliography}{10}
+
+\bibitem{fALB04a}
+H.~Albrecher and M.~Predota.
+\newblock On {A}sian option pricing for {NIG} {L}\'evy processes.
+\newblock {\em Journal of computational and applied mathematics}, 172:153--168,
+  2004.
+
+\bibitem{fAVR06a}
+T.~Avramidis and P.~L'Ecuyer.
+\newblock Efficient {M}onte {C}arlo and quasi-{M}onte {C}arlo option pricing
+  under the variance-gamma model.
+\newblock {\em Management Science}, 52(12):1930--1944, 2006.
+
+\bibitem{fAVR03a}
+T.~Avramidis, P.~L'Ecuyer, and P.-A. Tremblay.
+\newblock Efficient simulation of gamma and variance-gamma processes.
+\newblock In {\em Proceedings of the 2003 Winter Simulation Conference}, pages
+  319--326, Piscataway, New Jersey, 2003. {IEEE} Press.
+
+\bibitem{pBAR98a}
+O.~E. Barndorff-Nielsen.
+\newblock Processes of normal inverse gaussian type.
+\newblock {\em Finance and Stochastics}, 2:41--68, 1998.
+
+\bibitem{fCOX85a}
+J.~C. Cox, J.~E. Ingersoll, and S.~A. Ross.
+\newblock A theory of the term structure of interest rates.
+\newblock {\em Econometrica}, 53:385--407, 1985.
+
+\bibitem{pFEL66a}
+W.~Feller.
+\newblock {\em An Introduction to Probability Theory and Its Applications, Vol.
+  2}.
+\newblock Wiley, New York, NY, first edition, 1966.
+
+\bibitem{fGLA04a}
+P.~Glasserman.
+\newblock {\em Monte {C}arlo Methods in Financial Engineering}.
+\newblock Springer-Verlag, New York, 2004.
+
+\bibitem{fIMA06a}
+J.~Imai and K.~S. Tan.
+\newblock A general dimension reduction technique for derivative pricing.
+\newblock {\em Journal of Computational Finance}, 10(2):129--155, 2006.
+
+\bibitem{fLEC04a}
+P.~L'Ecuyer.
+\newblock Quasi-{M}onte {C}arlo methods in finance.
+\newblock In R.~G. Ingalls, M.~D. Rossetti, J.~S. Smith, and B.~A Peters,
+  editors, {\em Proceedings of the 2004 Winter Simulation Conference},
+  Piscataway, New Jersey, 2004. {IEEE} Press.
+
+\bibitem{fLEC08a}
+P.~L'Ecuyer, J.~S. Parent-Chartier, and M.~Dion.
+\newblock Simulation of a {L}\'evy process by {PCA} sampling to reduce the
+  effective dimention.
+\newblock In {\em Proceedings of the 2008 Winter Simulation Conference}, pages
+  436--443, Pistacaway, NJ, 2008. IEEE Press.
+
+\bibitem{rLEC06a}
+P.~L'Ecuyer and R.~Simard.
+\newblock Inverting the symmetrical beta distribution.
+\newblock {\em {ACM} Transactions on Mathematical Software}, 32(4):509--520,
+  2006.
+
+\bibitem{fMAD98a}
+D.~B. Madan, P.~P. Carr, and E.~C. Chang.
+\newblock The variance gamma process and option pricing.
+\newblock {\em European Finance Review}, 2:79--105, 1998.
+
+\bibitem{fMAD91a}
+D.~B. Madan and F.~Milne.
+\newblock Option pricing with {V.G.} martingale components.
+\newblock {\em Mathematical Finance}, 1:39--55, 1991.
+
+\bibitem{fMAD90a}
+D.~B. Madan and E.~Seneta.
+\newblock The variance gamma {(V.G.)} model for share market returns.
+\newblock {\em Journal of Business}, 63:511--524, 1990.
+
+\bibitem{rMIC76a}
+J.~R. Michael, W.~R. Schuchany, and R.~W. Haas.
+\newblock Generating random variates using transformations with multiple roots.
+\newblock {\em The American Statistician}, 30:88--90, 1976.
+
+\bibitem{fRIB02a}
+C.~Ribeiro and N.~Webber.
+\newblock Valuing path-dependent options in the variance-gamma model by {M}onte
+  {C}arlo with a gamma bridge.
+\newblock manuscript, December 2002.
+
+\bibitem{fWEB03a}
+N.~Webber and C.~Ribeiro.
+\newblock A {M}onte {C}arlo method for the normal inverse gaussian option
+  valuation model using an inverse gaussian bridge.
+\newblock Technical Report~5, Society for Computational Economics, 2003.
+
+\end{thebibliography}

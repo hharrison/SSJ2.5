@@ -1,0 +1,234 @@
+\defclass {PascalDist}
+
+The \emph{Pascal} distribution is a special case of the
+\emph{negative binomial\/} distribution
+\cite[page 324]{sLAW00a} with
+parameters $n$ and $p$, where $n$ is a positive
+integer and $0\le p\le 1$.
+Its mass function is
+\begin{htmlonly}
+\eq
+  p(x) = \mbox{nCr}(n + x - 1, x) p^n (1 - p)^{x},
+    \qquad\mbox{for } x = 0, 1, 2, \ldots
+\endeq
+where nCr is defined in \class{BinomialDist}.
+\end{htmlonly}
+\begin{latexonly}
+\eq
+  p(x) = \binom{n + x - 1}{x} p^n (1 - p)^{x},
+    \qquad\mbox{for } x = 0, 1, 2, \ldots \eqlabel{eq:fmass-pascal}
+\endeq
+\end{latexonly}
+This $p(x)$ can be interpreted as the probability of having $x$ failures
+before the $n$th success in a sequence of independent Bernoulli trials
+with  probability of success $p$.
+For $n=1$, this gives the \emph{geometric} distribution.
+
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        PascalDist
+ * Description:  Pascal distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdist;
+\begin{hide}
+import umontreal.iro.lecuyer.util.RootFinder;
+import umontreal.iro.lecuyer.functions.MathFunction;
+\end{hide}
+
+public class PascalDist extends NegativeBinomialDist\begin{hide} {
+   private static final double EPSI = 1.0E-10;
+
+   private static class Function implements MathFunction {
+      protected int m;
+      protected int max;
+      protected double mean;
+      protected int[] Fj;
+
+      public Function (int m, int max, double mean, int[] Fj) {
+         this.m = m;
+         this.max = max;
+         this.mean = mean;
+         this.Fj = new int[Fj.length];
+         System.arraycopy(Fj, 0, this.Fj, 0, Fj.length);
+      }
+
+      public double evaluate (double p) {
+         double sum = 0.0;
+         double s = (p * mean) / (1.0 - p);
+
+         for (int j = 0; j < max; j++)
+            sum += Fj[j] / (s + (double) j);
+
+         return sum + m * Math.log (p);
+      }
+
+      public double evaluateN (int n, double p) {
+         double sum = 0.0;
+
+         for (int j = 0; j < max; j++)
+            sum += Fj[j] / (n + j);
+
+         return sum + m * Math.log (p);
+      }
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+\begin{code}
+
+   public PascalDist (int n, double p)\begin{hide} {
+      setParams (n, p);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Creates an object that contains the probability
+   terms (\ref{eq:fmass-pascal}) and the distribution function for
+   the Pascal distribution with parameter $n$ and $p$.
+ \end{tabb}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}
+
+   public static double[] getMLE (int[] x, int m)\begin{hide} {
+      if (m <= 0)
+         throw new IllegalArgumentException ("m <= 0");
+
+      double sum = 0.0;
+      int max = Integer.MIN_VALUE;
+      for (int i = 0; i < m; i++)
+      {
+         sum += x[i];
+         if (x[i] > max)
+            max = x[i];
+      }
+      double mean = (double) sum / (double) m;
+
+      double var = 0.0;
+      for (int i = 0; i < m; i++)
+         var += (x[i] - mean) * (x[i] - mean);
+      var /= (double) m;
+
+      if (mean >= var)
+           throw new UnsupportedOperationException("mean >= variance");
+
+      int[] Fj = new int[max];
+      for (int j = 0; j < max; j++) {
+         int prop = 0;
+         for (int i = 0; i < m; i++)
+            if (x[i] > j)
+               prop++;
+
+         Fj[j] = prop;
+      }
+
+      double[] parameters = new double[2];
+      Function f = new Function (m, max, mean, Fj);
+
+      parameters[1] = RootFinder.brentDekker (EPSI, 1 - EPSI, f, 1e-5);
+      if (parameters[1] >= 1.0)
+         parameters[1] = 1.0 - 1e-15;
+
+      parameters[0] = Math.round ((parameters[1] * mean) / (1.0 - parameters[1]));
+      if (parameters[0] == 0)
+          parameters[0] = 1;
+
+      return parameters;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Estimates the parameter $(n, p)$ of the Pascal distribution
+   using the maximum likelihood method, from the $m$ observations
+   $x[i]$, $i = 0, 1, \ldots, m-1$. The estimates are returned in a two-element
+    array, in regular order: [$n$, $p$].
+   \begin{detailed}
+   The maximum likelihood estimators are the values $(\hat{n}$, $\hat{p})$
+  that  satisfy the equations
+   \begin{eqnarray*}
+      \frac{\hat{n}(1 - \hat{p})}{\hat{p}} & = & \bar{x}_m\\
+      \ln (1 + \hat{p}) & = & \sum_{j=1}^{\infty} \frac{F_j}{(\hat{n} + j - 1)}
+   \end{eqnarray*}
+   where  $\bar x_m$ is the average of $x[0],\dots,x[m-1]$, and
+   $F_j = \sum_{i=j}^{\infty} f_i$ = proportion of $x$'s which are
+   greater than or equal to $j$
+   \cite[page 132]{tJOH69a}.
+   \end{detailed}
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations used to evaluate parameters}
+   \param{m}{the number of observations used to evaluate parameters}
+   \return{returns the parameters [$\hat{n}$, $\hat{p}$]}
+\end{htmlonly}
+\begin{code}
+
+   public static PascalDist getInstanceFromMLE (int[] x, int m)\begin{hide} {
+      double parameters[] = getMLE (x, m);
+      return new PascalDist ((int) parameters[0], parameters[1]);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new instance of a Pascal distribution with parameters $n$ and
+   $p$ estimated using the maximum likelihood method based on the $m$
+   observations $x[i]$, $i = 0, 1, \ldots, m-1$.
+\end{tabb}
+\begin{htmlonly}
+   \param{x}{the list of observations to use to evaluate parameters}
+   \param{m}{the number of observations to use to evaluate parameters}
+\end{htmlonly}
+\begin{code}
+
+   public int getN1()\begin{hide} {
+      return (int) (n + 0.5);
+   }
+   \end{hide}
+\end{code}
+\begin{tabb} Returns the parameter $n$ of this object.
+\end{tabb}
+\begin{code}
+
+   public void setParams (int n, double p)\begin{hide} {
+      super.setParams ((double) n, p);
+   }\end{hide}
+\end{code}
+\begin{tabb} Sets the parameter $n$ and $p$ of this object.
+\end{tabb}
+
+\begin{hide}\begin{code}
+
+   public String toString ()\begin{hide} {
+      return getClass().getSimpleName() + " : n = " + getN1() + ", p = " + getP();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns a \texttt{String} containing information about the current distribution.
+\end{tabb}\end{hide}
+\begin{code}\begin{hide}
+}\end{hide}
+\end{code}

@@ -1,0 +1,357 @@
+\defclass {BiStudentDist}
+ 
+Extends the class \class{ContinuousDistribution2Dim} for the {\em 
+ standard  bivariate Student's $t$\/} distribution\latex{ \cite[page 132]{tJOH72a}}. 
+ The correlation between $X$ and $Y$ is \latex{$\rho$}\html{$r$}
+ and the number of degrees of freedom is $\nu$.
+Its probability density is 
+\eq 
+ f (x, y) = 
+   \latex{\frac{1}{2\pi\sqrt{1-\rho^2}}\left[1 + \frac{x^2
+           - 2\rho x y + y^2}{\nu(1-\rho^2)}\right]^{-(\nu + 2)/2}}
+   \html{\left(1 + (x^2 - 2\rho x y + y^2) /(\nu(1-\rho^2))\right)^{-(\nu + 2)/2}/
+         (2\pi\sqrt{1-r^2})}, \eqlabel{eq:pdf1bit}
+\endeq
+and the corresponding distribution function (the \texttt{cdf}) is
+\begin{latexonly}
+\eq
+ T_\nu(x, y, \rho) = 
+    \frac{1}{2\pi\sqrt{1-\rho^2}} \int_{-\infty}^x dx
+    \int_{-\infty}^y dy\, f (x, y). \eqlabel{eq:cdf1bit}
+\endeq
+\end{latexonly}
+\begin{htmlonly}
+\eq
+ T_\nu(x, y, r) = 
+  \int_{-\infty}^x dx \int_{-\infty}^y dy\, f(x,y) /(2\pi\sqrt{1 - r^{2}}).
+\endeq
+\end{htmlonly}
+We also define the upper distribution function called \texttt{barF} as
+\begin{latexonly}
+\eq
+ \overline T_\nu(x, y, \rho) =
+    \frac{1}{2\pi\sqrt{1-\rho^2}} \int^{\infty}_x dx
+    \int^{\infty}_y dy\, f(x,y). \eqlabel{eq:cdf2bit}
+\endeq
+\end{latexonly}
+\begin{htmlonly}
+\eq
+ \overline T_\nu(x, y, r) = 
+  \int^{\infty}_x dx \int^{\infty}_y dy\, f(x,y) /(2\pi\sqrt{1 - r^2}).
+\endeq
+\end{htmlonly}
+
+\bigskip\hrule
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BiStudentDist
+ * Description:  standard bivariate Student t-distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+ */
+\end{hide}
+package umontreal.iro.lecuyer.probdistmulti;
+\begin{hide}
+import umontreal.iro.lecuyer.probdist.StudentDist;
+\end{hide}
+
+public class BiStudentDist extends ContinuousDistribution2Dim \begin{hide} {
+   protected int nu;               // Number of degrees of freedom
+   protected double rho;
+   protected double facRho;        // sqrt(1 - rho^2)
+
+\end{hide}
+\end{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructor}
+
+\begin{code}
+
+   public BiStudentDist (int nu, double rho) \begin{hide} {
+      setParams (nu, rho);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ Constructs a \texttt{BiStudentDist} object with correlation $\rho = $\texttt{ rho}
+  and $\nu$ = \texttt{nu} degrees of freedom.
+  \end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Methods}
+\begin{code}\begin{hide}
+
+   public double density (double x, double y) {
+      if (Math.abs(rho) == 1.)
+         throw new IllegalArgumentException ("|rho| = 1");
+      double T = 1.0 + (x*x - 2.0*rho*x*y + y*y) / (nu*facRho*facRho);
+      return 1.0 / (Math.pow (T, (nu + 2)/2.0) * (2.0*Math.PI*facRho));
+   }
+
+   public double cdf (double x, double y) {
+      return cdf (nu, x, y, rho);
+   }
+
+   public double barF (double x, double y) {
+      return barF (nu, x, y, rho);
+   }
+\end{hide}
+
+   public static double density (int nu, double x, double y, double rho) \begin{hide} {
+      if (nu < 1)
+         throw new IllegalArgumentException ("nu < 1");
+      if (Math.abs(rho) >= 1.)
+         throw new IllegalArgumentException ("|rho| >= 1");
+      double fRho = (1.0 - rho)*(1.0 + rho);
+      double T = 1.0 + (x*x - 2.0*rho*x*y + y*y) / (nu*fRho);
+      return 1.0 / (Math.pow (T, (nu + 2)/2.0) * (2.0*Math.PI*Math.sqrt(fRho)));
+   }\end{hide}
+\end{code}
+\begin{tabb} Computes the standard bivariate Student's $t$ density function
+  (\ref{eq:pdf1bit}) with correlation $\rho$ = \texttt{rho} and
+   $\nu$  = \texttt{nu}  degrees  of freedom.
+\end{tabb}
+\begin{code}
+
+   public static double cdf (int nu, double x, double y, double rho) \begin{hide} {
+      if (nu < 1)
+         throw new IllegalArgumentException ("nu < 1");
+      if (Math.abs(rho) > 1.)
+         throw new IllegalArgumentException ("|rho| > 1");
+
+// This function is translated from Alan Genz's Matlab code.
+/*
+% function p = bvtl( nu, dh, dk, r )
+%
+%    A function for computing bivariate t probabilities.
+%    bvtl calculates the probability that x < dh and y < dk;
+%   parameters
+%     nu number of degrees of freedom
+%     dh 1st upper integration limit
+%     dk 2nd upper integration limit
+%     r   correlation coefficient
+%
+%        This function is based on the method described by 
+%          Dunnett, C.W. and M. Sobel, (1954),
+%          A bivariate generalization of Student's t-distribution
+%          with tables for certain special cases,
+%          Biometrika 41, pp. 153-169,
+%
+%       Alan Genz
+%       Department of Mathematics
+%       Washington State University
+%       Pullman, Wa 99164-3113
+%       Email : alangenz@wsu.edu
+%
+*/
+      final double dh = x;
+      final double dk = y;
+      final double eps = 1.0e-15;
+      final double tpi = 2.*Math.PI;
+      double hrk, krh, bvt, snu;
+      double gmph, gmpk, xnkh, xnhk, qhrk, hkn, hpk, hkrn;
+      double btnckh, btnchk, btpdkh, btpdhk;
+       
+      if (1. - rho <= eps) {
+         x = Math.min (dh, dk);
+         return StudentDist.cdf (nu, x);
+      }
+      if (rho + 1. <= eps) {
+         if (dh > -dk)  
+            return StudentDist.cdf(nu, dh) - StudentDist.cdf (nu, -dk);
+         else
+            return 0.;
+      }
+      final double ors = (1. - rho)*(1. + rho);
+      hrk = dh - rho*dk; krh = dk - rho*dh; 
+      if (Math.abs(hrk) + ors > 0.) {
+        xnhk = hrk*hrk/( hrk*hrk + ors*( nu + dk*dk));
+        xnkh = krh*krh/( krh*krh + ors*( nu + dh*dh));
+      } else {
+        xnhk = 0.;
+        xnkh = 0.; 
+      }
+      int hs, ks, j;
+      if (dh - rho*dk > 0.)
+         hs = 1;
+      else if (dh - rho*dk < 0.)
+         hs = -1;
+      else
+         hs = 0;
+      if (dk - rho*dh > 0.)
+         ks = 1;
+      else if (dk - rho*dh < 0.)
+         ks = -1;
+      else
+         ks = 0;
+      if (nu % 2 == 0) {
+         bvt = Math.atan2 (Math.sqrt(ors), -rho)/tpi;
+         gmph = dh/Math.sqrt (16.*( nu + dh*dh));
+         gmpk = dk/Math.sqrt (16.*( nu + dk*dk)); 
+         btnckh = 2.*Math.atan2 (Math.sqrt(xnkh), Math.sqrt(1. - xnkh))/Math.PI;
+         btpdkh = 2.*Math.sqrt( xnkh*( 1. - xnkh))/Math.PI;
+         btnchk = 2.*Math.atan2( Math.sqrt(xnhk), Math.sqrt(1. - xnhk))/Math.PI;
+         btpdhk = 2.*Math.sqrt( xnhk*( 1. - xnhk))/Math.PI;
+         for (j = 1; j <= nu/2; ++j) {
+            bvt = bvt + gmph*( 1. + ks*btnckh); 
+            bvt = bvt + gmpk*( 1. + hs*btnchk);
+            btnckh = btnckh + btpdkh;
+            btpdkh = 2*j*btpdkh*( 1. - xnkh )/(2*j+1); 
+            btnchk = btnchk + btpdhk;
+            btpdhk = 2*j*btpdhk*( 1. - xnhk )/(2*j+1); 
+            gmph = gmph*( j - 0.5 )/( j*( 1. + dh*dh/nu));
+            gmpk = gmpk*( j - 0.5 )/( j*( 1. + dk*dk/nu));
+         }
+
+      } else {
+         qhrk = Math.sqrt( dh*dh + dk*dk - 2.*rho*dh*dk + nu*ors); 
+         hkrn = dh*dk + rho*nu; hkn = dh*dk - nu; hpk = dh + dk;
+         bvt = Math.atan2( -Math.sqrt(nu)*(hkn*qhrk+hpk*hkrn),
+                            hkn*hkrn-nu*hpk*qhrk )/tpi; 
+         if (bvt < -10.*eps)
+            bvt = bvt + 1;
+         gmph = dh/( tpi*Math.sqrt(nu)*( 1. + dh*dh/nu)); 
+         gmpk = dk/( tpi*Math.sqrt(nu)*( 1. + dk*dk/nu)); 
+         btnckh = Math.sqrt( xnkh ); btpdkh = btnckh;
+         btnchk = Math.sqrt( xnhk ); btpdhk = btnchk; 
+         for (j = 1; j <=  (nu - 1)/2; ++j) {
+            bvt = bvt + gmph*( 1. + ks*btnckh ); 
+            bvt = bvt + gmpk*( 1. + hs*btnchk );
+            btpdkh = (2*j-1)*btpdkh*( 1. - xnkh )/(2*j);
+            btnckh = btnckh + btpdkh; 
+            btpdhk = (2*j-1)*btpdhk*( 1. - xnhk )/(2*j);
+            btnchk = btnchk + btpdhk; 
+            gmph = gmph*j/(( j + 0.5 )*( 1. + dh*dh/nu));
+            gmpk = gmpk*j/(( j + 0.5 )*( 1. + dk*dk/nu));
+         }
+      }
+      return bvt;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Computes the standard bivariate Student's $t$ distribution (\ref{eq:cdf1bit})
+   using the method described in \cite{tGEN04a}. The code for the \texttt{cdf} 
+  was translated directly from the Matlab code written by Alan Genz
+  and available from his web page at
+  \url{http://www.math.wsu.edu/faculty/genz/homepage}
+  (the code is copyrighted by Alan Genz 
+  and is included in this package with the kind permission of the author).
+  The correlation is $\rho = $\texttt{ rho} and the number of 
+  degrees of freedom is $\nu$ = \texttt{nu}.
+ %  The absolute error is expected to be smaller than $10^{-15}$.
+\end{tabb}
+\begin{code}
+
+   public static double barF (int nu, double x, double y, double rho) \begin{hide}
+   {
+      double u = 1.0 + cdf (nu, x, y, rho) - cdf (nu, XBIG, y, rho) -
+                 cdf (nu, x, XBIG, rho);
+      final double eps = 1.0e-15;
+      if (u < eps) return 0.0;
+      if (u <= 1.0) return u;
+      return 1.0;
+    }\end{hide}
+\end{code}
+ \begin{tabb} Computes the standard upper bivariate Student's $t$ distribution 
+   (\ref{eq:cdf2bit}).
+ \end{tabb}
+\begin{code}\begin{hide}
+
+   public double[] getMean() {
+      return getMean (nu, rho);
+   }\end{hide}
+
+   public static double[] getMean (int nu, double rho)\begin{hide} {
+      if (nu < 1)
+         throw new IllegalArgumentException ("nu < 1");
+      if (Math.abs(rho) > 1.)
+         throw new IllegalArgumentException ("|rho| > 1");
+
+      double mean[] = new double[2];
+
+      mean[0] = 0;
+      mean[1] = 0;
+
+      return mean;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the mean vector $E[X] = (0, 0)$ of the bivariate Student's $t$ distribution.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public double[][] getCovariance() {
+      return getCovariance (nu, rho);
+   }\end{hide}
+
+   public static double[][] getCovariance (int nu, double rho)\begin{hide} {
+      if (nu < 1)
+         throw new IllegalArgumentException ("nu < 1");
+      if (Math.abs(rho) > 1.)
+         throw new IllegalArgumentException ("|rho| > 1");
+
+      double cov[][] = new double[2][2];
+
+      double coeff = (double) nu / ((double) nu - 2.0);
+
+      cov[0][0] = coeff;
+      cov[0][1] = coeff * rho;
+      cov[1][0] = coeff * rho;
+      cov[1][1] = coeff;
+
+      return cov;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the covariance matrix of the bivariate Student's $t$ distribution.
+\end{tabb}
+\begin{code}\begin{hide}
+
+   public double[][] getCorrelation() {
+      return getCovariance (nu, rho);
+   }\end{hide}
+
+   public static double[][] getCorrelation (int nu, double rho)\begin{hide} {
+      if (nu < 1)
+         throw new IllegalArgumentException ("nu < 1");
+      if (Math.abs(rho) > 1.)
+         throw new IllegalArgumentException ("|rho| > 1");
+
+      double corr[][] = new double[2][2];
+
+      corr[0][0] = 1.0;
+      corr[0][1] = rho;
+      corr[1][0] = rho;
+      corr[1][1] = 1.0;
+
+      return corr;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the correlation matrix of the bivariate Student's $t$ distribution.
+\end{tabb}
+\begin{code}
+
+   protected void setParams (int nu, double rho) \begin{hide} {
+      if (nu < 1)
+         throw new IllegalArgumentException ("nu < 1");
+      if (Math.abs(rho) > 1.)
+         throw new IllegalArgumentException ("|rho| > 1");
+      this.dimension = 2;
+      this.nu = nu;
+      this.rho = rho; 
+      facRho = Math.sqrt((1.0 - rho)*(1.0 + rho));
+   }\end{hide}
+\end{code}
+  \begin{tabb} Sets the parameters $\nu$ = \texttt{nu} and
+  $\rho$ = \texttt{rho} of this object.
+  \end{tabb}
+\begin{code}\begin{hide} 
+}\end{hide}
+\end{code}

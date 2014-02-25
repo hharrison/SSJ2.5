@@ -1,0 +1,341 @@
+\defclass {BoxSeriesCollection}
+
+This class stores data used in a 
+\externalclass{umontreal.iro.lecuyer.charts}{CategoryChart}.
+It also provides complementary tools to draw
+ box-and-whisker plots; for example, one may
+add or remove plots series and modify plot style. This class is linked with 
+the JFreeChart \texttt{DefaultBoxAndWhiskerCategoryDataset} class to store 
+data plots, and linked with the JFreeChart
+\texttt{BoxAndWhiskerRenderer} to render the plots.
+
+\bigskip\hrule
+\begin{code}
+\begin{hide}
+/*
+ * Class:        BoxSeriesCollection
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.charts;\begin{hide}
+
+import   org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
+import   org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
+
+import   java.util.List;
+import   java.util.ArrayList;
+import   java.util.Locale;
+import   java.util.Formatter;
+\end{hide}
+
+public class BoxSeriesCollection extends SSJCategorySeriesCollection \begin{hide} {
+   final double BARWIDTH = 0.1;
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructors}
+
+\begin{code}
+   public BoxSeriesCollection () \begin{hide} {
+      renderer = new BoxAndWhiskerRenderer();
+      seriesCollection = new DefaultBoxAndWhiskerCategoryDataset ();
+      ((BoxAndWhiskerRenderer)renderer).setMaximumBarWidth(BARWIDTH);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{BoxSeriesCollection} instance with an empty dataset.
+\end{tabb}
+\begin{code}
+
+   public BoxSeriesCollection (double[] data, int numPoints) \begin{hide} {
+      renderer = new BoxAndWhiskerRenderer();
+
+      ((BoxAndWhiskerRenderer)renderer).setMaximumBarWidth(BARWIDTH);
+      seriesCollection = new DefaultBoxAndWhiskerCategoryDataset ();
+
+      DefaultBoxAndWhiskerCategoryDataset tempSeriesCollection =
+            (DefaultBoxAndWhiskerCategoryDataset)seriesCollection;
+
+      final List<Double> list = new ArrayList<Double>();
+      for (int i = 0; i < numPoints; i ++)
+         list.add(data[i]);
+
+      tempSeriesCollection.add(list, 0, 0);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+ Creates a new \texttt{BoxSeriesCollection} instance with default parameters
+ and input series \texttt{data}. Only \emph{the first} \texttt{numPoints}
+ of \texttt{data} will taken into account.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{point sets.}
+   \param{numPoints}{Number of points}
+\end{htmlonly}
+\begin{code}
+
+   public BoxSeriesCollection (double[]... data) \begin{hide} {
+      renderer = new BoxAndWhiskerRenderer();
+      seriesCollection = new DefaultBoxAndWhiskerCategoryDataset ();
+
+      DefaultBoxAndWhiskerCategoryDataset tempSeriesCollection =
+            (DefaultBoxAndWhiskerCategoryDataset)seriesCollection;
+
+      for (int i = 0; i < data.length; i ++) {
+         if (data[i].length == 0)
+            throw new IllegalArgumentException("Unable to render the plot. data["
+                                                   + i +"] contains no row");
+         final List<Double> list = new ArrayList<Double>();
+         for (int j = 0; j < data[i].length-1; j ++)
+            list.add(data[i][j]);
+         tempSeriesCollection.add(list, 0, "Serie " + i);
+         list.clear();
+      }
+      ((BoxAndWhiskerRenderer)renderer).setMaximumBarWidth(BARWIDTH);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{BoxSeriesCollection} instance with default
+   parameters and given data series. The input parameter represents series
+   of point sets.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+\begin{code}
+
+   public BoxSeriesCollection (DefaultBoxAndWhiskerCategoryDataset data) \begin{hide} {
+      renderer = new BoxAndWhiskerRenderer();
+      ((BoxAndWhiskerRenderer)renderer).setFillBox(false);
+      seriesCollection = data;
+      ((BoxAndWhiskerRenderer)renderer).setMaximumBarWidth(BARWIDTH);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Creates a new \texttt{BoxSeriesCollection} instance with default parameters and given data series.
+   The input parameter represents a \texttt{DefaultBoxAndWhiskerCategoryDataset}.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{series of point sets.}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Data control methods}
+
+\begin{code}
+
+   public int add (double[] data) \begin{hide} {
+      return add(data, data.length);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{data} represents
+   a point set.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{point sets.}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{DefaultBoxAndWhiskerXYDataset} object.}
+\end{htmlonly}
+\begin{code}
+
+   public int add (double[] data, int numPoints) \begin{hide} {
+      DefaultBoxAndWhiskerCategoryDataset tempSeriesCollection =
+            (DefaultBoxAndWhiskerCategoryDataset)seriesCollection;
+
+      final List<Double> list = new ArrayList<Double>();
+      for (int i = 0; i < numPoints; i ++)
+         list.add(data[i]);
+
+      int count = tempSeriesCollection.getColumnCount();
+      tempSeriesCollection.add(list, 0, "Serie " + count);
+      return count;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Adds a data series into the series collection. Vector \texttt{data} represents
+   a point set. Only \emph{the first} \texttt{numPoints} of 
+   \texttt{data} will be added to the new series.
+\end{tabb}
+\begin{htmlonly}
+   \param{data}{Point set}
+   \param{numPoints}{Number of points to add}
+   \return{Integer that represent the new point set's position in the JFreeChart \texttt{DefaultBoxAndWhiskerXYDataset} object.}
+\end{htmlonly}
+\begin{code}
+
+   public String getName (int series) \begin{hide} {
+      return (String)((DefaultBoxAndWhiskerCategoryDataset)seriesCollection).getColumnKey(series);
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Gets the current name of the selected series.
+\end{tabb}
+\begin{htmlonly}
+   \param{series}{series index.}
+   \return{current name of the series.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getRangeBounds() \begin{hide} {
+      double max=0, min=0;
+      DefaultBoxAndWhiskerCategoryDataset tempSeriesCollection =
+            (DefaultBoxAndWhiskerCategoryDataset)seriesCollection;
+
+      if(tempSeriesCollection.getColumnCount() != 0 && tempSeriesCollection.getRowCount() != 0) {
+         max = tempSeriesCollection.getItem(0, 0).getMaxOutlier().doubleValue() ;
+         min = tempSeriesCollection.getItem(0, 0).getMinOutlier().doubleValue() ;
+      }
+
+      for(int i = 0; i < tempSeriesCollection.getRowCount(); i++) {
+         for( int j = 0; j < tempSeriesCollection.getColumnCount(); j++) {
+            max = Math.max(max, tempSeriesCollection.getItem(i, j).getMaxOutlier().doubleValue() );
+            min = Math.min(min, tempSeriesCollection.getItem(i, j).getMinOutlier().doubleValue() );
+         }
+      }
+
+      double[] retour = {min, max};
+      return retour;
+   }\end{hide}
+\end{code}
+\begin{tabb}
+   Returns the range ($y$-coordinates) min and max values.
+\end{tabb}
+\begin{htmlonly}
+   \return{range min and max values.}
+\end{htmlonly}
+\begin{code}
+
+   public String toString() \begin{hide} {
+      Formatter formatter = new Formatter(Locale.US);
+      for(int i = 0; i < seriesCollection.getRowCount(); i++) {
+         formatter.format(" Series " + i + " : %n");
+         for(int j = 0; j < seriesCollection.getColumnCount(); j++)
+            formatter.format(",%15e%n", seriesCollection.getValue(i, j));
+      }
+      return formatter.toString();
+   }\end{hide}
+\end{code}
+\begin{tabb}
+  Returns in a \texttt{String} all data contained in the current object.
+\end{tabb}
+\begin{htmlonly}
+   \return{All data contained in the current object as a \class{String}.}
+\end{htmlonly}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsubsection*{Rendering methods}
+\begin{code}
+
+   public String toLatex (double YScale, double YShift, 
+                          double ymin, double ymax) \begin{hide} {
+      throw new UnsupportedOperationException(" NOT implemented yet");
+/*         
+      // Calcule les bornes reelles du graphique, en prenant en compte la position des axes
+      
+      ymin = Math.min(YShift, ymin);
+      ymax = Math.max(YShift, ymax);
+
+      DefaultBoxAndWhiskerCategoryDataset tempSeriesCollection = (DefaultBoxAndWhiskerCategoryDataset)seriesCollection;
+      Formatter formatter = new Formatter(Locale.US);
+//       double var;
+//       double margin = ((BoxAndWhiskerRenderer)renderer).getMargin();
+
+//       for (int i = tempSeriesCollection.getColumnCount() - 1; i >= 0; i--) {
+//          List temp = tempSeriesCollection.getBins(i);
+//          ListIterator iter = temp.listIterator();
+//          
+//          Color color = (Color)renderer.getSeriesPaint(i);
+//          String colorString = detectXColorClassic(color);
+//          if (colorString == null) {
+//             colorString = "color"+i;
+//             formatter.format( "\\definecolor{%s}{rgb}{%.2f, %.2f, %.2f}%n",
+//                               colorString, color.getRed()/255.0, color.getGreen()/255.0, color.getBlue()/255.0);
+//          }
+//          
+//          HistogramBin currentBin=null;
+//          while(iter.hasNext()) {
+//             double currentMargin;
+//             currentBin = (HistogramBin)iter.next();
+//             currentMargin = ((margin*(currentBin.getEndBoundary()-currentBin.getStartBoundary()))-XShift)*XScale;
+//             if ((currentBin.getStartBoundary() >= xmin && currentBin.getStartBoundary() <= xmax) 
+//                && (currentBin.getCount() >= ymin && currentBin.getCount() <= ymax) )
+//             {
+//                var = Math.min( currentBin.getEndBoundary(), xmax);
+//                if (filled[i]) {
+//                   formatter.format("\\filldraw [line width=%.2fpt, opacity=%.2f, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+//                         lineWidth[i], (color.getAlpha()/255.0), colorString,
+//                         currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+//                         currentMargin, (var-XShift)*XScale, (currentBin.getCount()-YShift)*YScale);
+//               }
+//               else {
+//                   formatter.format("\\draw [line width=%.2fpt, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+//                         lineWidth[i], colorString,
+//                         currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+//                         currentMargin, (var-XShift)*XScale, (currentBin.getCount()-YShift)*YScale);
+//               }
+//             }
+//             else if (   (currentBin.getStartBoundary() >= xmin && currentBin.getStartBoundary() <= xmax) 
+//                         && (currentBin.getCount() >= ymin && currentBin.getCount() > ymax) )
+//             { // Cas ou notre rectangle ne peut pas etre affiche en entier (trop haut)
+//                var = Math.min( currentBin.getEndBoundary(), xmax);
+//                if (filled[i]) {
+//                   formatter.format("\\filldraw [line width=%.2fpt,  opacity=%.2f, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+//                         lineWidth[i], (color.getAlpha()/255.0), colorString,
+//                         currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+//                         currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+//               formatter.format("\\draw [line width=%.2fpt, color=%s, style=dotted] ([xshift=%.4f] %.4f, %.4f) rectangle ([yshift=3mm, xshift=-%.4f] %.4f, %.4f); %%%n",
+//                         lineWidth[i], colorString,
+//                         currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, (ymax-YShift)*YScale,
+//                         currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+//                }
+//                else {
+//                   formatter.format("\\draw [line width=%.2fpt, color=%s] ([xshift=%.4f] %.4f, %.4f) rectangle ([xshift=-%.4f] %.4f, %.4f); %%%n",
+//                         lineWidth[i], colorString,
+//                         currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, 0.0,
+//                         currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+//                   
+//               formatter.format("\\draw [line width=%.2fpt, color=%s, style=dotted] ([xshift=%.4f] %.4f, %.4f) rectangle ([yshift=3mm, xshift=-%.4f] %.4f, %.4f); %%%n",
+//                         lineWidth[i], colorString,
+//                         currentMargin, (currentBin.getStartBoundary()-XShift)*XScale, (ymax-YShift)*YScale,
+//                         currentMargin, (var-XShift)*XScale, (ymax-YShift)*YScale);
+//                }
+//             }
+//          }
+//       }
+      return formatter.toString();
+*/
+}\end{hide}
+\end{code}
+\begin{tabb}
+  NOT IMPLEMENTED: To do.
+\end{tabb}
+\begin{htmlonly}
+   \param{ymin}{}
+   \param{ymax}{}
+   \return{LaTeX source code}
+\end{htmlonly}
+\begin{code}
+\begin{hide}
+}\end{hide}
+\end{code}

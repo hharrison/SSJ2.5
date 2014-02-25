@@ -1,0 +1,213 @@
+\defclass{HaltonSequence}
+
+This class implements the sequence of Halton \cite{rHAL60a},
+which is essentially a modification of Hammersley nets for producing 
+an infinite sequence of points having low discrepancy.
+The $i$th point in $s$ dimensions is 
+\eq
+ \bu_i = (\psi_{b_1}(i),\psi_{b_2}(i),\dots, \psi_{b_s}(i)),
+                                            \eqlabel{eq:Halton-point2}
+\endeq
+for $i=0,1,2,\dots$, where $\psi_b$ is the radical inverse function
+in base $b$, defined in class \class{RadicalInverse}, and where
+$2 = b_1 < \cdots < b_s$ are the $s$ smallest prime numbers in 
+increasing order.
+
+A fast method is implemented to generate randomized Halton sequences\latex{
+\cite{rSTR95a,vWAN99a}}, starting from an arbitrary point $x_0$.
+
+The points can be ``scrambled'' by applying a permutation to the 
+digits of $i$ before computing each coordinate\latex{
+via (\ref{eq:Halton-point})}, in the same way as for the class
+\class{HammersleyPointSet}, for all coordinates $j\ge 0$.
+
+\bigskip\hrule\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{code}
+
+\begin{hide}
+/*
+ * Class:        HaltonSequence
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.hups;
+
+
+public class HaltonSequence extends PointSet\begin{hide} { 
+   private int[] base;           // Vector of prime bases.
+   private int[][] permutation;  // Digits permutation, for each dimension.
+   private boolean permuted;     // Permute digits?
+   private RadicalInverse[] radinv; // Vector of RadicalInverse's.
+   private int[] start;          // starting indices
+   private final static int positiveBitMask = ~Integer.reverse(1);
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Constructor}
+
+\begin{code}
+   public HaltonSequence (int dim) \begin{hide} {
+      if (dim < 1)
+         throw new IllegalArgumentException
+            ("Halton sequence must have positive dimension dim");
+      this.dim  = dim;
+      numPoints = Integer.MAX_VALUE;
+      base = RadicalInverse.getPrimes (dim);
+      start = new int[dim];
+      java.util.Arrays.fill(start, 0);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Constructs a new Halton sequence %% of $n$ points
+    in \texttt{dim} dimensions.
+%%   The number of points is infinite.
+ \end{tabb}
+\begin{htmlonly}
+   \param{dim}{dimension}
+\end{htmlonly}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Methods}
+
+\begin{code}
+
+   public void setStart (double[] x0) \begin{hide} {
+      for (int i = 0; i < dim; i++)
+         start[i] = RadicalInverse.radicalInverseInteger(base[i], x0[i]);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Initializes the Halton sequence starting at point \texttt{x0}.
+   For each coordinate $j$, the sequence starts at index $i_j$ such that 
+   \texttt{x0[$j$]} is the radical inverse of $i_j$.
+   The dimension of \texttt{x0} must be at least as large as the dimension
+   of this object.
+ \end{tabb}
+\begin{htmlonly}
+   \param{x0}{starting point of the Halton sequence}
+\end{htmlonly}
+\begin{code}
+
+   public void init (double[] x0) \begin{hide} {
+      radinv = new RadicalInverse[dim];
+      for (int i = 0; i < dim; i++)
+         radinv[i] = new RadicalInverse (base[i], x0[i]);
+   }\end{hide}
+\end{code}
+ \begin{tabb}
+   Initializes the Halton sequence starting at point \texttt{x0}.
+   The dimension of \texttt{x0} must be at least as large as the dimension
+   of this object.
+%%   The number of points is infinite.
+ \end{tabb}
+\begin{htmlonly}
+   \param{x0}{starting point of the Halton sequence}
+\end{htmlonly}
+\begin{code}
+
+   public void addFaureLemieuxPermutations()\begin{hide} {
+      permutation = new int[dim][];
+      for (int i = 0; i < dim; i++) {
+         permutation[i] = new int[base[i]];
+         RadicalInverse.getFaureLemieuxPermutation (i, permutation[i]);
+      }
+      permuted = true;
+   }
+\end{hide}
+\end{code}
+ \begin{tabb}
+Permutes the digits using permutations from \cite{vFAU09a} for all coordinates.
+After the method is called, the coordinates $u_{i,j}$ are generated via
+\[
+  u_{i,j} = \sum_{r=0}^{k-1} \pi_j[a_r] b_j^{-r-1},
+\]
+ for $j=0,\dots,s-1$,
+ where $\pi_j$ is the Faure-Lemieux (2008) permutation of $\{0,\dots,b_j-1\}$.
+ \end{tabb}
+\begin{code}
+
+   public void addFaurePermutations()\begin{hide} {
+      permutation = new int[dim][];
+      for (int i = 0; i < dim; i++) {
+         permutation[i] = new int[base[i]];
+         RadicalInverse.getFaurePermutation (base[i], permutation[i]);
+      }
+      permuted = true;
+   }
+\end{hide}
+\end{code}
+ \begin{tabb}
+  Permutes the digits using Faure permutations for all coordinates.
+  After the method is called, the coordinates $u_{i,j}$ are generated via
+\[
+  u_{i,j} = \sum_{r=0}^{k-1} \pi_j[a_r] b_j^{-r-1},
+\]
+ for $j=0,\dots,s-1$,
+ where $\pi_j$ is the Faure permutation of $\{0,\dots,b_j-1\}$.
+ \end{tabb}
+\begin{code}
+
+   public void ErasePermutations()\begin{hide} {
+      permuted = false;
+      permutation = null;
+   }
+\end{hide}
+\end{code}
+ \begin{tabb}
+  Erases the permutations: from now on, the digits will not be
+  permuted.
+ \end{tabb}
+\begin{code}
+\begin{hide}
+    
+   public int getNumPoints () {
+      return Integer.MAX_VALUE;
+   }
+
+   public double getCoordinate (int i, int j) {
+      if (radinv != null) {
+         if (!permuted) {
+            return radinv[j].nextRadicalInverse ();
+         } else {
+            throw new UnsupportedOperationException (
+            "Fast radical inverse is not implemented in case of permutation");
+         }
+      } else {
+         int k = start[j] + i;
+         // if overflow, restart at first nonzero point
+         // (Struckmeier restarts at zero)
+         if (k < 0)
+            k = (k & positiveBitMask) + 1;
+         if (permuted)
+            return RadicalInverse.permutedRadicalInverse 
+            (base[j], permutation[j], k);
+         else 
+            return RadicalInverse.radicalInverse (base[j], k);
+      }
+   }
+}
+\end{hide}
+\end{code}

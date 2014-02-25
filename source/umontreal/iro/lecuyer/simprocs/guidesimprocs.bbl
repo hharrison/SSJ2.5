@@ -1,0 +1,53 @@
+\begin{thebibliography}{1}
+
+\bibitem{sBIR86a}
+G.~M. Birtwistle, G.~Lomow, B.~Unger, and P.~Luker.
+\newblock Process style packages for discrete event modelling.
+\newblock {\em Transactions of the Society for Computer Simulation},
+  3-4:279--318, 1986.
+
+\bibitem{sFRA77a}
+W.~R. Franta.
+\newblock {\em The Process View of Simulation}.
+\newblock North Holland, New York, NY, 1977.
+
+\bibitem{iJAC05a}
+P.~H.~M. Jacobs.
+\newblock {\em DSOL: an open source, {J}ava based, suite for continuous and
+  discrete event simulation}.
+\newblock Technische Universiteit Delft, Delft, Netherlands, 2005.
+\newblock Available at \url{http://www.simulation.tudelft.nl/dsol/}.
+
+\bibitem{sJAC04a}
+P.~H.~M. Jacobs and A.~Verbraeck.
+\newblock Single-threaded specification of process-interaction formalism in
+  {J}ava.
+\newblock In R.~G. Ingalls, M.~D. Rosetti, J.~S. Smith, and B.~A. Peters,
+  editors, {\em Proceedings of the 2004 Winter Simulation Conference}, pages
+  1548--1555. {IEEE} Press, 2004.
+
+\bibitem{sKRE86a}
+W.~Kreutzer.
+\newblock {\em System Simulation - Programming Styles and Languages}.
+\newblock Addison Wesley, New York, NY, 1986.
+
+\bibitem{sLAW00a}
+A.~M. Law and W.~D. Kelton.
+\newblock {\em Simulation Modeling and Analysis}.
+\newblock McGraw-Hill, New York, NY, third edition, 2000.
+
+\bibitem{sLEC05a}
+P.~L'Ecuyer and E.~Buist.
+\newblock Simulation in {J}ava with {SSJ}.
+\newblock In M.~E. Kuhl, N.~M. Steiger, F.~B. Armstrong, and J.~A. Joines,
+  editors, {\em Proceedings of the 2005 Winter Simulation Conference}, pages
+  611--620, Pistacaway, NJ, 2005. {IEEE} Press.
+
+\bibitem{sLEC02a}
+P.~L'Ecuyer, L.~Meliani, and J.~Vaucher.
+\newblock {SSJ}: A framework for stochastic simulation in {J}ava.
+\newblock In E.~Y\"ucesan, C.-H. Chen, J.~L. Snowdon, and J.~M. Charnes,
+  editors, {\em Proceedings of the 2002 Winter Simulation Conference}, pages
+  234--242. {IEEE} Press, 2002.
+
+\end{thebibliography}

@@ -1,0 +1,109 @@
+\defclass {FNoncentralGen}
+
+This class implements random variate generators for the 
+\emph{noncentral F}-distribution.
+If $X$ is a noncentral chi-square random variable with $\nu_1 > 0$ degrees of 
+freedom and noncentrality parameter $\lambda > 0$, and $Y$ is a chi-square 
+random variable (statistically independent of $X$) with $\nu_2>0$ degrees
+ of freedom, then
+\begin{latexonly}%
+\[
+             F' = \frac{X/\nu_1}{Y/\nu_2}
+\]
+\end{latexonly}%
+\begin{htmlonly}%
+\[
+             F\,' = {(X/\nu_1)} / {(Y/\nu_2)}
+\]
+\end{htmlonly}%
+has a noncentral $F$-distribution.
+
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        FNoncentralGen
+ * Description:  random variate generators for the noncentral F-distribution
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.randvar;\begin{hide}
+import umontreal.iro.lecuyer.rng.*;
+import umontreal.iro.lecuyer.probdist.*;
+\end{hide}
+
+public class FNoncentralGen extends RandomVariateGen \begin{hide} {
+   private ChiSquareNoncentralGen noncenchigen;
+   private ChiSquareGen chigen;
+   private double nu1;   // degrees of freedom of noncenchigen
+   private int nu2;   // degrees of freedom of chigen
+
+   public double nextDouble()  {
+      double x = noncenchigen.nextDouble();
+      double y = chigen.nextDouble();
+      return (x * nu2) / (y * nu1);
+   }
+\end{hide}
+\end{code}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection* {Constructors}
+\begin{code}
+
+   public FNoncentralGen (ChiSquareNoncentralGen ncgen, ChiSquareGen cgen) \begin{hide} {
+      super (null, null);
+      setChiSquareNoncentralGen (ncgen);
+      setChiSquareGen (cgen);
+   }\end{hide}
+\end{code}
+\begin{tabb}  Creates a \emph{noncentral-F} random variate generator
+ using noncentral chi-square generator \texttt{ncgen} and 
+ chi-square generator \texttt{cgen}.
+\end{tabb}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\subsubsection* {Methods}
+\begin{code}
+
+   public void setChiSquareNoncentralGen (ChiSquareNoncentralGen ncgen)\begin{hide} {
+      nu1 = ncgen.getNu();
+      noncenchigen = ncgen;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the noncentral chi-square generator to \texttt{ncgen}.
+ \end{tabb}
+\begin{code}
+
+   public void setChiSquareGen (ChiSquareGen cgen)\begin{hide} {
+      nu2 = cgen.getN();
+      chigen = cgen;
+   }\end{hide}
+\end{code}
+ \begin{tabb} Sets the chi-square generator to \texttt{cgen}.
+ \end{tabb}
+\begin{code}
+\begin{hide}
+}
+\end{hide}
+\end{code}

@@ -1,0 +1,249 @@
+\defclass{Polynomial}
+
+Represents a polynomial of degree $n$ in power form. Such a polynomial is of
+the form
+\begin{equation}
+p(x) = c_0 + c_1x + \cdots + c_nx^n,
+\end{equation}
+where $c_0, \ldots, c_n$ are the coefficients of the polynomial.
+
+\bigskip\hrule
+
+\begin{code}
+\begin{hide}
+/*
+ * Class:        Polynomial
+ * Description:  
+ * Environment:  Java
+ * Software:     SSJ 
+ * Copyright (C) 2001  Pierre L'Ecuyer and Université de Montréal
+ * Organization: DIRO, Université de Montréal
+ * @author       Éric Buist
+ * @since
+
+ * SSJ is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (GPL) as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * any later version.
+
+ * SSJ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * A copy of the GNU General Public License is available at
+   <a href="http://www.gnu.org/licenses">GPL licence site</a>.
+ */
+\end{hide}
+package umontreal.iro.lecuyer.functions;\begin{hide}
+
+import java.io.Serializable;
+import umontreal.iro.lecuyer.util.PrintfFormat;
+\end{hide}
+
+public class Polynomial implements MathFunction\begin{hide}
+,
+      MathFunctionWithFirstDerivative, MathFunctionWithDerivative,
+      MathFunctionWithIntegral, Serializable, Cloneable {
+   private static final long serialVersionUID = -2911550952861456470L;
+   private double[] coeff;
+\end{hide}
+
+   public Polynomial (double... coeff)\begin{hide} {
+      if (coeff == null)
+         throw new NullPointerException ();
+      if (coeff.length == 0)
+         throw new IllegalArgumentException (
+               "At least one coefficient is needed");
+      this.coeff = coeff.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Constructs a new polynomial with coefficients \texttt{coeff}. The value of
+ \texttt{coeff[i]} in this array corresponds to $c_i$.
+\end{tabb}
+\begin{htmlonly}
+   \param{coeff}{the coefficients of the polynomial.}
+   \exception{NullPointerException}{if \texttt{coeff} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the length of \texttt{coeff} is 0.}
+\end{htmlonly}
+\begin{code}
+
+   public int getDegree ()\begin{hide} {
+      return coeff.length - 1;
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the degree of this polynomial.
+\end{tabb}
+\begin{htmlonly}
+   \return{the degree of this polynomial.}
+\end{htmlonly}
+\begin{code}
+
+   public double[] getCoefficients ()\begin{hide} {
+      return coeff.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns an array containing the coefficients of the polynomial.
+\end{tabb}
+\begin{htmlonly}
+   \return{the array of coefficients.}
+\end{htmlonly}
+\begin{code}
+
+   public double getCoefficient (int i)\begin{hide} {
+      return coeff[i];
+   }\end{hide}
+\end{code}
+\begin{tabb}   Returns the $i$th coefficient of the polynomial.
+\end{tabb}
+\begin{htmlonly}
+   \return{the array of coefficients.}
+\end{htmlonly}
+\begin{code}
+
+   public void setCoefficients (double... coeff)\begin{hide} {
+      if (coeff == null)
+         throw new NullPointerException ();
+      if (coeff.length == 0)
+         throw new IllegalArgumentException (
+               "At least one coefficient is needed");
+      this.coeff = coeff.clone ();
+   }\end{hide}
+\end{code}
+\begin{tabb}   Sets the array of coefficients of this polynomial to \texttt{coeff}.
+\end{tabb}
+\begin{htmlonly}
+   \param{coeff}{the new array of coefficients.}
+   \exception{NullPointerException}{if \texttt{coeff} is \texttt{null}.}
+   \exception{IllegalArgumentException}{if the length of \texttt{coeff} is 0.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public double evaluate (double x) {
+      double res = coeff[coeff.length - 1];
+      for (int i = coeff.length - 2; i >= 0; i--)
+         res = coeff[i] + x * res;
+      return res;
+   }
+
+   public double derivative (double x) {
+      return derivative (x, 1);
+   }
+
+   public double derivative (double x, int n) {
+      if (n < 0)
+         throw new IllegalArgumentException ("n < 0");
+      if (n == 0)
+         return evaluate (x);
+      if (n >= coeff.length)
+         return 0;
+//      double res = coeff[coeff.length - 1]*(coeff.length - 1);
+//      for (int i = coeff.length - 2; i >= n; i--)
+//         res = i*(coeff[i] + x * res);
+      double res = getCoeffDer (coeff.length - 1, n);
+      for (int i = coeff.length - 2; i >= n; i--)
+         res = getCoeffDer (i, n) + x * res;
+      return res;
+   }\end{hide}
+
+   public Polynomial derivativePolynomial (int n)\begin{hide} {
+      if (n < 0)
+         throw new IllegalArgumentException ("n < 0");
+      if (n == 0)
+         return this;
+      if (n >= coeff.length)
+         return new Polynomial (0);
+      final double[] coeffDer = new double[coeff.length - n];
+      for (int i = coeff.length - 1; i >= n; i--)
+         coeffDer[i - n] = getCoeffDer (i, n);
+      return new Polynomial (coeffDer);
+   }\end{hide}
+\end{code}
+\begin{tabb} Returns a polynomial corresponding to the $n$th derivative of
+this polynomial.
+\end{tabb}
+\begin{htmlonly}
+   \param{n}{the degree of the derivative.}
+   \return{the derivative.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   private double getCoeffDer (int i, int n) {
+      double coeffDer = coeff[i];
+      for (int j = i; j > i - n; j--)
+         coeffDer *= j;
+      return coeffDer;
+   }
+
+   public double integral (double a, double b) {
+      return integralA0 (b) - integralA0 (a);
+   }
+
+   private double integralA0 (double u) {
+      final int n = coeff.length - 1;
+      double res = u * coeff[n] / (n + 1);
+      for (int i = coeff.length - 2; i >= 0; i--)
+         res = coeff[i] * u / (i + 1) + u * res;
+      return res;
+   }\end{hide}
+
+   public Polynomial integralPolynomial (double c)\begin{hide} {
+      final double[] coeffInt = new double[coeff.length + 1];
+      coeffInt[0] = c;
+      for (int i = 0; i < coeff.length; i++)
+         coeffInt[i + 1] = coeff[i] / (i + 1);
+      return new Polynomial (coeffInt);
+   }
+
+   @Override
+\end{hide}
+\end{code}
+\begin{tabb} Returns a polynomial representing the integral of this polynomial.
+ This integral is of the form
+\[\int p(x)dx = c + c_0x + \frac{c_1 x^2}2 + \cdots + \frac{c_n x^{n+1}}{n+1},
+ \]
+where $c$ is a user-defined constant.
+\end{tabb}
+\begin{htmlonly}
+   \param{c}{the constant for the integral.}
+   \return{the polynomial representing the integral.}
+\end{htmlonly}
+\begin{code}\begin{hide}
+
+   public String toString () {
+      final StringBuilder sb = new StringBuilder ();
+      for (int i = 0; i < coeff.length; i++) {
+         if (i > 0) {
+            if (coeff[i] == 0)
+               continue;
+            else if (coeff[i] > 0)
+               sb.append (" + ");
+            else
+               sb.append (" - ");
+            sb.append (PrintfFormat.format (8, 3, 3, Math.abs (coeff[i])));
+         }
+         else
+            sb.append (PrintfFormat.format (8, 3, 3, coeff[i]));
+         if (i > 0) {
+            sb.append ("*X");
+            if (i > 1)
+               sb.append ("^").append (i);
+         }
+      }
+      return sb.toString ();
+   }
+
+   @Override
+   public Polynomial clone () {
+      Polynomial pol;
+      try {
+         pol = (Polynomial) super.clone ();
+      }
+      catch (final CloneNotSupportedException cne) {
+         throw new IllegalStateException ("Clone not supported");
+      }
+      pol.coeff = coeff.clone ();
+      return pol;
+   }
+}\end{hide}
+\end{code}
