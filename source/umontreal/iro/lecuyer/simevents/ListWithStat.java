@@ -292,7 +292,7 @@ public class ListWithStat<E>
       E oldElement = oldNode.getElement();
       boolean equal;
       if (oldElement == null || element == null)
-         equal = oldElement == oldElement;
+         equal = oldElement == element;
       else
          equal = oldElement.equals (element);
       if (equal) {
@@ -391,7 +391,7 @@ public class ListWithStat<E>
          E oldElement = oldNode.getElement();
          boolean equal;
          if (oldElement == null || element == null)
-            equal = oldElement == oldElement;
+            equal = oldElement == element;
          else
             equal = oldElement.equals (element);
          if (equal) {
