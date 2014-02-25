@@ -207,7 +207,7 @@ public class ErlangDist extends GammaDist {
     * 
     */
    public void setParams (int k, double lambda, int d) {
-      setParams (k, lambda, d);
+      setParams ((double)k, lambda, d);
    }
 
 
