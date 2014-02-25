@@ -307,7 +307,7 @@ public class BinaryDataReader extends AbstractDataReader  {
     * 
     */
    public BinaryDataReader (InputStream inputStream) throws IOException  {
-      this.in = new DataInputStream(in);
+      this.in = new DataInputStream(inputStream);
    }
    
 
